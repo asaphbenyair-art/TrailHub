@@ -56,6 +56,12 @@ enum NotificationType {
   NEW_MESSAGE
 }
 
+enum TripType {
+  DAY_HIKE
+  EXPEDITION
+  MULTI_SITE
+}
+
 // ─── NextAuth required models ───────────────────────────────────────────────
 
 model Account {
@@ -107,6 +113,13 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  gender                String?
+  birthYear             Int?
+  bio                   String?  @db.Text
+  phone                 String?
+  preferredRegions      String[]
+  preferredDifficulties String[]
+
   accounts      Account[]
   sessions      Session[]
   guide         Guide?
@@ -135,6 +148,7 @@ model Guide {
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   trips        Trip[]
+  coupons      Coupon[]
 }
 
 model Trip {
@@ -158,6 +172,10 @@ model Trip {
   latitude  Float?
   longitude Float?
 
+  tripType  TripType @default(DAY_HIKE)
+  endDate   DateTime?
+  priceTiers Json?
+
   meetingPoint    String?
   waypoints       String? @db.Text
   whatToBring     String?
@@ -176,6 +194,8 @@ model Trip {
   notifications Notification[]
   questions     TripQuestion[]
   chatMessages  ChatMessage[]
+  days          TripDay[]
+  coupons       Coupon[]
 
   @@index([guideId])
   @@index([status])
@@ -304,6 +324,7 @@ model OrganizationMembership {
   organizationId String
   userId         String
   role           OrgMemberRole @default(MEMBER)
+  isIndependent  Boolean       @default(true)
   joinedAt       DateTime      @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -311,4 +332,41 @@ model OrganizationMembership {
 
   @@unique([organizationId, userId])
   @@index([userId])
+}
+
+model TripDay {
+  id        String   @id @default(cuid())
+  tripId    String
+  dayNumber Int
+  title     String?
+  description String? @db.Text
+  distanceKm  Float?
+  durationMin Int?
+  startPoint  String?
+  endPoint    String?
+  waypoints   String? @db.Text
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+  @@unique([tripId, dayNumber])
+}
+
+model Coupon {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  discountPct Int
+  maxUses     Int?
+  usedCount   Int      @default(0)
+  expiresAt   DateTime?
+  isActive    Boolean  @default(true)
+  guideId     String
+  tripId      String?
+  createdAt   DateTime @default(now())
+
+  guide Guide @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  trip  Trip? @relation(fields: [tripId], references: [id], onDelete: SetNull)
+
+  @@index([guideId])
+  @@index([tripId])
 }

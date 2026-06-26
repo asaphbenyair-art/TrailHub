@@ -7,7 +7,7 @@ import Step2 from "../../new/steps/Step2";
 import Step3 from "../../new/steps/Step3";
 import Step4 from "../../new/steps/Step4";
 import Step5 from "../../new/steps/Step5";
-import { WizardData, DEFAULT_WIZARD_DATA } from "../../new/types";
+import { WizardData, DEFAULT_WIZARD_DATA, TripDayData, PriceTier, CouponData } from "../../new/types";
 
 const STEPS = [
   { label: "פרטים" },
@@ -32,15 +32,30 @@ function validateStep(step: number, data: WizardData): string | null {
 function tripToWizard(trip: Record<string, unknown>): WizardData {
   const images = (trip.images as string[]) ?? [];
   const durationMin = Number(trip.durationMin ?? 0);
+  const priceTiers = Array.isArray(trip.priceTiers) ? trip.priceTiers as { label: string; price: string }[] : [];
+  const tripDays = Array.isArray(trip.days)
+    ? (trip.days as Record<string, unknown>[]).map((d) => ({
+        dayNumber: Number(d.dayNumber ?? 1),
+        title: String(d.title ?? ""),
+        description: String(d.description ?? ""),
+        distanceKm: String(d.distanceKm ?? ""),
+        durationHours: d.durationMin ? String(Number(d.durationMin) / 60) : "",
+        startPoint: String(d.startPoint ?? ""),
+        endPoint: String(d.endPoint ?? ""),
+      }))
+    : [];
   return {
     title: String(trip.title ?? ""),
     description: String(trip.description ?? ""),
     date: trip.date ? new Date(trip.date as string).toISOString().slice(0, 10) : "",
+    endDate: trip.endDate ? new Date(trip.endDate as string).toISOString().slice(0, 10) : "",
     startTime: String(trip.startTime ?? "07:00"),
     region: String(trip.region ?? ""),
     meetingPoint: String(trip.meetingPoint ?? ""),
     mainImagePreview: images[0] ?? "",
     extraImagePreviews: images.slice(1),
+    tripType: (trip.tripType as "DAY_HIKE" | "EXPEDITION" | "MULTI_SITE") ?? "DAY_HIKE",
+    tripDays,
     routeType: "one-way",
     distanceKm: String(trip.distanceKm ?? ""),
     durationHours: durationMin > 0 ? String(durationMin / 60) : "",
@@ -56,6 +71,8 @@ function tripToWizard(trip: Record<string, unknown>): WizardData {
       : [],
     whatToBring: "",
     price: String(trip.price ?? ""),
+    priceTiers: priceTiers.map((t) => ({ label: t.label, price: String(t.price) })),
+    coupons: [],
     cancelTier1Hours: "72",
     cancelTier1Refund: "100%",
     cancelTier2Hours: "24",
@@ -85,7 +102,7 @@ export default function EditTripPage() {
       .catch(() => router.replace("/guide/dashboard"));
   }, [id, router]);
 
-  function onChange(field: keyof WizardData, value: string | string[]) {
+  function onChange(field: keyof WizardData, value: string | string[] | TripDayData[] | PriceTier[] | CouponData[]) {
     setData((prev) => ({ ...prev, [field]: value }));
   }
 
@@ -132,6 +149,7 @@ export default function EditTripPage() {
       description: data.description,
       region: data.region,
       date: new Date(data.date).toISOString(),
+      endDate: data.endDate ? new Date(data.endDate).toISOString() : null,
       startTime: data.startTime,
       meetingPoint: data.meetingPoint,
       difficulty: data.difficulty,
@@ -143,6 +161,10 @@ export default function EditTripPage() {
       cancellationPolicy,
       status: data.status === "PREVIEW" ? "DRAFT" : data.status,
       images,
+      tripType: data.tripType || "DAY_HIKE",
+      priceTiers: data.priceTiers.length > 0 ? data.priceTiers : null,
+      tripDays: data.tripDays,
+      coupons: data.coupons,
     };
 
     const res = await fetch(`/api/guide/trips/${id}`, {
@@ -154,8 +176,9 @@ export default function EditTripPage() {
     setSaving(false);
 
     if (!res.ok) {
-      const d = await res.json();
-      setError(d.error ?? "שגיאה בשמירה");
+      let msg = "שגיאה בשמירה";
+      try { const d = await res.json(); msg = d.error ?? msg; } catch {}
+      setError(msg);
       return;
     }
 
@@ -217,40 +240,43 @@ export default function EditTripPage() {
           {step === 4 && <Step4 data={data} onChange={onChange} />}
           {step === 5 && <Step5 data={data} onChange={onChange} />}
 
-          <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-gray-50">
-            <button
-              type="button"
-              onClick={goPrev}
-              className={`px-4 py-2 text-xs border border-gray-200 rounded-full text-gray-500 hover:bg-gray-100 transition-colors ${
-                step === 1 ? "invisible" : ""
-              }`}
-            >
-              חזור
-            </button>
-
-            <div className="flex flex-col items-center gap-1">
-              {error && <span className="text-xs text-red-500">{error}</span>}
-              <span className="text-xs text-gray-400">שלב {step} מתוך 5</span>
-            </div>
-
-            {step < 5 ? (
-              <button
-                type="button"
-                onClick={goNext}
-                className="px-5 py-2 text-xs bg-[#1A6B4A] text-white rounded-full font-medium hover:bg-[#155a3e] transition-colors"
-              >
-                המשך
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={saving}
-                className="px-5 py-2 text-xs bg-[#1A6B4A] text-white rounded-full font-medium hover:bg-[#155a3e] transition-colors disabled:opacity-60"
-              >
-                {saving ? "שומר..." : "שמור שינויים"}
-              </button>
+          <div className="border-t border-gray-100 bg-gray-50">
+            {error && (
+              <div className="px-5 pt-2 text-xs text-red-500 text-center">{error}</div>
             )}
+            <div className="flex items-center justify-between px-5 py-3">
+              <button
+                type="button"
+                onClick={goPrev}
+                className={`px-4 py-2 text-xs border border-gray-200 rounded-full text-gray-500 hover:bg-gray-100 transition-colors ${
+                  step === 1 ? "invisible" : ""
+                }`}
+              >
+                חזור
+              </button>
+
+              <span className="text-xs text-gray-400">שלב {step} מתוך 5</span>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="px-4 py-2 text-xs border border-[#1A6B4A] text-[#1A6B4A] rounded-full font-medium hover:bg-[#D6EDE3] transition-colors disabled:opacity-60"
+                >
+                  {saving ? "שומר..." : "שמור"}
+                </button>
+                {step < 5 && (
+                  <button
+                    type="button"
+                    onClick={goNext}
+                    className="px-5 py-2 text-xs bg-[#1A6B4A] text-white rounded-full font-medium hover:bg-[#155a3e] transition-colors"
+                  >
+                    המשך
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>

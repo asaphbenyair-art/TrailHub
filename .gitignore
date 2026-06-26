@@ -43,3 +43,9 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# claude code local settings
+.claude/settings.local.json
+
+# user-uploaded images (production storage is external)
+/public/uploads/

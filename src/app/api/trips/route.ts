@@ -15,12 +15,13 @@ export async function GET(request: Request) {
 
   const trips = await prisma.trip.findMany({
     where: {
-      status: { in: ["OPEN", "DRAFT"] },
+      status: { in: ["OPEN", "FULL"] },
       ...(q && {
         OR: [
           { title: { contains: q, mode: "insensitive" } },
           { description: { contains: q, mode: "insensitive" } },
           { region: { contains: q, mode: "insensitive" } },
+          { guide: { user: { name: { contains: q, mode: "insensitive" } } } },
         ],
       }),
       ...(regions.length > 0 && { region: { in: regions } }),

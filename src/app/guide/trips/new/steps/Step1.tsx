@@ -1,13 +1,19 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { WizardData } from "../types";
+import { WizardData, TripDayData } from "../types";
 
 const REGIONS = ["גליל עליון", "גליל תחתון", "כרמל", "ירושלים", "שפלה", "נגב", "ערבה", "גולן", "עמק יזרעאל"];
 
+const TRIP_TYPES = [
+  { value: "DAY_HIKE", label: "טיול יום", desc: "טיול חד-יומי" },
+  { value: "EXPEDITION", label: "מסע", desc: "מספר ימים רצופים" },
+  { value: "MULTI_SITE", label: "מרובה אתרים", desc: "מספר יעדים נפרדים" },
+] as const;
+
 interface Props {
   data: WizardData;
-  onChange: (field: keyof WizardData, value: string | string[]) => void;
+  onChange: (field: keyof WizardData, value: string | string[] | TripDayData[]) => void;
 }
 
 async function uploadFile(file: File): Promise<string> {
@@ -114,6 +120,112 @@ function ImageUpload({
   );
 }
 
+function TripDayEditor({
+  days,
+  onChange,
+}: {
+  days: TripDayData[];
+  onChange: (days: TripDayData[]) => void;
+}) {
+  function updateDay(idx: number, field: keyof TripDayData, value: string) {
+    const next = days.map((d, i) => i === idx ? { ...d, [field]: value } : d);
+    onChange(next);
+  }
+
+  function addDay() {
+    onChange([...days, {
+      dayNumber: days.length + 1,
+      title: "",
+      description: "",
+      distanceKm: "",
+      durationHours: "",
+      startPoint: "",
+      endPoint: "",
+    }]);
+  }
+
+  function removeDay(idx: number) {
+    const next = days.filter((_, i) => i !== idx).map((d, i) => ({ ...d, dayNumber: i + 1 }));
+    onChange(next);
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-gray-500">ימי המסע</span>
+        <button
+          type="button"
+          onClick={addDay}
+          className="text-xs text-[#1A6B4A] font-medium border border-[#1A6B4A] rounded-full px-3 py-1 hover:bg-[#D6EDE3] transition-colors"
+        >
+          + הוסף יום
+        </button>
+      </div>
+      {days.length === 0 && (
+        <p className="text-xs text-gray-400 text-center py-3">לחץ "הוסף יום" להגדרת כל יום</p>
+      )}
+      {days.map((day, idx) => (
+        <div key={idx} className="border border-gray-200 rounded-xl p-3 flex flex-col gap-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-semibold text-[#1A6B4A]">יום {day.dayNumber}</span>
+            <button
+              type="button"
+              onClick={() => removeDay(idx)}
+              className="text-xs text-red-400 hover:text-red-600"
+            >
+              הסר
+            </button>
+          </div>
+          <input
+            type="text"
+            placeholder="שם היום (למשל: מנחל דן לחרמון)"
+            value={day.title}
+            onChange={(e) => updateDay(idx, "title", e.target.value)}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+          />
+          <textarea
+            placeholder="תיאור קצר של היום"
+            value={day.description}
+            onChange={(e) => updateDay(idx, "description", e.target.value)}
+            rows={2}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] resize-none"
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              type="text"
+              placeholder="נקודת התחלה"
+              value={day.startPoint}
+              onChange={(e) => updateDay(idx, "startPoint", e.target.value)}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+            />
+            <input
+              type="text"
+              placeholder="נקודת סיום"
+              value={day.endPoint}
+              onChange={(e) => updateDay(idx, "endPoint", e.target.value)}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+            />
+            <input
+              type="number"
+              placeholder="ק״מ"
+              value={day.distanceKm}
+              onChange={(e) => updateDay(idx, "distanceKm", e.target.value)}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+            />
+            <input
+              type="number"
+              placeholder="שעות הליכה"
+              value={day.durationHours}
+              onChange={(e) => updateDay(idx, "durationHours", e.target.value)}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Step1({ data, onChange }: Props) {
   const [mainPreview, setMainPreview] = useState<string>(data.mainImagePreview ?? "");
   const [extraPreviews, setExtraPreviews] = useState<string[]>(data.extraImagePreviews ?? []);
@@ -125,17 +237,14 @@ export default function Step1({ data, onChange }: Props) {
       onChange("mainImagePreview", "");
       return;
     }
-    // Show local preview immediately
     const localUrl = URL.createObjectURL(files[0]);
     setMainPreview(localUrl);
-    // Upload in background; replace preview with server URL on success
     setUploading(true);
     try {
       const serverUrl = await uploadFile(files[0]);
       setMainPreview(serverUrl);
       onChange("mainImagePreview", serverUrl);
     } catch {
-      // Keep blob preview visible; page.tsx will re-upload on save
       onChange("mainImagePreview", localUrl);
     } finally {
       setUploading(false);
@@ -160,10 +269,34 @@ export default function Step1({ data, onChange }: Props) {
     }
   }
 
+  const isMultiDay = data.tripType === "EXPEDITION" || data.tripType === "MULTI_SITE";
+
   return (
     <div className="p-5 flex flex-col gap-4">
       <div className="text-sm font-medium text-gray-900 border-b border-gray-100 pb-3 mb-1">
         פרטים בסיסיים
+      </div>
+
+      {/* Trip type selector */}
+      <div className="flex flex-col gap-2">
+        <label className="text-xs font-medium text-gray-500">סוג הטיול</label>
+        <div className="grid grid-cols-3 gap-2">
+          {TRIP_TYPES.map((t) => (
+            <button
+              key={t.value}
+              type="button"
+              onClick={() => onChange("tripType", t.value)}
+              className={`rounded-xl border p-2 text-center transition-colors ${
+                data.tripType === t.value
+                  ? "border-[#1A6B4A] bg-[#D6EDE3]"
+                  : "border-gray-200 hover:border-gray-300"
+              }`}
+            >
+              <div className="text-xs font-semibold text-gray-800">{t.label}</div>
+              <div className="text-[10px] text-gray-400 mt-0.5">{t.desc}</div>
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-col gap-1">
@@ -190,7 +323,9 @@ export default function Step1({ data, onChange }: Props) {
 
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-500">תאריך</label>
+          <label className="text-xs font-medium text-gray-500">
+            {isMultiDay ? "תאריך התחלה" : "תאריך"}
+          </label>
           <input
             type="date"
             value={data.date}
@@ -199,17 +334,44 @@ export default function Step1({ data, onChange }: Props) {
             dir="ltr"
           />
         </div>
+        {isMultiDay ? (
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-500">תאריך סיום</label>
+            <input
+              type="date"
+              value={data.endDate}
+              min={data.date}
+              onChange={(e) => onChange("endDate", e.target.value)}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+              dir="ltr"
+            />
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-500">שעת מפגש</label>
+            <input
+              type="time"
+              value={data.startTime}
+              onChange={(e) => onChange("startTime", e.target.value)}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+              dir="ltr"
+            />
+          </div>
+        )}
+      </div>
+
+      {isMultiDay && (
         <div className="flex flex-col gap-1">
           <label className="text-xs font-medium text-gray-500">שעת מפגש</label>
           <input
             type="time"
             value={data.startTime}
             onChange={(e) => onChange("startTime", e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] w-32"
             dir="ltr"
           />
         </div>
-      </div>
+      )}
 
       <div className="flex flex-col gap-1">
         <label className="text-xs font-medium text-gray-500">איזור בארץ</label>
@@ -236,6 +398,13 @@ export default function Step1({ data, onChange }: Props) {
         />
         <p className="text-xs text-gray-400 mt-1">ניתן להקליד כתובת מדויקת או שם מקום מוכר</p>
       </div>
+
+      {isMultiDay && (
+        <TripDayEditor
+          days={data.tripDays}
+          onChange={(days) => onChange("tripDays", days)}
+        />
+      )}
 
       <ImageUpload
         label="תמונה ראשית"

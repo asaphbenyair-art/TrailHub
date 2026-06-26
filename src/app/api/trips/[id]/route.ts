@@ -11,6 +11,7 @@ export async function GET(
     include: {
       guide: { include: { user: { select: { name: true, image: true, email: true } } } },
       reviews: { include: { user: { select: { name: true } } }, orderBy: { createdAt: "desc" } },
+      days: { orderBy: { dayNumber: "asc" } },
     },
   });
   if (!trip) return NextResponse.json({ error: "לא נמצא" }, { status: 404 });

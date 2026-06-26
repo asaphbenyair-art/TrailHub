@@ -7,7 +7,7 @@ import Step2 from "./steps/Step2";
 import Step3 from "./steps/Step3";
 import Step4 from "./steps/Step4";
 import Step5 from "./steps/Step5";
-import { WizardData, DEFAULT_WIZARD_DATA } from "./types";
+import { WizardData, DEFAULT_WIZARD_DATA, TripDayData, PriceTier, CouponData } from "./types";
 
 const STEPS = [
   { label: "פרטים" },
@@ -36,7 +36,7 @@ export default function NewTripWizard() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
-  function onChange(field: keyof WizardData, value: string | string[]) {
+  function onChange(field: keyof WizardData, value: string | string[] | TripDayData[] | PriceTier[] | CouponData[]) {
     setData((prev) => ({ ...prev, [field]: value }));
   }
 
@@ -99,6 +99,7 @@ export default function NewTripWizard() {
       description: data.description,
       region: data.region,
       date: new Date(data.date).toISOString(),
+      endDate: data.endDate ? new Date(data.endDate).toISOString() : null,
       startTime: data.startTime,
       meetingPoint: data.meetingPoint,
       waypoints: data.waypoints || null,
@@ -111,6 +112,10 @@ export default function NewTripWizard() {
       cancellationPolicy,
       status: data.status === "PREVIEW" ? "DRAFT" : data.status,
       images,
+      tripType: data.tripType || "DAY_HIKE",
+      priceTiers: data.priceTiers.length > 0 ? data.priceTiers : null,
+      tripDays: data.tripDays,
+      coupons: data.coupons,
     };
 
     const res = await fetch("/api/guide/trips", {
@@ -122,8 +127,9 @@ export default function NewTripWizard() {
     setSaving(false);
 
     if (!res.ok) {
-      const d = await res.json();
-      setError(d.error ?? "שגיאה בשמירה");
+      let msg = "שגיאה בשמירה";
+      try { const d = await res.json(); msg = d.error ?? msg; } catch {}
+      setError(msg);
       return;
     }
 
