@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head><meta charset="UTF-8"><title>דשבורד מדריך</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif}
+body{background:#f5f5f5;padding:16px;direction:rtl}
+.note{background:#fffbe6;border:1px solid #e8d44d;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#555}
+.page{background:#f5f5f5;max-width:480px}
+.topbar{background:#fff;padding:12px 14px;border-radius:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.logo{font-size:16px;font-weight:500;color:#1A6B4A}
+.gname{font-size:13px;color:#666;margin-right:auto}
+.new-btn{display:flex;align-items:center;gap:5px;padding:6px 14px;background:#1A6B4A;color:#fff;border:none;border-radius:20px;font-size:12px;cursor:pointer}
+.avatar{width:32px;height:32px;border-radius:50%;background:#854F0B;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#fff}
+.tabs{display:flex;background:#fff;border-radius:12px;margin-bottom:8px;overflow:hidden}
+.tab{flex:1;padding:10px;text-align:center;font-size:12px;cursor:pointer;color:#666;border-bottom:2px solid transparent}
+.tab.active{color:#1A6B4A;border-bottom:2px solid #1A6B4A;font-weight:500}
+.panel{display:none;flex-direction:column;gap:10px}
+.panel.active{display:flex}
+.card{background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e5e5e5}
+.tc-hd{display:flex;gap:10px;padding:12px}
+.tc-img{width:70px;height:70px;border-radius:10px;flex-shrink:0}
+.tc-name{font-size:14px;font-weight:500;color:#111;margin-bottom:4px}
+.tc-meta{font-size:12px;color:#666;display:flex;flex-direction:column;gap:2px}
+.status{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:500;margin-bottom:6px}
+.s-pub{background:#D6EDE3;color:#0F5038}
+.s-draft{background:#f5f5f5;color:#666;border:1px solid #ddd}
+.reg-bar{padding:10px 12px;background:#fafafa;border-top:1px solid #f0f0f0;border-bottom:1px solid #f0f0f0}
+.rl{display:flex;justify-content:space-between;font-size:12px;color:#666;margin-bottom:4px}
+.rl span:last-child{color:#1A6B4A;font-weight:500}
+.rt{height:5px;background:#f0f0f0;border-radius:3px;overflow:hidden}
+.rf{height:100%;border-radius:3px;background:#1A6B4A}
+.int-bar{padding:8px 12px;background:#FDF3DC;border-top:1px solid #EF9F27;font-size:12px;color:#633806}
+.tc-foot{display:flex;gap:6px;padding:10px 12px;justify-content:flex-end}
+.btn{padding:5px 12px;border-radius:20px;font-size:11px;cursor:pointer;border:1px solid #ddd;background:#fff;color:#666}
+.btn.primary{background:#1A6B4A;color:#fff;border:none}
+.btn.danger{border-color:#C0392B;color:#C0392B}
+.sec-title{font-size:13px;font-weight:500;color:#111;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.sec-title a{font-size:12px;color:#1A6B4A;font-weight:400;cursor:pointer}
+.reg-list{border-top:1px solid #f0f0f0}
+.reg-hdr{display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:8px 12px;background:#fafafa;font-size:11px;font-weight:500;color:#666}
+.reg-row{display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:8px 12px;border-top:1px solid #f0f0f0;align-items:center;font-size:12px}
+.rn{font-weight:500;color:#111}
+.rd{color:#999;font-size:11px}
+.rb{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500}
+.rb-paid{background:#D6EDE3;color:#0F5038}
+.rb-pend{background:#FAEEDA;color:#633806}
+.rb-wl{background:#D4E4F0;color:#185FA5}
+.msg-btn{padding:4px 8px;background:#fff;border:1px solid #ddd;border-radius:20px;font-size:11px;cursor:pointer;color:#666}
+.conds-sec{padding:12px;border-top:1px solid #f0f0f0}
+.conds-title{font-size:12px;font-weight:500;color:#666;margin-bottom:8px}
+.cond-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f0f0f0;font-size:12px}
+.cond-item:last-child{border-bottom:none}
+.cond-cnt{width:24px;height:24px;border-radius:50%;background:#FAEEDA;color:#633806;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0}
+.cond-txt{flex:1;color:#666}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:#fff;border-radius:8px;padding:12px;text-align:center;border:1px solid #e5e5e5}
+.sv{font-size:22px;font-weight:500;color:#111}
+.sl{font-size:11px;color:#999;margin-top:2px}
+.popular-list{display:flex;flex-direction:column;gap:8px}
+.pop-item{display:flex;align-items:center;gap:8px;font-size:13px}
+.pop-num{color:#999;font-size:11px;width:16px}
+</style>
+</head>
+<body>
+<div class="note">
+  <strong>דשבורד מדריך</strong><br>
+  שלושה טאבים: הטיולים שלי (קרובים + טיוטות), נרשמים (עם בקשות על תנאי), סטטיסטיקות.<br>
+  בקשות על תנאי מוצגות לכל טיול כדי שהמדריך יוכל להחליט על שינויים.
+</div>
+<div class="page">
+  <div class="topbar">
+    <div class="logo">🧭 TrailHub</div>
+    <span class="gname">שלום, רועי</span>
+    <button class="new-btn">＋ טיול חדש</button>
+    <div class="avatar">רל</div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('trips')">הטיולים שלי</div>
+    <div class="tab" onclick="showTab('regs')">נרשמים</div>
+    <div class="tab" onclick="showTab('stats')">סטטיסטיקות</div>
+  </div>
+
+  <div class="panel active" id="t-trips">
+    <div class="sec-title">טיולים קרובים</div>
+    <div class="card">
+      <div class="tc-hd">
+        <div class="tc-img" style="background:linear-gradient(160deg,#3d6b35,#1a3d16)"></div>
+        <div class="tc-info" style="flex:1">
+          <div class="status s-pub">🌍 מפורסם</div>
+          <div class="tc-name">טיול נחל קלט</div>
+          <div class="tc-meta"><span>📅 שישי, 14 פבר' · 07:00</span><span>📍 12.4 ק"מ · בינוני</span></div>
+        </div>
+      </div>
+      <div class="reg-bar">
+        <div class="rl"><span>נרשמים</span><span>18 מתוך 24 · 6 מקומות נותרו</span></div>
+        <div class="rt"><div class="rf" style="width:75%"></div></div>
+      </div>
+      <div class="int-bar">⚙ 3 מתעניינים על תנאי — <strong>2 יירשמו אם הטיול יתקצר ל-10 ק"מ</strong></div>
+      <div class="tc-foot">
+        <button class="btn" onclick="showTab('regs')">רשימת נרשמים</button>
+        <button class="btn">עריכה</button>
+        <button class="btn primary">📢 Broadcast</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="tc-hd">
+        <div class="tc-img" style="background:linear-gradient(160deg,#3d6b55,#0f3d28)"></div>
+        <div style="flex:1">
+          <div class="status s-pub">🌍 מפורסם</div>
+          <div class="tc-name">נחל פולג — מעיינות ובריכות</div>
+          <div class="tc-meta"><span>📅 שישי, 21 פבר' · 08:00</span><span>📍 8.2 ק"מ · קל</span></div>
+        </div>
+      </div>
+      <div class="reg-bar">
+        <div class="rl"><span>נרשמים</span><span>6 מתוך 20 · 14 מקומות נותרו</span></div>
+        <div class="rt"><div class="rf" style="width:30%"></div></div>
+      </div>
+      <div class="tc-foot"><button class="btn">נרשמים (6)</button><button class="btn">עריכה</button><button class="btn primary">📢 Broadcast</button></div>
+    </div>
+    <div class="sec-title" style="margin-top:4px">טיוטות <a>הכל</a></div>
+    <div class="card">
+      <div class="tc-hd">
+        <div class="tc-img" style="background:linear-gradient(160deg,#8B7355,#4a3c20)"></div>
+        <div style="flex:1">
+          <div class="status s-draft">📄 טיוטה</div>
+          <div class="tc-name">מסלול הר המצפה — חצי יום</div>
+          <div class="tc-meta"><span>📅 תאריך לא נקבע</span><span style="color:#C0392B">⚠ חסר: GPX, מחיר</span></div>
+        </div>
+      </div>
+      <div class="tc-foot"><button class="btn danger">מחק</button><button class="btn primary">המשך עריכה</button></div>
+    </div>
+  </div>
+
+  <div class="panel" id="t-regs">
+    <div class="sec-title">נרשמים — טיול נחל קלט · 14 פבר'</div>
+    <div class="card">
+      <div class="reg-list">
+        <div class="reg-hdr"><span>שם</span><span>הצטרף</span><span>סטטוס</span></div>
+        <div class="reg-row"><div><div class="rn">דן כהן</div><div class="rd">נרשם 2 פבר'</div></div><button class="msg-btn">💬</button><span class="rb rb-paid">שולם</span></div>
+        <div class="reg-row"><div><div class="rn">מיכל לוי</div><div class="rd">נרשמה 3 פבר'</div></div><button class="msg-btn">💬</button><span class="rb rb-paid">שולם</span></div>
+        <div class="reg-row"><div><div class="rn">יוסי אברהם</div><div class="rd">נרשם 5 פבר'</div></div><button class="msg-btn">💬</button><span class="rb rb-pend">ממתין לחיוב</span></div>
+        <div class="reg-row"><div><div class="rn">שרה גולן</div><div class="rd">המתנה · 8 פבר'</div></div><button class="msg-btn">💬</button><span class="rb rb-wl">המתנה #1</span></div>
+      </div>
+      <div class="conds-sec">
+        <div class="conds-title">⚙ בקשות על תנאי</div>
+        <div class="cond-item"><div class="cond-cnt">2</div><div class="cond-txt">יירשמו אם הטיול יתקצר ל-10 ק"מ</div></div>
+        <div class="cond-item"><div class="cond-cnt">1</div><div class="cond-txt">יירשם אם המחיר ירד ל-100 ₪</div></div>
+      </div>
+      <div class="tc-foot"><button class="btn primary">📢 Broadcast לקבוצה</button></div>
+    </div>
+  </div>
+
+  <div class="panel" id="t-stats">
+    <div class="stats-grid">
+      <div class="stat"><div class="sv">24</div><div class="sl">טיולים השנה</div></div>
+      <div class="stat"><div class="sv">312</div><div class="sl">מטיילים</div></div>
+      <div class="stat"><div class="sv">4.9</div><div class="sl">דירוג ממוצע</div></div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat"><div class="sv">₪37K</div><div class="sl">הכנסה השנה</div></div>
+      <div class="stat"><div class="sv">94%</div><div class="sl">אחוז השלמה</div></div>
+      <div class="stat"><div class="sv">67%</div><div class="sl">חוזרים</div></div>
+    </div>
+    <div class="card" style="padding:14px">
+      <div class="sec-title">הטיולים הפופולריים</div>
+      <div class="popular-list">
+        <div class="pop-item"><span class="pop-num">1</span><span style="flex:1">נחל קלט</span><span style="font-size:12px;color:#666">8 יציאות · 156 מטיילים</span></div>
+        <div class="pop-item"><span class="pop-num">2</span><span style="flex:1">נחל פולג</span><span style="font-size:12px;color:#666">6 יציאות · 98 מטיילים</span></div>
+        <div class="pop-item"><span class="pop-num">3</span><span style="flex:1">עין גדי</span><span style="font-size:12px;color:#666">5 יציאות · 58 מטיילים</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function showTab(n){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  const map={trips:0,regs:1,stats:2};
+  document.querySelectorAll('.tab')[map[n]].classList.add('active');
+  document.getElementById('t-'+n).classList.add('active');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head><meta charset="UTF-8"><title>זרימת הרשמה</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif}
+body{background:#f5f5f5;padding:16px;direction:rtl}
+.note{background:#fffbe6;border:1px solid #e8d44d;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#555}
+.tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.tab{padding:7px 14px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid #ddd;background:#fff;color:#666}
+.tab.active{background:#1A6B4A;color:#fff;border-color:#1A6B4A}
+.screen{display:none;max-width:480px}
+.screen.active{display:block}
+.card{background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e5e5e5}
+.trip-sum{display:flex;align-items:center;gap:12px;padding:14px;border-bottom:1px solid #f0f0f0}
+.ts-img{width:56px;height:56px;border-radius:10px;background:linear-gradient(160deg,#3d6b35,#1a3d16);flex-shrink:0}
+.ts-name{font-size:14px;font-weight:500;color:#111}
+.ts-meta{font-size:12px;color:#666;margin-top:3px}
+.ts-price{font-size:18px;font-weight:500;color:#111}
+.ts-sub{font-size:11px;color:#999}
+.steps{display:flex;padding:12px 14px 0;align-items:flex-start}
+.sd{display:flex;flex-direction:column;align-items:center;flex:1}
+.sdc{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;border:1.5px solid #ddd;color:#999;background:#fff}
+.sdc.done{background:#1A6B4A;border-color:#1A6B4A;color:#fff}
+.sdc.cur{border-color:#1A6B4A;color:#1A6B4A}
+.sdl{font-size:10px;color:#999;margin-top:4px;text-align:center}
+.sdl.cur{color:#1A6B4A}
+.sline{flex:1;height:1.5px;background:#eee;margin-top:12px}
+.sline.done{background:#1A6B4A}
+.section{padding:14px;border-bottom:1px solid #f0f0f0}
+.sec-title{font-size:13px;font-weight:500;color:#111;margin-bottom:10px}
+.pf-field{margin-bottom:10px}
+.pf-field label{display:block;font-size:11px;color:#666;margin-bottom:4px}
+.pf-field input{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px}
+.pf-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.secure{display:flex;align-items:center;gap:6px;font-size:11px;color:#999;margin-top:6px}
+.alert-row{display:flex;align-items:center;gap:8px;padding:10px;background:#f8f8f8;border-radius:8px;margin-top:6px}
+.alert-row input{width:60px;font-size:13px;padding:5px 8px;border:1px solid #ddd;border-radius:8px}
+.alert-label{font-size:12px;color:#666}
+.sum-box{background:#f8f8f8;border-radius:8px;padding:12px 14px}
+.sum-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:#111}
+.sum-row span:first-child{color:#666}
+.sum-total{display:flex;justify-content:space-between;font-size:15px;font-weight:500;padding-top:8px;margin-top:8px;border-top:1px solid #ddd}
+.btn-full{width:100%;padding:12px;font-size:14px;border:none;border-radius:20px;cursor:pointer;background:#1A6B4A;color:#fff;font-weight:500;margin-top:4px}
+.foot{display:flex;gap:8px;padding:14px;justify-content:flex-end}
+.btn-back{padding:8px 16px;font-size:13px;border:1px solid #ddd;border-radius:20px;cursor:pointer;background:#fff;color:#666}
+.success{text-align:center;padding:32px 20px}
+.success-icon{width:56px;height:56px;border-radius:50%;background:#D6EDE3;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:24px}
+.success-title{font-size:18px;font-weight:500;color:#111;margin-bottom:6px}
+.success-sub{font-size:13px;color:#666;line-height:1.6;margin-bottom:20px}
+.success-detail{background:#f8f8f8;border-radius:8px;padding:12px 14px;text-align:right;margin-bottom:16px}
+.sd-row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0}
+.sd-row span:first-child{color:#666}
+.cond-box{background:#f8f8f8;border-radius:8px;padding:12px 14px;margin-bottom:10px}
+.cond-input{width:100%;font-size:13px;padding:7px 10px;border:1px solid #ddd;border-radius:8px;margin-bottom:8px}
+.conds-list{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.cond-item{display:flex;align-items:center;gap:8px;background:#f8f8f8;border-radius:8px;padding:8px 10px}
+.cond-and{font-size:10px;font-weight:500;color:#fff;background:#1A6B4A;border-radius:4px;padding:2px 6px;flex-shrink:0}
+.cond-and.first{background:#eee;color:#999}
+.cond-del{background:none;border:none;cursor:pointer;color:#999;font-size:16px}
+.ca-row{display:flex;gap:8px}
+.ca-btn{flex:1;padding:9px;border:1px solid #ddd;border-radius:8px;font-size:12px;cursor:pointer;text-align:center;background:#fff;color:#666}
+.ca-btn.sel{border-color:#1A6B4A;background:#D6EDE3;color:#0F5038}
+.ca-desc{font-size:11px;color:#999;margin-top:3px;text-align:center}
+.add-cond{display:flex;align-items:center;gap:6px;font-size:13px;color:#1A6B4A;cursor:pointer;padding:4px 0}
+.and-note{font-size:11px;color:#999;background:#f8f8f8;border-radius:8px;padding:8px 10px;margin-top:8px;line-height:1.5}
+.cb-row{display:flex;align-items:center;gap:10px;padding:10px 0}
+.cb{width:18px;height:18px;border-radius:4px;border:1.5px solid #ddd;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.cb.checked{background:#1A6B4A;border-color:#1A6B4A;color:#fff;font-size:11px}
+.wl-opts{display:flex;flex-direction:column;gap:10px;margin-bottom:10px}
+.wl-opt{border:1px solid #ddd;border-radius:8px;padding:12px 14px;cursor:pointer;background:#fff}
+.wl-opt.sel{border-color:#1A6B4A;background:#D6EDE3}
+.wl-opt-title{font-size:13px;font-weight:500;color:#111}
+.wl-opt.sel .wl-opt-title{color:#0F5038}
+.wl-opt-desc{font-size:12px;color:#666;margin-top:4px;line-height:1.5}
+.wl-warn{background:#FADBD8;border-radius:8px;padding:8px 10px;font-size:12px;color:#791F1F;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="note">
+  <strong>זרימת הרשמה — שלושה מצבים</strong><br>
+  עבור בין הטאבים לראות: הרשמה רגילה (כולל מסך הצלחה), מתעניין על תנאי (AND), ורשימת המתנה.<br>
+  תשלום: Authorization בהרשמה, Capture רק בכניסה לחלון ללא החזר.
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="show('normal')">הרשמה רגילה</div>
+  <div class="tab" onclick="show('cond')">מתעניין על תנאי</div>
+  <div class="tab" onclick="show('wl')">רשימת המתנה</div>
+</div>
+
+<!-- הרשמה רגילה -->
+<div class="screen active" id="s-normal">
+  <div class="card">
+    <div class="trip-sum">
+      <div class="ts-img"></div>
+      <div style="flex:1"><div class="ts-name">טיול נחל קלט</div><div class="ts-meta">שישי 14 פבר' · 07:00 · רועי לוי · 6 מקומות נותרו</div></div>
+      <div style="text-align:left"><div class="ts-price">₪120</div><div class="ts-sub">לאדם</div></div>
+    </div>
+    <div class="steps">
+      <div class="sd"><div class="sdc done">✓</div><div class="sdl" style="color:#1A6B4A">מדיניות</div></div>
+      <div class="sline done"></div>
+      <div class="sd"><div class="sdc cur">2</div><div class="sdl cur">תשלום</div></div>
+      <div class="sline"></div>
+      <div class="sd"><div class="sdc">3</div><div class="sdl">אישור</div></div>
+    </div>
+    <div class="section">
+      <div class="sec-title">פרטי תשלום</div>
+      <div class="pf-field"><label>מספר כרטיס</label><input type="text" placeholder="0000 0000 0000 0000"></div>
+      <div class="pf-row">
+        <div class="pf-field"><label>תוקף</label><input type="text" placeholder="MM/YY"></div>
+        <div class="pf-field"><label>CVV</label><input type="text" placeholder="•••"></div>
+      </div>
+      <div class="pf-field"><label>שם בעל הכרטיס</label><input type="text" placeholder="כפי שמופיע על הכרטיס"></div>
+      <div class="secure">🔒 הכרטיס יאושר עכשיו אך יחויב רק ב-12 פבר'</div>
+    </div>
+    <div class="section">
+      <div class="sec-title">התראת סף ביטול</div>
+      <div style="font-size:12px;color:#666;margin-bottom:8px">קבל התראה לפני כניסה לחלון ללא החזר</div>
+      <div class="alert-row">
+        <span class="alert-label">שלח לי התראה</span>
+        <input type="number" value="24">
+        <span class="alert-label">שעות לפני</span>
+      </div>
+      <div style="font-size:11px;color:#999;margin-top:6px">ברירת מחדל: 24 שעות (ניתן לשינוי בהגדרות)</div>
+    </div>
+    <div class="section">
+      <div class="sum-box">
+        <div class="sum-row"><span>מחיר לאדם</span><span>₪120</span></div>
+        <div class="sum-row"><span>עמלת שירות</span><span>₪9</span></div>
+        <div class="sum-total"><span>סה"כ לתשלום</span><span>₪129</span></div>
+      </div>
+    </div>
+    <div style="padding:14px">
+      <button class="btn-full" onclick="show('success')">אשר הרשמה ←</button>
+    </div>
+  </div>
+</div>
+
+<!-- מסך הצלחה -->
+<div class="screen" id="s-success">
+  <div class="card">
+    <div class="success">
+      <div class="success-icon">✓</div>
+      <div class="success-title">נרשמת בהצלחה!</div>
+      <div class="success-sub">אישור נשלח למייל. הכרטיס יחויב ב-12 פבר' אם לא תבטל לפני כן.</div>
+      <div class="success-detail">
+        <div class="sd-row"><span>טיול</span><span>טיול נחל קלט</span></div>
+        <div class="sd-row"><span>תאריך</span><span>שישי, 14 פבר' · 07:00</span></div>
+        <div class="sd-row"><span>מדריך</span><span>רועי לוי</span></div>
+        <div class="sd-row"><span>סכום שאושר</span><span>₪129</span></div>
+        <div class="sd-row"><span>חיוב בפועל</span><span>12 פבר' · אם לא בוטל</span></div>
+      </div>
+      <button class="btn-full" onclick="show('normal')">חזרה לחיפוש טיולים</button>
+    </div>
+  </div>
+</div>
+
+<!-- מתעניין על תנאי -->
+<div class="screen" id="s-cond">
+  <div class="card">
+    <div class="trip-sum">
+      <div class="ts-img" style="background:linear-gradient(160deg,#3d6b35,#1a3d16)"></div>
+      <div style="flex:1"><div class="ts-name">טיול הר מירון — לולאה גדולה</div><div class="ts-meta">שבת 22 פבר' · 28 ק"מ · קשה</div></div>
+      <div style="text-align:left"><div class="ts-price">₪160</div><div class="ts-sub">לאדם</div></div>
+    </div>
+    <div class="section">
+      <div class="sec-title">הגדר תנאים להרשמה</div>
+      <div style="font-size:13px;color:#666;margin-bottom:12px">אירשם לטיול רק כש<strong>כל</strong> התנאים הבאים מתקיימים:</div>
+      <div class="conds-list" id="conds">
+        <div class="cond-item">
+          <span class="cond-and first">אם</span>
+          <input style="flex:1;font-size:13px;padding:6px 8px;border:1px solid #ddd;border-radius:6px" type="text" value='הטיול יתקצר ל-20 ק"מ'>
+          <button class="cond-del" onclick="delCond(this)">✕</button>
+        </div>
+        <div class="cond-item">
+          <span class="cond-and">וגם</span>
+          <input style="flex:1;font-size:13px;padding:6px 8px;border:1px solid #ddd;border-radius:6px" type="text" value="המחיר ירד ל-120 ₪">
+          <button class="cond-del" onclick="delCond(this)">✕</button>
+        </div>
+      </div>
+      <div class="add-cond" onclick="addCond()">＋ הוסף תנאי נוסף</div>
+      <div class="and-note">כל התנאים חייבים להתקיים יחד. המדריך יראה את הבקשות המצטברות.</div>
+    </div>
+    <div class="section">
+      <div class="sec-title">כשהתנאים מתקיימים — מה לעשות?</div>
+      <div class="ca-row">
+        <div style="flex:1"><div class="ca-btn sel">רשום אותי אוטומטית</div><div class="ca-desc">יחויב מיד ללא החזר</div></div>
+        <div style="flex:1"><div class="ca-btn">שלח לי התראה</div><div class="ca-desc">תחרות עם ממתינים אחרים</div></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="cb-row"><div class="cb checked">✓</div><span style="font-size:13px;color:#666">עדכן אותי על כל שינוי בטיול</span></div>
+    </div>
+    <div style="padding:14px"><button class="btn-full">שמור עניין על תנאי ←</button></div>
+  </div>
+</div>
+
+<!-- רשימת המתנה -->
+<div class="screen" id="s-wl">
+  <div class="card">
+    <div class="trip-sum">
+      <div class="ts-img" style="background:linear-gradient(160deg,#9a7a4a,#5c4208)"></div>
+      <div style="flex:1"><div class="ts-name">מסביב למכתש רמון</div><div class="ts-meta" style="color:#C0392B;font-weight:500">מלא · 4 ממתינים כבר</div></div>
+      <div style="text-align:left"><div class="ts-price">₪380</div><div class="ts-sub">לאדם</div></div>
+    </div>
+    <div class="section">
+      <div class="sec-title">הצטרף לרשימת ההמתנה</div>
+      <div style="font-size:13px;color:#666;margin-bottom:12px">הטיול מלא. כשיתפנה מקום:</div>
+      <div class="wl-opts">
+        <div class="wl-opt sel">
+          <div class="wl-opt-title">⚡ רשום אותי אוטומטית</div>
+          <div class="wl-opt-desc">כשמתפנה מקום — נרשם ומחויב מיד. מובטח מקום.</div>
+          <div class="wl-warn">⚠️ הכרטיס יחויב ב-₪389 ללא אפשרות החזר</div>
+        </div>
+        <div class="wl-opt">
+          <div class="wl-opt-title">🔔 שלח לי התראה</div>
+          <div class="wl-opt-desc">כשמתפנה מקום — התראה לכל הממתינים בו-זמנית. מי שרושם ראשון זוכה.</div>
+        </div>
+      </div>
+      <div class="cb-row"><div class="cb checked">✓</div><span style="font-size:13px;color:#666">עדכן אותי על כל שינוי בטיול</span></div>
+    </div>
+    <div style="padding:14px"><button class="btn-full">הצטרף לרשימת ההמתנה ←</button></div>
+  </div>
+</div>
+
+<script>
+function show(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('s-'+name).classList.add('active');
+  const map={normal:0,cond:1,wl:2,success:0};
+  if(map[name]!==undefined)document.querySelectorAll('.tab')[map[name]].classList.add('active');
+}
+function addCond(){
+  const list=document.getElementById('conds');
+  const d=document.createElement('div');d.className='cond-item';
+  d.innerHTML='<span class="cond-and">וגם</span><input style="flex:1;font-size:13px;padding:6px 8px;border:1px solid #ddd;border-radius:6px" type="text" placeholder="הוסף תנאי..."><button class="cond-del" onclick="delCond(this)">✕</button>';
+  list.appendChild(d);d.querySelector('input').focus();
+}
+function delCond(btn){
+  const items=document.querySelectorAll('.cond-item');
+  if(items.length>1){btn.closest('.cond-item').remove();document.querySelector('.cond-and').textContent='אם';document.querySelector('.cond-and').classList.add('first');}
+}
+</script>
+</body>
+</html>

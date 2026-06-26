@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head><meta charset="UTF-8"><title>פרופיל מדריך</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif}
+body{background:#f5f5f5;padding:16px;direction:rtl}
+.note{background:#fffbe6;border:1px solid #e8d44d;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#555}
+.page{background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e5e5e5;max-width:480px}
+.hero{height:100px;background:linear-gradient(160deg,#2d5228,#0f2a0d);position:relative}
+.hero-back{position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.4);border:none;border-radius:20px;padding:5px 10px;color:#fff;font-size:12px;cursor:pointer}
+.ph{padding:0 14px 14px;border-bottom:1px solid #f0f0f0}
+.av-wrap{display:flex;align-items:flex-end;gap:12px;margin-top:-24px;margin-bottom:10px}
+.av{width:64px;height:64px;border-radius:50%;background:#854F0B;border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:500;color:#fff;flex-shrink:0}
+.gn{font-size:18px;font-weight:500;color:#111;margin-bottom:2px}
+.gt{font-size:13px;color:#666}
+.follow-btn{margin-right:auto;padding:7px 18px;border-radius:20px;font-size:13px;cursor:pointer;border:1px solid #1A6B4A;color:#1A6B4A;background:none;flex-shrink:0}
+.follow-btn.f{background:#1A6B4A;color:#fff}
+.stats-row{display:flex;gap:0;margin-bottom:12px}
+.stat{flex:1;text-align:center;padding:8px 0}
+.stat+.stat{border-right:1px solid #f0f0f0}
+.sv{font-size:17px;font-weight:500;color:#111}
+.sl{font-size:11px;color:#999;margin-top:2px}
+.bio{font-size:13px;color:#666;line-height:1.7;margin-bottom:12px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#f8f8f8;border:1px solid #eee;border-radius:20px;font-size:12px;color:#666}
+.links{display:flex;gap:8px;margin-bottom:4px}
+.link-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border:1px solid #ddd;border-radius:20px;font-size:12px;color:#666;cursor:pointer;background:#fff}
+.declared{background:#f8f8f8;border-radius:8px;padding:10px 12px;display:flex;gap:16px;flex-wrap:wrap;margin-top:12px}
+.di{display:flex;flex-direction:column;align-items:center;gap:2px}
+.dv{font-size:14px;font-weight:500;color:#111}
+.dl{font-size:10px;color:#999}
+.dn{font-size:10px;color:#999;margin-top:6px;width:100%;text-align:center;padding-top:6px;border-top:1px solid #eee;font-style:italic}
+.pstats{background:#f8f8f8;border-radius:8px;padding:12px 14px;margin-top:10px}
+.ps-title{font-size:12px;font-weight:500;color:#666;margin-bottom:8px}
+.ps-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0}
+.ps-row span:first-child{color:#666}
+.ps-note{font-size:10px;color:#999;margin-top:6px;font-style:italic}
+.tabs{display:flex;border-bottom:1px solid #f0f0f0}
+.tab{flex:1;padding:10px;text-align:center;font-size:12px;cursor:pointer;color:#666;border-bottom:2px solid transparent}
+.tab.active{color:#1A6B4A;border-bottom:2px solid #1A6B4A;font-weight:500}
+.content{padding:14px;display:flex;flex-direction:column;gap:10px}
+.panel{display:none;flex-direction:column;gap:10px}
+.panel.active{display:flex}
+.tc{background:#fff;border-radius:12px;border:1px solid #e5e5e5;overflow:hidden;cursor:pointer}
+.tc-row{display:flex;gap:10px;padding:10px}
+.tc-img{width:60px;height:60px;border-radius:8px;flex-shrink:0}
+.tc-name{font-size:13px;font-weight:500;color:#111;margin-bottom:4px}
+.tc-meta{font-size:11px;color:#666;display:flex;flex-direction:column;gap:2px}
+.tc-price{font-size:14px;font-weight:500;color:#111;margin-top:4px}
+.tb{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:500}
+.b-easy{background:#EAF3DE;color:#27500A}
+.b-med{background:#FAEEDA;color:#633806}
+.sbar{height:3px;background:#f0f0f0;border-radius:2px;overflow:hidden;margin:5px 0 2px}
+.sfill{height:100%;border-radius:2px;background:#1A6B4A}
+.rev{padding:12px;background:#f8f8f8;border-radius:8px}
+.revh{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.rav{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#fff}
+.rn{font-size:13px;font-weight:500;color:#111}
+.rs{color:#BA7517;font-size:11px;margin-right:auto}
+.rt-trip{font-size:11px;color:#999;margin-bottom:4px}
+.rt{font-size:13px;color:#666;line-height:1.6}
+.rating-sum{display:flex;align-items:center;gap:10px;padding:4px 0 10px}
+.big-score{font-size:28px;font-weight:500;color:#111}
+.bars{display:flex;flex-direction:column;gap:3px;min-width:120px}
+.bar-row{display:flex;align-items:center;gap:5px;font-size:11px;color:#999}
+.bar-track{flex:1;height:4px;background:#f0f0f0;border-radius:2px;overflow:hidden}
+.bar-fill{height:100%;background:#BA7517;border-radius:2px}
+</style>
+</head>
+<body>
+<div class="note">
+  <strong>פרופיל מדריך</strong><br>
+  הפרדה ברורה בין נתונים שהמדריך הצהיר עליהם (ניסיון, הכשרה) לנתוני פלטפורמה (אחוז עמידה, ביטולים).<br>
+  כפתור עוקב → התראות על טיולים חדשים. לחץ על טיול → wireframe 02.
+</div>
+<div class="page">
+  <div class="hero"><button class="hero-back">→ חזרה</button></div>
+  <div class="ph">
+    <div class="av-wrap">
+      <div class="av">רל</div>
+      <div style="flex:1"><div class="gn">רועי לוי</div><div class="gt">מדריך טיולים מוסמך</div></div>
+      <button class="follow-btn f" onclick="this.classList.toggle('f');this.textContent=this.classList.contains('f')?'🔔 עוקב':'🔔 עקוב'">🔔 עוקב</button>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><div class="sv">★ 4.9</div><div class="sl">דירוג</div></div>
+      <div class="stat"><div class="sv">127</div><div class="sl">ביקורות</div></div>
+      <div class="stat"><div class="sv">312</div><div class="sl">מטיילים</div></div>
+      <div class="stat"><div class="sv">24</div><div class="sl">טיולים</div></div>
+    </div>
+    <div class="bio">מדריך טיולים מוסמך עם תשוקה לנחלים וסביבות מים. מתמחה בצפון ובמרכז הארץ. אוהב לספר את סיפור הנוף, לא רק לעבור בו.</div>
+    <div class="tags">
+      <span class="tag">📍 גליל</span><span class="tag">📍 כרמל</span><span class="tag">📍 ירושלים</span>
+      <span class="tag">💧 נחלים ומים</span><span class="tag">📜 היסטוריה</span><span class="tag">🌿 בוטניקה</span>
+    </div>
+    <div class="links">
+      <div class="link-btn">▶ ערוץ יוטיוב</div>
+      <div class="link-btn">🎙 פודקאסט</div>
+    </div>
+    <div class="declared">
+      <div class="di"><div class="dv">8</div><div class="dl">שנות ניסיון</div></div>
+      <div class="di"><div class="dv">מכללת לוינסקי</div><div class="dl">הכשרה</div></div>
+      <div class="di"><div class="dv">גיל 34</div><div class="dl"></div></div>
+      <div class="dn">* נתונים שהמדריך הצהיר עליהם</div>
+    </div>
+    <div class="pstats">
+      <div class="ps-title">📊 נתוני פלטפורמה</div>
+      <div class="ps-row"><span>טיולים דרך TrailHub</span><span>24</span></div>
+      <div class="ps-row"><span>אחוז עמידה בזמנים</span><span>97%</span></div>
+      <div class="ps-row"><span>ביטולים</span><span>1 (דצמ' 2024 · מזג אוויר)</span></div>
+      <div class="ps-row"><span>חבר מאז</span><span>ינואר 2024</span></div>
+      <div class="ps-note">נתונים אלה מחושבים אוטומטית על ידי המערכת</div>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('trips')">טיולים קרובים</div>
+    <div class="tab" onclick="showTab('reviews')">ביקורות</div>
+  </div>
+  <div class="content">
+    <div class="panel active" id="t-trips">
+      <div class="tc">
+        <div class="tc-row">
+          <div class="tc-img" style="background:linear-gradient(160deg,#3d6b35,#1a3d16)"></div>
+          <div style="flex:1">
+            <div style="display:flex;justify-content:space-between;gap:6px">
+              <div class="tc-name">טיול נחל קלט</div>
+              <span class="tb b-med">בינוני</span>
+            </div>
+            <div class="tc-meta"><span>📅 שישי, 14 פבר' · 07:00</span><span>📍 12.4 ק"מ · 5-6 שעות</span></div>
+            <div class="tc-price">₪120 <span style="font-size:11px;font-weight:400;color:#999">לאדם</span></div>
+            <div class="sbar"><div class="sfill" style="width:75%"></div></div>
+            <div style="font-size:11px;color:#999">6 מקומות נותרו מתוך 24</div>
+          </div>
+        </div>
+      </div>
+      <div class="tc">
+        <div class="tc-row">
+          <div class="tc-img" style="background:linear-gradient(160deg,#2d6b5a,#0f3d2e)"></div>
+          <div style="flex:1">
+            <div style="display:flex;justify-content:space-between;gap:6px">
+              <div class="tc-name">נחל פולג — מעיינות ובריכות</div>
+              <span class="tb b-easy">קל</span>
+            </div>
+            <div class="tc-meta"><span>📅 שישי, 21 פבר' · 08:00</span><span>📍 8.2 ק"מ · 3-4 שעות</span></div>
+            <div class="tc-price">₪85 <span style="font-size:11px;font-weight:400;color:#999">לאדם</span></div>
+            <div class="sbar"><div class="sfill" style="width:30%"></div></div>
+            <div style="font-size:11px;color:#999">14 מקומות נותרו מתוך 20</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="panel" id="t-reviews">
+      <div class="rating-sum">
+        <div class="big-score">4.9</div>
+        <div><div style="color:#BA7517;font-size:16px">★★★★★</div><div style="font-size:12px;color:#999">127 ביקורות</div></div>
+        <div class="bars">
+          <div class="bar-row"><span>5★</span><div class="bar-track"><div class="bar-fill" style="width:88%"></div></div><span>88%</span></div>
+          <div class="bar-row"><span>4★</span><div class="bar-track"><div class="bar-fill" style="width:10%"></div></div><span>10%</span></div>
+          <div class="bar-row"><span>3★</span><div class="bar-track"><div class="bar-fill" style="width:2%"></div></div><span>2%</span></div>
+        </div>
+      </div>
+      <div class="rev"><div class="revh"><div class="rav" style="background:#185FA5">דכ</div><div class="rn">דן כהן</div><div class="rs">★★★★★</div></div><div class="rt-trip">על: טיול נחל עיון</div><div class="rt">רועי הוא מדריך ברמה אחרת. לא רק מוביל — מספר, מסביר, עוצר בכל נקודה. הילדים שלי נהנו עד הסוף.</div></div>
+      <div class="rev"><div class="revh"><div class="rav" style="background:#993556">נש</div><div class="rn">נועה שפירא</div><div class="rs">★★★★☆</div></div><div class="rt-trip">על: טיול נחל קלט</div><div class="rt">נחל יפהפה וקטע הצוקים מרהיב. קצת עמוס אבל רועי ניהל יפה. בהחלט אחזור.</div></div>
+    </div>
+  </div>
+</div>
+<script>
+function showTab(n){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab')[n==='trips'?0:1].classList.add('active');
+  document.getElementById('t-'+n).classList.add('active');
+}
+</script>
+</body>
+</html>

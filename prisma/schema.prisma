@@ -1,0 +1,314 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  GUIDE
+  ORG_ADMIN
+  ADMIN
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+  EXTREME
+}
+
+enum TripStatus {
+  DRAFT
+  PENDING_REVIEW
+  REJECTED
+  OPEN
+  FULL
+  CANCELLED
+  COMPLETED
+}
+
+enum OrgMemberRole {
+  MEMBER
+  ADMIN
+}
+
+enum RegistrationStatus {
+  PENDING
+  CONFIRMED
+  WAITLIST
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+}
+
+enum NotificationType {
+  TRIP_UPDATED
+  TRIP_CANCELLED
+  QUESTION_ANSWERED
+  NEW_MESSAGE
+}
+
+// ─── NextAuth required models ───────────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── Core models ────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  password      String?
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  guide         Guide?
+  registrations Registration[]
+  reviews       Review[]
+  favorites     FavoriteTrip[]
+  notifications        Notification[]
+  questions            TripQuestion[]
+  sentMessages         ChatMessage[] @relation("SentMessages")
+  receivedMessages     ChatMessage[] @relation("ReceivedMessages")
+  orgMemberships       OrganizationMembership[]
+}
+
+model Guide {
+  id             String  @id @default(cuid())
+  userId         String  @unique
+  bio            String? @db.Text
+  location       String?
+  phone          String?
+  rating         Float   @default(0)
+  reviewCount    Int     @default(0)
+  isVerified     Boolean @default(false)
+  yearsActive    Int?
+  organizationId String?
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  trips        Trip[]
+}
+
+model Trip {
+  id          String     @id @default(cuid())
+  title       String
+  description String?    @db.Text
+  region      String
+  difficulty  Difficulty @default(MEDIUM)
+  status      TripStatus @default(DRAFT)
+
+  date        DateTime
+  startTime   String
+  durationMin Int
+  distanceKm  Float
+
+  price    Float
+  maxSpots Int
+  spotsBooked Int @default(0)
+
+  images    String[]
+  latitude  Float?
+  longitude Float?
+
+  meetingPoint    String?
+  waypoints       String? @db.Text
+  whatToBring     String?
+  cancellationPolicy String? @db.Text
+  approvalNote       String? @db.Text
+
+  guideId String
+  guide   Guide  @relation(fields: [guideId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  registrations Registration[]
+  reviews       Review[]
+  favorites     FavoriteTrip[]
+  notifications Notification[]
+  questions     TripQuestion[]
+  chatMessages  ChatMessage[]
+
+  @@index([guideId])
+  @@index([status])
+  @@index([date])
+  @@index([region])
+}
+
+model Registration {
+  id               String             @id @default(cuid())
+  tripId           String
+  userId           String
+  status           RegistrationStatus @default(PENDING)
+  paymentStatus    PaymentStatus      @default(PENDING)
+  participantCount Int                @default(1)
+  totalPrice       Float
+  notes            String?            @db.Text
+  waitlistPosition Int?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tripId, userId])
+  @@index([userId])
+  @@index([tripId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  tripId    String
+  userId    String
+  rating    Int
+  comment   String?  @db.Text
+  createdAt DateTime @default(now())
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tripId, userId])
+}
+
+model FavoriteTrip {
+  id        String   @id @default(cuid())
+  userId    String
+  tripId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tripId])
+}
+
+// ─── Communication models ────────────────────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  tripId    String?
+  type      NotificationType
+  title     String
+  body      String
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trip Trip? @relation(fields: [tripId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([userId, read])
+}
+
+model TripQuestion {
+  id         String    @id @default(cuid())
+  tripId     String
+  userId     String
+  body       String    @db.Text
+  answer     String?   @db.Text
+  answeredAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+}
+
+model ChatMessage {
+  id         String   @id @default(cuid())
+  tripId     String
+  fromUserId String
+  toUserId   String
+  body       String   @db.Text
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  trip     Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  fromUser User @relation("SentMessages", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser   User @relation("ReceivedMessages", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@index([tripId, fromUserId])
+  @@index([tripId, toUserId])
+}
+
+// ─── Institutional models ────────────────────────────────────────────────────
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  type        String   // "company" | "camp" | "association" | "school" | "other"
+  contactName String?
+  contactEmail String?
+  contactPhone String?
+  logoUrl     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  guides      Guide[]
+  memberships OrganizationMembership[]
+}
+
+model OrganizationMembership {
+  id             String        @id @default(cuid())
+  organizationId String
+  userId         String
+  role           OrgMemberRole @default(MEMBER)
+  joinedAt       DateTime      @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+}

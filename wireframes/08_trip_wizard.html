@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head><meta charset="UTF-8"><title>אשף יצירת טיול</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif}
+body{background:#f5f5f5;padding:16px;direction:rtl}
+.note{background:#fffbe6;border:1px solid #e8d44d;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#555}
+.wizard{background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e5e5e5;max-width:480px}
+.steps{display:flex;border-bottom:1px solid #f0f0f0;background:#fafafa}
+.step{flex:1;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;border-bottom:2px solid transparent}
+.step.active{border-bottom:2px solid #1A6B4A;background:#fff}
+.snum{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;background:#f0f0f0;color:#999}
+.step.active .snum{background:#1A6B4A;color:#fff}
+.step.done .snum{background:#D6EDE3;color:#1A6B4A}
+.slbl{font-size:10px;color:#999;text-align:center}
+.step.active .slbl{color:#1A6B4A;font-weight:500}
+.panel{display:none;padding:18px}
+.panel.active{display:block}
+.sec{font-size:14px;font-weight:500;color:#111;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #f0f0f0}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;font-weight:500;color:#666;margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;font-size:13px;background:#fff;border:1px solid #ddd;border-radius:8px;padding:8px 10px;color:#111}
+.field textarea{min-height:70px;resize:vertical}
+.hint{font-size:11px;color:#999;margin-top:4px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.upload-box{border:1px dashed #ddd;border-radius:8px;padding:18px;text-align:center;color:#999;font-size:13px;cursor:pointer}
+.loc-row{display:flex;gap:6px}
+.loc-row input{flex:1}
+.pin-btn{padding:7px 10px;border:1px solid #ddd;border-radius:8px;background:#fafafa;color:#666;cursor:pointer;white-space:nowrap;font-size:12px}
+.pin-btn.active{border-color:#1A6B4A;background:#D6EDE3;color:#0F5038}
+.mini-map{height:100px;background:#ddeedd;border:1px solid #ddd;border-radius:8px;margin-top:6px;cursor:crosshair;display:flex;align-items:center;justify-content:center;color:#888;font-size:12px;position:relative;display:none}
+.type-row{display:flex;gap:6px;flex-wrap:wrap}
+.type-btn{flex:1;min-width:80px;padding:9px 6px;border:1px solid #ddd;border-radius:8px;font-size:11px;cursor:pointer;text-align:center;background:#fff;color:#666}
+.type-btn.sel{border-color:#1A6B4A;background:#D6EDE3;color:#0F5038}
+.map-ph{background:#ddeedd;border-radius:8px;height:160px;position:relative;overflow:hidden;margin-bottom:6px;cursor:crosshair;display:flex;align-items:center;justify-content:center;color:#555;font-size:12px}
+.elev{background:#f8f8f8;border-radius:8px;padding:8px 12px;margin-bottom:8px}
+.elev-lbl{font-size:10px;color:#999;margin-bottom:4px}
+.wl{border:1px solid #eee;border-radius:8px;overflow:hidden;margin-bottom:8px}
+.wl-hd{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#fafafa;font-size:12px;font-weight:500;color:#666}
+.wl-clear{font-size:11px;color:#C0392B;cursor:pointer}
+.wp-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid #f0f0f0;font-size:13px}
+.drag{color:#ccc;cursor:grab;font-size:14px}
+.wpn{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#fff}
+.wp-del{background:none;border:none;cursor:pointer;color:#ccc;font-size:14px}
+.wp-del:hover{color:#C0392B}
+.diff-row{display:flex;gap:6px}
+.diff-btn{flex:1;padding:7px 3px;border:1px solid #ddd;border-radius:8px;text-align:center;font-size:11px;cursor:pointer;color:#666;background:#fff}
+.d-easy{border-color:#1A6B4A;background:#D6EDE3;color:#0F5038}
+.d-med{border-color:#E8A020;background:#FDF3DC;color:#7A5010}
+.d-hard{border-color:#C0392B;background:#FADBD8;color:#8B2519}
+.d-ext{border-color:#6B1A1A;background:#F5C0C0;color:#4A0F0F}
+.eq-sel{display:flex;flex-wrap:wrap;gap:4px;min-height:32px;padding:6px;background:#fafafa;border:1px solid #eee;border-radius:8px;margin-bottom:8px}
+.eq-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:#fff;border:1px solid #eee;border-radius:20px;font-size:12px}
+.eq-tag span{font-size:10px;cursor:pointer;color:#999}
+.eq-wrap{border:1px solid #eee;border-radius:8px;overflow:hidden}
+.eq-row{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-bottom:1px solid #f0f0f0;font-size:13px;cursor:pointer}
+.eq-row:last-child{border-bottom:none}
+.eq-row:hover{background:#fafafa}
+.eq-row.added{color:#ccc}
+.eq-more{padding:7px 10px;font-size:12px;color:#1A6B4A;cursor:pointer;text-align:center}
+.pol-row{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid #eee;border-radius:8px;margin-bottom:8px;font-size:13px;flex-wrap:wrap}
+.pol-row input[type=number]{width:60px;font-size:13px}
+.pol-row select{font-size:13px}
+.rev-sec{background:#fafafa;border-radius:8px;padding:12px 14px;margin-bottom:10px}
+.rev-title{font-size:12px;font-weight:500;color:#666;margin-bottom:6px}
+.rv{display:flex;justify-content:space-between;font-size:13px;padding:3px 0}
+.rv span:first-child{color:#666}
+.pub-opts{display:flex;gap:8px;margin-top:14px}
+.pub-btn{flex:1;padding:12px 6px;border:1px solid #ddd;border-radius:8px;text-align:center;cursor:pointer;background:#fff}
+.pub-btn .pi{font-size:20px;display:block;margin-bottom:4px}
+.pub-btn .pt{font-size:13px;font-weight:500;color:#111}
+.pub-btn .pd{font-size:11px;color:#999;margin-top:2px}
+.pub-btn.sel{border-color:#1A6B4A;background:#D6EDE3}
+.pub-btn.sel .pt{color:#0F5038}
+.foot{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-top:1px solid #f0f0f0;background:#fafafa}
+.btn-back{padding:7px 16px;font-size:12px;border:1px solid #ddd;border-radius:20px;cursor:pointer;background:#fff;color:#666}
+.btn-next{padding:7px 20px;font-size:12px;border:none;border-radius:20px;cursor:pointer;background:#1A6B4A;color:#fff;font-weight:500}
+.prog{font-size:11px;color:#999}
+</style>
+</head>
+<body>
+<div class="note">
+  <strong>אשף יצירת טיול — 5 שלבים</strong><br>
+  שלב 1: פרטים (שם, תיאור, תאריך, איזור, נקודת מפגש עם אפשרות דקירה במפה, תמונות)<br>
+  שלב 2: מסלול (GPX → מפה אוטומטית + גבהים + נקודות עצירה בלחיצה על המסלול + גרירה לסידור)<br>
+  שלב 3: פרמטרים (קושי כולל קיצוני, גיל, כושר, משתתפים, ציוד מוצע בדקירה)<br>
+  שלב 4: תשלום וביטולים (מחיר + 3 מדרגות החזר)<br>
+  שלב 5: סקירה + בחירת מצב פרסום (טיוטה/Preview/Published)
+</div>
+<div class="wizard">
+  <div class="steps">
+    <div class="step active" onclick="go(1)"><div class="snum">1</div><div class="slbl">פרטים</div></div>
+    <div class="step" onclick="go(2)"><div class="snum">2</div><div class="slbl">מסלול</div></div>
+    <div class="step" onclick="go(3)"><div class="snum">3</div><div class="slbl">פרמטרים</div></div>
+    <div class="step" onclick="go(4)"><div class="snum">4</div><div class="slbl">תשלום</div></div>
+    <div class="step" onclick="go(5)"><div class="snum">5</div><div class="slbl">פרסום</div></div>
+  </div>
+
+  <div class="panel active" id="p1">
+    <div class="sec">פרטים בסיסיים</div>
+    <div class="field"><label>שם הטיול</label><input type="text" placeholder="למשל: טיול נחל פולג — מעיינות ובריכות"></div>
+    <div class="field"><label>תיאור</label><textarea placeholder="תיאור חופשי — מה רואים, מה עושים, מה מיוחד..."></textarea></div>
+    <div class="row">
+      <div class="field"><label>תאריך</label><input type="date"></div>
+      <div class="field"><label>שעת מפגש</label><input type="time" value="07:00"></div>
+    </div>
+    <div class="field"><label>איזור בארץ</label>
+      <select><option>בחר...</option><option>גליל עליון</option><option>גליל תחתון</option><option>כרמל</option><option>ירושלים</option><option>נגב</option><option>ערבה</option><option>גולן</option></select>
+    </div>
+    <div class="field">
+      <label>נקודת מפגש</label>
+      <div class="loc-row">
+        <input type="text" placeholder="הקלד כתובת או שם מקום...">
+        <button class="pin-btn" id="pin-btn" onclick="togglePin()">📍 דקור במפה</button>
+      </div>
+      <div class="mini-map" id="mini-map" onclick="placePin(event)">לחץ לסימון מיקום<div id="pin-marker" style="display:none;position:absolute;font-size:20px">📍</div></div>
+      <div class="hint">ניתן להקליד כתובת או לסמן על המפה</div>
+    </div>
+    <div class="field"><label>תמונה ראשית</label><div class="upload-box">🖼 גרור תמונה לכאן או לחץ להעלאה</div></div>
+    <div class="field"><label>תמונות נוספות (עד 8)</label><div class="upload-box" style="padding:12px">🖼🖼🖼 העלה עד 8 תמונות</div></div>
+  </div>
+
+  <div class="panel" id="p2">
+    <div class="sec">מסלול</div>
+    <div class="field">
+      <label>סוג מסלול</label>
+      <div class="type-row">
+        <div class="type-btn sel" onclick="selType(this)">חד-כיווני</div>
+        <div class="type-btn" onclick="selType(this)">מעגלי — שטח</div>
+        <div class="type-btn" onclick="selType(this)">מעגלי — עירוני</div>
+        <div class="type-btn" onclick="selType(this)">סוג נוסף...</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>קובץ GPX</label>
+      <div class="upload-box" id="gpx-box" onclick="loadGpx()">🗺 העלה קובץ GPX — המסלול יוצג על המפה אוטומטית</div>
+      <div class="hint">לאחר ההעלאה — לחץ על המסלול להוספת נקודות עצירה</div>
+    </div>
+    <div id="map-sec" style="display:none">
+      <div class="map-ph" onclick="handleMapClick()">לחץ על המסלול להוספת נקודת עצירה
+        <div style="position:absolute;top:8px;right:8px;background:rgba(255,255,255,0.9);padding:3px 8px;border-radius:4px;font-size:10px">לחץ על המסלול</div>
+        <div style="position:absolute;left:4%;top:85%;width:18px;height:18px;border-radius:50%;background:#2C5F8A;border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;transform:translate(-50%,-50%)">פ</div>
+        <div style="position:absolute;left:30%;top:58%;width:18px;height:18px;border-radius:50%;background:#1A6B4A;border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;transform:translate(-50%,-50%)">1</div>
+        <div style="position:absolute;left:60%;top:35%;width:18px;height:18px;border-radius:50%;background:#1A6B4A;border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;transform:translate(-50%,-50%)">2</div>
+        <div style="position:absolute;left:97%;top:5%;width:18px;height:18px;border-radius:50%;background:#C0392B;border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;transform:translate(-50%,-50%)">ס</div>
+      </div>
+      <div class="elev"><div class="elev-lbl">מפת גבהים — נגזרת אוטומטית מ-GPX</div>
+        <svg viewBox="0 0 360 40" width="100%" height="40">
+          <path d="M0,38 Q40,34 80,28 Q130,20 170,14 Q220,8 260,12 Q300,16 340,4 L360,0 L360,40 L0,40Z" fill="#D6EDE3"/>
+          <path d="M0,38 Q40,34 80,28 Q130,20 170,14 Q220,8 260,12 Q300,16 360,2" stroke="#1A6B4A" stroke-width="1.5" fill="none"/>
+        </svg>
+      </div>
+      <div class="wl">
+        <div class="wl-hd"><span>נקודות עצירה</span><span class="wl-clear" onclick="clearWps()">נקה הכל</span></div>
+        <div class="wp-row"><span class="drag">⠿</span><div style="width:20px;height:20px;border-radius:50%;background:#2C5F8A;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff">פ</div><div style="flex:1;font-size:13px;color:#111">נקודת פתיחה — חניון נחל פולג</div></div>
+        <div class="wp-row" id="wp1"><span class="drag">⠿</span><div style="width:20px;height:20px;border-radius:50%;background:#1A6B4A;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff">1</div><div style="flex:1"><div style="font-size:13px;font-weight:500;color:#111">מעיין הדוד</div><div style="font-size:11px;color:#999">מעיין טבעי עם צל</div></div><button class="wp-del" onclick="rmWp('wp1')">✕</button></div>
+        <div class="wp-row" id="wp2"><span class="drag">⠿</span><div style="width:20px;height:20px;border-radius:50%;background:#1A6B4A;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff">2</div><div style="flex:1"><div style="font-size:13px;font-weight:500;color:#111">בריכת הקשתות</div><div style="font-size:11px;color:#999">עצירת צהריים</div></div><button class="wp-del" onclick="rmWp('wp2')">✕</button></div>
+        <div class="wp-row"><span class="drag">⠿</span><div style="width:20px;height:20px;border-radius:50%;background:#C0392B;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff">ס</div><div style="flex:1;font-size:13px;color:#111">נקודת סיום — מושב עמיקם</div></div>
+      </div>
+      <div class="hint" style="text-align:center">גרור ⠿ לשינוי סדר · לחץ ✕ למחיקה · לחץ על המסלול להוספה</div>
+    </div>
+  </div>
+
+  <div class="panel" id="p3">
+    <div class="sec">פרמטרים</div>
+    <div class="field"><label>רמת קושי</label>
+      <div class="diff-row">
+        <div class="diff-btn d-easy" onclick="selDiff(this,'easy')">קל</div>
+        <div class="diff-btn" onclick="selDiff(this,'med')">בינוני</div>
+        <div class="diff-btn" onclick="selDiff(this,'hard')">קשה</div>
+        <div class="diff-btn" onclick="selDiff(this,'ext')">קיצוני</div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field"><label>גיל מינימום</label><input type="number" placeholder="למשל: 8"></div>
+      <div class="field"><label>גיל מקסימום</label><input type="number" placeholder="ללא הגבלה"></div>
+    </div>
+    <div class="field"><label>רמה גופנית נדרשת</label><textarea placeholder="למשל: הליכה של 5 שעות בשטח לא אחיד"></textarea></div>
+    <div class="row">
+      <div class="field"><label>מקסימום משתתפים</label><input type="number" placeholder="ריק = ללא הגבלה"></div>
+      <div class="field"><label>מינימום יציאה</label><input type="number" placeholder="למשל: 5"></div>
+    </div>
+    <div class="field">
+      <label>ציוד נדרש</label>
+      <div class="eq-sel" id="eq-sel">
+        <span class="eq-tag">נעלי הליכה <span onclick="rmEq(this,'נעלי הליכה')">✕</span></span>
+        <span class="eq-tag">כובע <span onclick="rmEq(this,'כובע')">✕</span></span>
+      </div>
+      <div class="eq-wrap" id="eq-wrap">
+        <div class="eq-row" onclick="addEq(this,'מים (2 ליטר)')"><span>מים (2 ליטר)</span><span style="color:#1A6B4A">＋</span></div>
+        <div class="eq-row added" id="eq-כובע"><span>כובע ושמשייה</span><span>✓</span></div>
+        <div class="eq-row" onclick="addEq(this,'אוכל לצהריים')"><span>אוכל לצהריים</span><span style="color:#1A6B4A">＋</span></div>
+        <div id="eq-more-items" style="display:none">
+          <div class="eq-row" onclick="addEq(this,'מקל הליכה')"><span>מקל הליכה</span><span style="color:#1A6B4A">＋</span></div>
+          <div class="eq-row" onclick="addEq(this,'ערכת עזרה ראשונה')"><span>ערכת עזרה ראשונה</span><span style="color:#1A6B4A">＋</span></div>
+        </div>
+        <div class="eq-more" id="eq-more-btn" onclick="showMore()">+ הצג עוד ציוד</div>
+      </div>
+      <div class="hint">לחץ להוספה · לחיצה חוזרת מסירה</div>
+    </div>
+  </div>
+
+  <div class="panel" id="p4">
+    <div class="sec">תשלום וביטולים</div>
+    <div class="field"><label>מחיר לאדם (₪)</label><input type="number" placeholder="0 = חינם"><div class="hint">עמלת הפלטפורמה תנוכה אוטומטית · הרשמה זוגית ומשפחתית — בגרסה הבאה</div></div>
+    <div class="field">
+      <label>מדיניות ביטולים — מדרגות החזר</label>
+      <div class="hint" style="margin-bottom:10px">הגדר עד 3 מדרגות</div>
+      <div class="pol-row"><span style="color:#666;font-size:13px">עד</span><input type="number" value="72"><span style="color:#666;font-size:13px">שעות לפני — החזר</span><select><option>100%</option><option>75%</option><option>50%</option><option>0%</option></select></div>
+      <div class="pol-row"><span style="color:#666;font-size:13px">עד</span><input type="number" value="24"><span style="color:#666;font-size:13px">שעות לפני — החזר</span><select><option>50%</option><option>75%</option><option>25%</option><option>0%</option></select></div>
+      <div class="pol-row"><span style="color:#666;font-size:13px">פחות מ-24 שעות — החזר</span><select><option>0%</option><option>25%</option></select></div>
+    </div>
+  </div>
+
+  <div class="panel" id="p5">
+    <div class="sec">סקירה ופרסום</div>
+    <div class="rev-sec"><div class="rev-title">פרטים בסיסיים</div><div class="rv"><span>שם</span><span>טיול נחל פולג</span></div><div class="rv"><span>תאריך</span><span>שישי 14 פבר' · 07:00</span></div><div class="rv"><span>איזור</span><span>כרמל</span></div></div>
+    <div class="rev-sec"><div class="rev-title">מסלול</div><div class="rv"><span>סוג</span><span>חד-כיווני</span></div><div class="rv"><span>אורך</span><span>12.4 ק"מ</span></div><div class="rv"><span>עלייה</span><span>340 מ'</span></div><div class="rv"><span>נקודות עצירה</span><span>2</span></div></div>
+    <div class="rev-sec"><div class="rev-title">פרמטרים ותשלום</div><div class="rv"><span>קושי</span><span>קל</span></div><div class="rv"><span>גיל</span><span>8+</span></div><div class="rv"><span>מקסימום</span><span>20</span></div><div class="rv"><span>מחיר</span><span>₪120</span></div></div>
+    <div class="field">
+      <label>בחר מצב פרסום</label>
+      <div class="pub-opts">
+        <div class="pub-btn" onclick="selPub(this)"><span class="pi">📄</span><div class="pt">טיוטה</div><div class="pd">שמור, לא גלוי</div></div>
+        <div class="pub-btn sel" onclick="selPub(this)"><span class="pi">🔗</span><div class="pt">תצוגה מקדימה</div><div class="pd">גלוי דרך לינק</div></div>
+        <div class="pub-btn" onclick="selPub(this)"><span class="pi">🌍</span><div class="pt">פרסם</div><div class="pd">גלוי בחיפוש</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <button class="btn-back" id="bb" onclick="prev()" style="visibility:hidden">חזור</button>
+    <span class="prog" id="pg">שלב 1 מתוך 5</span>
+    <button class="btn-next" onclick="next()">המשך</button>
+  </div>
+</div>
+
+<script>
+let cur=1;
+function go(n){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.step').forEach((s,i)=>{
+    s.classList.remove('active','done');
+    if(i+1<n)s.classList.add('done');
+    if(i+1===n)s.classList.add('active');
+  });
+  document.getElementById('p'+n).classList.add('active');
+  cur=n;
+  document.getElementById('bb').style.visibility=n>1?'visible':'hidden';
+  document.querySelector('.btn-next').textContent=n===5?'שמור':'המשך';
+  document.getElementById('pg').textContent='שלב '+n+' מתוך 5';
+}
+function next(){if(cur<5)go(cur+1);}
+function prev(){if(cur>1)go(cur-1);}
+let pinMode=false;
+function togglePin(){
+  pinMode=!pinMode;
+  const btn=document.getElementById('pin-btn');
+  btn.classList.toggle('active',pinMode);
+  btn.textContent=pinMode?'📍 בטל דקירה':'📍 דקור במפה';
+  document.getElementById('mini-map').style.display=pinMode?'flex':'none';
+}
+function placePin(e){
+  if(!pinMode)return;
+  const r=e.currentTarget.getBoundingClientRect();
+  const m=document.getElementById('pin-marker');
+  m.style.display='block';m.style.left=((e.clientX-r.left)/r.width*100)+'%';m.style.top=((e.clientY-r.top)/r.height*100)+'%';
+  pinMode=false;document.getElementById('pin-btn').classList.remove('active');document.getElementById('pin-btn').textContent='📍 דקור במפה';
+}
+function loadGpx(){document.getElementById('gpx-box').style.display='none';document.getElementById('map-sec').style.display='block';}
+function handleMapClick(){alert('במימוש: לחיצה על המסלול → נקודת עצירה חדשה עם שם ותיאור');}
+function rmWp(id){const el=document.getElementById(id);if(el){el.style.opacity='0.3';el.style.textDecoration='line-through';setTimeout(()=>el.remove(),300);}}
+function clearWps(){['wp1','wp2'].forEach(id=>rmWp(id));}
+function selType(el){document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');}
+function selDiff(el,t){document.querySelectorAll('.diff-btn').forEach(b=>b.className='diff-btn');el.classList.add('d-'+t);}
+function selPub(el){document.querySelectorAll('.pub-btn').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');}
+const added=new Set(['נעלי הליכה','כובע']);
+function addEq(row,name){
+  if(added.has(name))return;added.add(name);
+  row.classList.add('added');row.querySelector('span:last-child').textContent='✓';row.onclick=null;
+  const sel=document.getElementById('eq-sel');
+  const t=document.createElement('span');t.className='eq-tag';t.innerHTML=name+' <span onclick="rmEq(this,\''+name+'\')">✕</span>';sel.appendChild(t);
+}
+function rmEq(span,name){span.closest('.eq-tag').remove();added.delete(name);const r=document.querySelector('[onclick*="'+name+'"]');if(r){r.classList.remove('added');r.querySelector('span:last-child').textContent='＋';r.onclick=()=>addEq(r,name);}}
+function showMore(){document.getElementById('eq-more-items').style.display='block';document.getElementById('eq-more-btn').style.display='none';}
+</script>
+</body>
+</html>
