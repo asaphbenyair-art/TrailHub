@@ -19,7 +19,13 @@
       "Bash(DATABASE_URL=\"postgresql://postgres.ezzzbpmkqsvdlbnpyiir:TrailHub2026@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres\" node *)",
       "Bash(mkdir -p \"/Users/asaphbenyair/Desktop/trailhub/src/app/api/organizations/[id]/members\")",
       "Bash(mkdir -p \"/Users/asaphbenyair/Desktop/trailhub/src/app/api/guide/trips/[id]/submit\")",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(gh repo *)",
+      "Bash(brew install *)",
+      "Bash(gh auth *)",
+      "Bash(brew list *)",
+      "Bash(/opt/homebrew/bin/brew list *)",
+      "Bash(/opt/homebrew/bin/gh auth *)"
     ]
   }
 }

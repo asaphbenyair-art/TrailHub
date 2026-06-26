@@ -30,7 +30,7 @@ function GoogleIcon() {
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ name: "", email: "", password: "", role: "USER" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", role: "USER", orgName: "", orgType: "company" });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -57,7 +57,19 @@ export default function RegisterPage() {
     if (!res.ok) {
       setError(data.error ?? "שגיאה בהרשמה");
     } else {
-      router.push("/auth/login");
+      // Sign in automatically after registration
+      const result = await signIn("credentials", {
+        email: form.email,
+        password: form.password,
+        redirect: false,
+      });
+      if (result?.ok) {
+        if (form.role === "GUIDE") router.push("/guide/dashboard");
+        else if (form.role === "ORG_ADMIN") router.push("/org");
+        else router.push("/trips");
+      } else {
+        router.push("/auth/login");
+      }
     }
   }
 
@@ -153,26 +165,60 @@ export default function RegisterPage() {
 
             <div className="flex flex-col gap-2">
               <label className="text-xs text-gray-500">אני...</label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {[
-                  { value: "USER", label: "מטייל" },
-                  { value: "GUIDE", label: "מדריך" },
+                  { value: "USER",      label: "מטייל",       icon: "🥾" },
+                  { value: "GUIDE",     label: "מדריך",       icon: "🧭" },
+                  { value: "ORG_ADMIN", label: "גוף מוסדי",  icon: "🏢" },
                 ].map((opt) => (
                   <button
                     key={opt.value}
                     type="button"
                     onClick={() => update("role", opt.value)}
-                    className={`py-2 rounded-lg border text-sm font-medium transition-colors ${
+                    className={`py-2.5 rounded-lg border text-xs font-medium transition-colors flex flex-col items-center gap-1 ${
                       form.role === opt.value
                         ? "border-[#1A6B4A] bg-[#D6EDE3] text-[#0F5038]"
                         : "border-gray-200 text-gray-500 hover:border-gray-300"
                     }`}
                   >
+                    <span className="text-base">{opt.icon}</span>
                     {opt.label}
                   </button>
                 ))}
               </div>
             </div>
+
+            {/* Org fields — shown only for ORG_ADMIN */}
+            {form.role === "ORG_ADMIN" && (
+              <div className="flex flex-col gap-3 bg-gray-50 rounded-xl p-3 border border-gray-100">
+                <div className="text-xs text-gray-500 font-medium">פרטי הארגון</div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-gray-500">שם הארגון</label>
+                  <input
+                    type="text"
+                    value={form.orgName}
+                    onChange={(e) => update("orgName", e.target.value)}
+                    required={form.role === "ORG_ADMIN"}
+                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] bg-white"
+                    placeholder="מחנה הקיץ שלנו, חברת טיולים בע״מ..."
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-gray-500">סוג ארגון</label>
+                  <select
+                    value={form.orgType}
+                    onChange={(e) => update("orgType", e.target.value)}
+                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] bg-white"
+                  >
+                    <option value="company">חברת טיולים</option>
+                    <option value="camp">מחנה קיץ / נוער</option>
+                    <option value="association">עמותה</option>
+                    <option value="school">בית ספר / מוסד חינוכי</option>
+                    <option value="other">אחר</option>
+                  </select>
+                </div>
+              </div>
+            )}
 
             <button
               type="submit"
