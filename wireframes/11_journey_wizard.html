@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head><meta charset="UTF-8"><title>אשף יצירת מסע</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif}
+body{background:#f5f5f5;padding:16px;direction:rtl}
+.note{background:#fffbe6;border:1px solid #e8d44d;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#555}
+.wizard{max-width:480px;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e5e5e5}
+.steps{display:flex;border-bottom:1px solid #f0f0f0;background:#fafafa}
+.step{flex:1;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border-bottom:2px solid transparent}
+.step.active{border-bottom:2px solid #2C5F8A;background:#fff}
+.snum{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;background:#f0f0f0;color:#999}
+.step.active .snum{background:#2C5F8A;color:#fff}
+.step.done .snum{background:#D4E4F0;color:#2C5F8A}
+.slbl{font-size:10px;color:#999;text-align:center}
+.step.active .slbl{color:#2C5F8A;font-weight:500}
+.panel{display:none;padding:16px}
+.panel.active{display:block}
+.sec{font-size:13px;font-weight:500;color:#111;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #f0f0f0}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;font-weight:500;color:#666;margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;font-size:13px;border:1px solid #ddd;border-radius:8px;padding:7px 10px}
+.field textarea{min-height:60px;resize:vertical}
+.hint{font-size:11px;color:#999;margin-top:3px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.upload-box{border:1px dashed #ddd;border-radius:8px;padding:14px;text-align:center;color:#999;font-size:12px;cursor:pointer}
+.reg-mode-opts{display:flex;flex-direction:column;gap:7px}
+.rm-opt{border:1px solid #ddd;border-radius:8px;padding:10px 12px;cursor:pointer}
+.rm-opt.sel{border-color:#2C5F8A;background:#E6F1FB}
+.rm-title{font-size:13px;font-weight:500;color:#111}
+.rm-opt.sel .rm-title{color:#185FA5}
+.rm-desc{font-size:11px;color:#666;margin-top:3px;line-height:1.5}
+.days-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.day-card{background:#f8f8f8;border-radius:10px;border:1px solid #eee;overflow:hidden}
+.day-header{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer}
+.day-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:#fff;background:#2C5F8A;flex-shrink:0}
+.day-num.rest{background:#ccc}
+.day-title-text{font-size:13px;font-weight:500;color:#111;flex:1}
+.day-date{font-size:11px;color:#999}
+.day-chev{font-size:13px;color:#999}
+.day-body{display:none;padding:0 12px 12px;border-top:1px solid #eee}
+.day-body.open{display:block}
+.day-field{margin-bottom:8px}
+.day-field label{display:block;font-size:11px;color:#666;margin-bottom:3px}
+.day-field input,.day-field select,.day-field textarea{width:100%;font-size:12px;padding:6px 8px;border:1px solid #ddd;border-radius:7px}
+.day-field textarea{min-height:50px}
+.rest-toggle{display:flex;align-items:center;gap:8px;padding:6px 0;margin-bottom:8px}
+.rest-toggle input{width:auto}
+.rest-toggle label{font-size:12px;color:#666}
+.day-guides{display:flex;flex-direction:column;gap:5px;margin-top:4px}
+.dg-row{display:flex;align-items:center;gap:7px;font-size:12px}
+.dg-av{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:500;color:#fff}
+.dg-name{flex:1;color:#111}
+.dg-role select{font-size:11px;border:1px solid #ddd;border-radius:5px;padding:2px 4px}
+.dg-del{background:none;border:none;cursor:pointer;color:#ccc;font-size:12px}
+.btn-add-day{display:flex;align-items:center;gap:5px;font-size:12px;color:#2C5F8A;cursor:pointer;padding:8px 0;border:1px dashed #c8dff5;border-radius:8px;justify-content:center;background:#f0f7ff}
+.guides-sec{background:#f8f8f8;border-radius:8px;padding:12px;margin-bottom:10px}
+.g-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #eee}
+.g-row:last-child{border-bottom:none}
+.gav{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#fff}
+.g-name{flex:1;font-size:13px;color:#111}
+.g-role select{font-size:11px;border:1px solid #ddd;border-radius:6px;padding:2px 4px}
+.g-del{background:none;border:none;cursor:pointer;color:#ccc;font-size:13px}
+.btn-add-g{font-size:12px;color:#1A6B4A;cursor:pointer;margin-top:5px}
+.rev-sec{background:#fafafa;border-radius:8px;padding:10px 12px;margin-bottom:8px}
+.rv-title{font-size:11px;font-weight:500;color:#666;margin-bottom:6px}
+.rv{display:flex;justify-content:space-between;font-size:12px;padding:2px 0}
+.rv span:first-child{color:#666}
+.pub-opts{display:flex;gap:7px;margin-top:10px}
+.pub-btn{flex:1;padding:10px 5px;border:1px solid #ddd;border-radius:8px;text-align:center;cursor:pointer;background:#fff}
+.pub-btn .pi{font-size:18px;display:block;margin-bottom:3px}
+.pub-btn .pt{font-size:12px;font-weight:500;color:#111}
+.pub-btn .pd{font-size:10px;color:#999;margin-top:2px}
+.pub-btn.sel{border-color:#2C5F8A;background:#E6F1FB}
+.pub-btn.sel .pt{color:#185FA5}
+.foot{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-top:1px solid #f0f0f0;background:#fafafa}
+.btn-back{padding:6px 14px;font-size:12px;border:1px solid #ddd;border-radius:20px;cursor:pointer;background:#fff;color:#666}
+.btn-next{padding:6px 18px;font-size:12px;border:none;border-radius:20px;cursor:pointer;background:#2C5F8A;color:#fff;font-weight:500}
+.prog{font-size:11px;color:#999}
+</style>
+</head>
+<body>
+<div class="note">
+  <strong>אשף יצירת מסע רב-יומי — 4 שלבים</strong><br>
+  שלב 1: פרטי המסע הכלליים + מצב הרשמה (שלם/ימים בודדים/גמיש).<br>
+  שלב 2: מדריכים כלליים של המסע (ראשי/משני).<br>
+  שלב 3: הגדרת ימים — כל יום עם GPX, נקודות עצירה, ציוד, ומדריכים ספציפיים ליום.<br>
+  שלב 4: תשלום + פרסום (ציבורי/פרטי/טיוטה).
+</div>
+<div class="wizard">
+  <div class="steps">
+    <div class="step active" onclick="go(1)"><div class="snum">1</div><div class="slbl">פרטים</div></div>
+    <div class="step" onclick="go(2)"><div class="snum">2</div><div class="slbl">מדריכים</div></div>
+    <div class="step" onclick="go(3)"><div class="snum">3</div><div class="slbl">ימים</div></div>
+    <div class="step" onclick="go(4)"><div class="snum">4</div><div class="slbl">פרסום</div></div>
+  </div>
+
+  <div class="panel active" id="p1">
+    <div class="sec">פרטי המסע</div>
+    <div class="field"><label>שם המסע</label><input type="text" placeholder="למשל: טרק הגליל העליון — מהחרמון לכנרת"></div>
+    <div class="field"><label>תיאור כללי</label><textarea placeholder="מה המסע כולל, מה מיוחד בו..."></textarea></div>
+    <div class="row">
+      <div class="field"><label>תאריך התחלה</label><input type="date"></div>
+      <div class="field"><label>תאריך סיום</label><input type="date"></div>
+    </div>
+    <div class="field"><label>איזור בארץ</label><select><option>בחר...</option><option>גליל עליון</option><option>גליל תחתון</option><option>גולן</option><option>ירושלים</option><option>נגב</option></select></div>
+    <div class="field"><label>תמונה ראשית למסע</label><div class="upload-box">🖼 גרור תמונה לכאן</div></div>
+    <div class="field">
+      <label>מצב הרשמה</label>
+      <div class="reg-mode-opts">
+        <div class="rm-opt">
+          <div class="rm-title">ימים בודדים</div>
+          <div class="rm-desc">כל יום נרשמים ומשלמים בנפרד. ניתן להצטרף ליום אחד בלבד.</div>
+        </div>
+        <div class="rm-opt sel">
+          <div class="rm-title">מסע שלם בלבד</div>
+          <div class="rm-desc">חייבים להירשם לכל הימים יחד. ניתן לעזוב עם הודעה מוקדמת.</div>
+        </div>
+        <div class="rm-opt">
+          <div class="rm-title">מסע עם גמישות</div>
+          <div class="rm-desc">נרשמים לכל המסע אך ניתן לעזוב ביום מסוים לפי מדיניות ביטולים.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="p2">
+    <div class="sec">מדריכים של המסע</div>
+    <div class="hint" style="margin-bottom:10px">אלה המדריכים הכלליים של המסע. ניתן לשנות את המדריך לכל יום בנפרד בשלב הבא.</div>
+    <div class="guides-sec">
+      <div class="g-row">
+        <div class="gav" style="background:#854F0B">רל</div>
+        <div class="g-name">רועי לוי (אתה)</div>
+        <div class="g-role"><select><option>ראשי</option><option>משני</option><option>שווה</option></select></div>
+      </div>
+      <div class="g-row">
+        <div class="gav" style="background:#185FA5">נש</div>
+        <div class="g-name">נועה שרון</div>
+        <div class="g-role"><select><option>משני</option><option>ראשי</option><option>שווה</option></select></div>
+        <button class="g-del">✕</button>
+      </div>
+      <div class="btn-add-g">＋ הוסף מדריך נוסף</div>
+    </div>
+  </div>
+
+  <div class="panel" id="p3">
+    <div class="sec">הגדרת ימים</div>
+    <div class="days-list">
+      <div class="day-card">
+        <div class="day-header" onclick="togDay(1)">
+          <div class="day-num">1</div>
+          <div class="day-title-text">הר החרמון — בניאס</div>
+          <div class="day-date">יום ג', 14 יולי</div>
+          <span class="day-chev" id="dc1">‹</span>
+        </div>
+        <div class="day-body open" id="db1">
+          <div style="height:8px"></div>
+          <div class="rest-toggle">
+            <input type="checkbox" id="rest1">
+            <label for="rest1">יום מנוחה (ללא מסלול)</label>
+          </div>
+          <div class="day-field"><label>שם היום</label><input type="text" value="הר החרמון — בניאס"></div>
+          <div class="row">
+            <div class="day-field"><label>תאריך</label><input type="date"></div>
+            <div class="day-field"><label>שעת מפגש</label><input type="time" value="06:00"></div>
+          </div>
+          <div class="day-field"><label>GPX ליום זה</label><div class="upload-box" style="padding:10px">🗺 העלה GPX</div></div>
+          <div class="day-field"><label>ציוד ספציפי ליום</label><input type="text" placeholder="נעלי טרק, שכבת חימום, 3 ליטר מים"></div>
+          <div class="day-field">
+            <label>מדריכים ביום זה</label>
+            <div class="day-guides">
+              <div class="dg-row"><div class="dg-av" style="background:#854F0B">רל</div><div class="dg-name">רועי לוי</div><div class="dg-role"><select><option>ראשי</option><option>משני</option></select></div><button class="dg-del">✕</button></div>
+              <div class="dg-row"><div class="dg-av" style="background:#185FA5">נש</div><div class="dg-name">נועה שרון</div><div class="dg-role"><select><option>משני</option><option>ראשי</option></select></div><button class="dg-del">✕</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="day-card">
+        <div class="day-header" onclick="togDay(2)">
+          <div class="day-num">2</div>
+          <div class="day-title-text">נחל עיון — מפלים</div>
+          <div class="day-date">יום ד', 15 יולי</div>
+          <span class="day-chev" id="dc2">‹</span>
+        </div>
+        <div class="day-body" id="db2">
+          <div style="height:8px"></div>
+          <div class="day-field"><label>שם היום</label><input type="text" value="נחל עיון — מפלים"></div>
+          <div class="row">
+            <div class="day-field"><label>תאריך</label><input type="date"></div>
+            <div class="day-field"><label>שעת מפגש</label><input type="time" value="07:00"></div>
+          </div>
+          <div class="day-field"><label>GPX ליום זה</label><div class="upload-box" style="padding:10px">🗺 העלה GPX</div></div>
+          <div class="day-field"><label>ציוד ספציפי</label><input type="text" placeholder="בגד ים, 2 ליטר מים"></div>
+          <div class="day-field">
+            <label>מדריך ביום זה</label>
+            <div class="day-guides">
+              <div class="dg-row"><div class="dg-av" style="background:#854F0B">רל</div><div class="dg-name">רועי לוי בלבד</div><div class="dg-role"><select><option>ראשי</option></select></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="day-card">
+        <div class="day-header" onclick="togDay(3)">
+          <div class="day-num rest">3</div>
+          <div class="day-title-text">יום מנוחה — ראש פינה</div>
+          <div class="day-date">יום ה', 16 יולי</div>
+          <span class="day-chev" id="dc3">‹</span>
+        </div>
+        <div class="day-body" id="db3">
+          <div style="height:8px"></div>
+          <div class="rest-toggle">
+            <input type="checkbox" id="rest3" checked>
+            <label for="rest3">יום מנוחה (ללא מסלול)</label>
+          </div>
+          <div class="day-field"><label>שם היום</label><input type="text" value="יום מנוחה — ראש פינה"></div>
+          <div class="day-field"><label>תיאור</label><textarea placeholder="יום חופשי בראש פינה. שוק, מסעדות, סיור עצמאי.">יום חופשי בראש פינה. שוק, מסעדות, סיור עצמאי.</textarea></div>
+        </div>
+      </div>
+    </div>
+    <div class="btn-add-day" onclick="alert('הוסף יום חדש')">＋ הוסף יום למסע</div>
+  </div>
+
+  <div class="panel" id="p4">
+    <div class="sec">תשלום ופרסום</div>
+    <div class="field"><label>מחיר למסע שלם (₪)</label><input type="number" placeholder="0 = חינם"></div>
+    <div class="field"><label>מחיר ליום בודד (₪)</label><input type="number" placeholder="אם מאפשרים ימים בודדים"><div class="hint">ניתן להגדיר מחיר שונה לכל יום אם צריך</div></div>
+    <div class="rev-sec">
+      <div class="rv-title">סיכום המסע</div>
+      <div class="rv"><span>שם</span><span>טרק הגליל העליון</span></div>
+      <div class="rv"><span>ימים</span><span>5 ימים · 14–18 יולי</span></div>
+      <div class="rv"><span>מדריכים</span><span>רועי (ראשי) + נועה (משני)</span></div>
+      <div class="rv"><span>מצב הרשמה</span><span>מסע שלם בלבד</span></div>
+    </div>
+    <div class="field">
+      <label>מצב פרסום</label>
+      <div class="pub-opts">
+        <div class="pub-btn" onclick="selPub(this)"><span class="pi">📄</span><div class="pt">טיוטה</div><div class="pd">שמור, לא גלוי</div></div>
+        <div class="pub-btn sel" onclick="selPub(this)"><span class="pi">🌍</span><div class="pt">ציבורי</div><div class="pd">מופיע בחיפוש</div></div>
+        <div class="pub-btn" onclick="selPub(this)"><span class="pi">🔒</span><div class="pt">פרטי</div><div class="pd">גלוי דרך לינק</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <button class="btn-back" id="bb" onclick="prev()" style="visibility:hidden">חזור</button>
+    <span class="prog" id="pg">שלב 1 מתוך 4</span>
+    <button class="btn-next" onclick="next()">המשך</button>
+  </div>
+</div>
+<script>
+let cur=1;
+function go(n){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.step').forEach((s,i)=>{s.classList.remove('active','done');if(i+1<n)s.classList.add('done');if(i+1===n)s.classList.add('active');});
+  document.getElementById('p'+n).classList.add('active');cur=n;
+  document.getElementById('bb').style.visibility=n>1?'visible':'hidden';
+  document.querySelector('.btn-next').textContent=n===4?'שמור':'המשך';
+  document.getElementById('pg').textContent='שלב '+n+' מתוך 4';
+}
+function next(){if(cur<4)go(cur+1);}
+function prev(){if(cur>1)go(cur-1);}
+function togDay(n){
+  const db=document.getElementById('db'+n);const dc=document.getElementById('dc'+n);
+  db.classList.toggle('open');
+}
+function selPub(el){document.querySelectorAll('.pub-btn').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');}
+</script>
+</body>
+</html>

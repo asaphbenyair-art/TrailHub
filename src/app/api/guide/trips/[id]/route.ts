@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { canManageTrip, syncTripTeam } from "@/lib/tripAccess";
+import { mapTripDay } from "@/lib/tripDay";
 
 async function getGuideAndTrip(userId: string, tripId: string) {
   const guide = await prisma.guide.findUnique({ where: { userId } });
@@ -26,8 +28,11 @@ export async function PUT(
   }
 
   const { id } = await params;
-  const result = await getGuideAndTrip(session.user.id!, id);
-  if ("error" in result) return NextResponse.json({ error: result.error }, { status: result.status });
+  const trip = await prisma.trip.findUnique({ where: { id }, include: { guide: true } });
+  if (!trip) return NextResponse.json({ error: "טיול לא נמצא" }, { status: 404 });
+  const allowed = await canManageTrip(id, session.user.id!, role);
+  if (!allowed) return NextResponse.json({ error: "אין הרשאה" }, { status: 403 });
+  const result = { trip, guide: trip.guide };
 
   const body = await req.json();
   const {
@@ -36,6 +41,12 @@ export async function PUT(
     distanceKm, durationMin, whatToBring,
     cancellationPolicy, status, images,
     tripType, priceTiers, tripDays, coupons,
+    visibility, registrationFields, routeType,
+    minAge, maxAge, fitnessLevel, minSpots, registrationMode,
+    secondGuideEmail, secondGuideRole, managerEmails,
+    routeGpx, waypointsJson, individualDayPrice,
+    unlimitedCapacity, accessWindowDays, attributeTags,
+    sourceMaterials, sourceMaterialsVisibility, multiPersonMode,
   } = body;
 
   const prevStatus = result.trip.status;
@@ -62,6 +73,23 @@ export async function PUT(
         whatToBring: whatToBring || null,
         cancellationPolicy: cancellationPolicy || null,
         status: newStatus,
+        visibility: visibility === "PRIVATE" ? "PRIVATE" : "PUBLIC",
+        ...(registrationMode && { registrationMode }),
+        registrationFields: Array.isArray(registrationFields) ? registrationFields : undefined,
+        routeType: routeType || null,
+        minAge: minAge ? parseInt(minAge) : null,
+        maxAge: maxAge ? parseInt(maxAge) : null,
+        fitnessLevel: fitnessLevel || null,
+        minSpots: minSpots ? parseInt(minSpots) : null,
+        routeGpx: routeGpx || null,
+        waypointsJson: waypointsJson ?? undefined,
+        individualDayPrice: individualDayPrice ? parseFloat(individualDayPrice) : null,
+        ...(unlimitedCapacity !== undefined && { unlimitedCapacity: !!unlimitedCapacity }),
+        ...(accessWindowDays !== undefined && { accessWindowDays: accessWindowDays ? parseInt(accessWindowDays) : null }),
+        ...(attributeTags !== undefined && { attributeTags: Array.isArray(attributeTags) ? attributeTags : [] }),
+        ...(sourceMaterials !== undefined && { sourceMaterials: sourceMaterials ?? undefined }),
+        ...(sourceMaterialsVisibility !== undefined && { sourceMaterialsVisibility: sourceMaterialsVisibility || null }),
+        ...(multiPersonMode !== undefined && { multiPersonMode: multiPersonMode || null }),
         images: Array.isArray(images) ? images : [],
         tripType: tripType || "DAY_HIKE",
         priceTiers: priceTiers ?? undefined,
@@ -76,19 +104,19 @@ export async function PUT(
   if (Array.isArray(tripDays)) {
     await prisma.tripDay.deleteMany({ where: { tripId: id } });
     if (tripDays.length > 0) {
-      await prisma.tripDay.createMany({
-        data: tripDays.map((d: { dayNumber: number; title?: string; description?: string; distanceKm?: string; durationHours?: string; startPoint?: string; endPoint?: string }) => ({
-          tripId: id,
-          dayNumber: d.dayNumber,
-          title: d.title || null,
-          description: d.description || null,
-          distanceKm: d.distanceKm ? parseFloat(d.distanceKm) : null,
-          durationMin: d.durationHours ? Math.round(parseFloat(d.durationHours) * 60) : null,
-          startPoint: d.startPoint || null,
-          endPoint: d.endPoint || null,
-        })),
-      });
+      await prisma.tripDay.createMany({ data: tripDays.map(mapTripDay(id)) });
     }
+  }
+
+  // Sync guides team + co-managers (only when the fields were provided)
+  if (secondGuideEmail !== undefined || managerEmails !== undefined) {
+    await syncTripTeam({
+      tripId: id,
+      ownerGuideId: result.guide.id,
+      secondGuideEmail,
+      secondGuideRole,
+      managerEmails,
+    });
   }
 
   // Create new coupons (don't delete existing ones)

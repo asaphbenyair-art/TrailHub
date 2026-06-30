@@ -18,6 +18,7 @@ const STATUS_BADGE: Record<string, { bg: string; color: string; label: string }>
   REJECTED:       { bg: "#FEE2E2", color: "#991B1B", label: "נדחה" },
   OPEN:           { bg: "#D6EDE3", color: "#0F5038", label: "פתוח" },
   FULL:           { bg: "#FEF3C7", color: "#92400E", label: "מלא" },
+  POSTPONED:      { bg: "#FEF3C7", color: "#7A5010", label: "נדחה" },
   CANCELLED:      { bg: "#FEE2E2", color: "#991B1B", label: "בוטל" },
   COMPLETED:      { bg: "#DBEAFE", color: "#1E40AF", label: "הסתיים" },
 };
@@ -37,6 +38,7 @@ interface Trip {
   spotsBooked: number;
   images: string[];
   approvalNote: string | null;
+  visibility?: string;
 }
 
 interface Guide {
@@ -61,6 +63,38 @@ export default function GuideDashboard() {
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [tab, setTab] = useState<"trips" | "stats">("trips");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  async function broadcast(tripId: string) {
+    const message = window.prompt("הודעה לכל הנרשמים:");
+    if (!message?.trim()) return;
+    const res = await fetch(`/api/guide/trips/${tripId}/broadcast`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message }),
+    });
+    const d = await res.json().catch(() => ({}));
+    window.alert(res.ok ? `ההודעה נשלחה ל-${d.sent ?? 0} נרשמים` : (d.error ?? "שגיאה"));
+  }
+
+  async function postpone(tripId: string) {
+    const category = window.prompt("סיבת הדחייה (מזג אוויר / מחלה / אישי / אחר):");
+    if (!category?.trim()) return;
+    const reason = window.prompt("פירוט (אופציונלי):") ?? "";
+    const res = await fetch(`/api/guide/trips/${tripId}/postpone`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ category, reason }),
+    });
+    if (res.ok) { setTrips((prev) => prev.map((t) => t.id === tripId ? { ...t, status: "POSTPONED" } : t)); }
+  }
+
+  function copyLink(tripId: string) {
+    const url = `${window.location.origin}/trips/${tripId}`;
+    navigator.clipboard?.writeText(url).then(() => {
+      setCopiedId(tripId);
+      setTimeout(() => setCopiedId(null), 1500);
+    }).catch(() => {});
+  }
 
   const loadTrips = useCallback(async () => {
     const res = await fetch("/api/guide/trips");
@@ -114,13 +148,50 @@ export default function GuideDashboard() {
           </div>
         </div>
 
-        <h1 className="text-base font-semibold text-gray-700 px-1">הטיולים שלי</h1>
+        {/* Tabs */}
+        <div className="bg-white rounded-xl overflow-hidden flex shadow-sm">
+          {([["trips", "הטיולים שלי"], ["stats", "סטטיסטיקות"]] as const).map(([k, label]) => (
+            <button key={k} type="button" onClick={() => setTab(k)}
+              className={`flex-1 py-2.5 text-xs font-medium border-b-2 transition-colors ${
+                tab === k ? "border-[#1A6B4A] text-[#1A6B4A]" : "border-transparent text-gray-400"}`}>
+              {label}
+            </button>
+          ))}
+        </div>
 
         {loading && (
           <div className="bg-white rounded-xl p-10 text-center text-gray-400 text-sm shadow-sm">טוען...</div>
         )}
 
-        {!loading && trips.length === 0 && (
+        {/* Statistics tab */}
+        {!loading && tab === "stats" && (() => {
+          const active = trips.filter((t) => t.status !== "CANCELLED");
+          const revenue = active.reduce((s, t) => s + t.price * t.spotsBooked, 0);
+          const registrants = active.reduce((s, t) => s + t.spotsBooked, 0);
+          const completed = trips.filter((t) => t.status === "COMPLETED" || new Date(t.date) < now).length;
+          const cancelled = trips.filter((t) => t.status === "CANCELLED").length;
+          const completionRate = trips.length > 0 ? Math.round((completed / trips.length) * 100) : 0;
+          const cards = [
+            { v: `₪${revenue.toLocaleString("he-IL")}`, l: "הכנסה" },
+            { v: trips.length, l: "טיולים" },
+            { v: registrants, l: "נרשמים" },
+            { v: guide && guide.rating > 0 ? `★${guide.rating.toFixed(1)}` : "—", l: "דירוג ממוצע" },
+            { v: `${completionRate}%`, l: "אחוז השלמה" },
+            { v: cancelled, l: "ביטולים" },
+          ];
+          return (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 grid grid-cols-3 gap-2">
+              {cards.map((c, i) => (
+                <div key={i} className="bg-gray-50 rounded-xl p-3 text-center">
+                  <div className="text-base font-semibold text-gray-900">{c.v}</div>
+                  <div className="text-[10px] text-gray-400 mt-0.5">{c.l}</div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+
+        {!loading && tab === "trips" && trips.length === 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center shadow-sm">
             <div className="text-4xl mb-3">🥾</div>
             <p className="text-gray-500 text-sm mb-4">עוד לא יצרת טיולים</p>
@@ -133,7 +204,7 @@ export default function GuideDashboard() {
           </div>
         )}
 
-        <div className="flex flex-col gap-3">
+        <div className={`flex flex-col gap-3 ${tab !== "trips" ? "hidden" : ""}`}>
           {trips.map((trip) => {
             const occupancy = trip.maxSpots > 0 ? trip.spotsBooked / trip.maxSpots : 0;
             const isFull = trip.status === "FULL" || occupancy >= 1;
@@ -164,6 +235,12 @@ export default function GuideDashboard() {
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: statusBadge.bg, color: statusBadge.color }}>
                       {statusBadge.label}
                     </span>
+                    {(trip.status === "OPEN" || trip.status === "FULL") && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium"
+                        style={{ background: trip.visibility === "PRIVATE" ? "rgba(0,0,0,0.6)" : "rgba(44,95,138,0.9)", color: "#fff" }}>
+                        {trip.visibility === "PRIVATE" ? "🔒 פרטי" : "🌍 ציבורי"}
+                      </span>
+                    )}
                     {diffBadge && (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: diffBadge.bg, color: diffBadge.color }}>
                         {diffBadge.label}
@@ -273,6 +350,12 @@ export default function GuideDashboard() {
                   {/* Communication links */}
                   <div className="flex gap-2 mt-2.5 pt-2.5 border-t border-gray-50">
                     <Link
+                      href={`/guide/trips/${trip.id}/registrants`}
+                      className="flex-1 text-center text-[11px] text-[#7A5010] border border-[#E8A020]/30 bg-[#FDF6E8] rounded-lg py-1.5 hover:bg-[#FBEFD5] transition-colors"
+                    >
+                      👥 נרשמים
+                    </Link>
+                    <Link
                       href={`/guide/trips/${trip.id}/qa`}
                       className="flex-1 text-center text-[11px] text-[#1A6B4A] border border-[#1A6B4A]/25 bg-[#F0FAF5] rounded-lg py-1.5 hover:bg-[#D6EDE3] transition-colors"
                     >
@@ -285,6 +368,26 @@ export default function GuideDashboard() {
                       ✉️ הודעות
                     </Link>
                   </div>
+
+                  {/* Broadcast + private link */}
+                  {(trip.status === "OPEN" || trip.status === "FULL") && (
+                    <div className="flex gap-2 mt-2">
+                      <button type="button" onClick={() => broadcast(trip.id)}
+                        className="flex-1 text-center text-[11px] text-gray-600 border border-gray-200 rounded-lg py-1.5 hover:bg-gray-50 transition-colors">
+                        📢 הודעה לקבוצה
+                      </button>
+                      <button type="button" onClick={() => postpone(trip.id)}
+                        className="flex-1 text-center text-[11px] text-[#7A5010] border border-[#E8A020]/40 rounded-lg py-1.5 hover:bg-[#FDF6E8] transition-colors">
+                        ⏸ דחה
+                      </button>
+                      {trip.visibility === "PRIVATE" && (
+                        <button type="button" onClick={() => copyLink(trip.id)}
+                          className="flex-1 text-center text-[11px] text-[#185FA5] border border-[#185FA5]/25 rounded-lg py-1.5 hover:bg-[#EEF5FC] transition-colors">
+                          {copiedId === trip.id ? "✓ הועתק" : "🔗 העתק לינק"}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             );

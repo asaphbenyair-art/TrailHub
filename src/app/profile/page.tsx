@@ -9,6 +9,14 @@ const DIFFICULTIES = ["EASY", "MEDIUM", "HARD", "EXTREME"];
 const DIFFICULTY_LABELS: Record<string, string> = {
   EASY: "קל", MEDIUM: "בינוני", HARD: "קשה", EXTREME: "קיצוני",
 };
+const FITNESS_OPTIONS = [
+  { value: "", label: "לא צוין" },
+  { value: "low", label: "נמוך" },
+  { value: "medium", label: "בינוני" },
+  { value: "high", label: "גבוה" },
+  { value: "excellent", label: "מצוין" },
+];
+const WEEKDAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
 
 interface UserProfile {
   id: string;
@@ -19,8 +27,11 @@ interface UserProfile {
   birthYear: number | null;
   bio: string | null;
   phone: string | null;
+  fitnessLevel: string | null;
   preferredRegions: string[];
   preferredDifficulties: string[];
+  preferredTripLengthKm: number | null;
+  preferredDays: number[];
   role: string;
 }
 
@@ -31,7 +42,17 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
-  const [activeTab, setActiveTab] = useState<"info" | "prefs" | "password">("info");
+  const [activeTab, setActiveTab] = useState<"info" | "prefs" | "guide" | "password">("info");
+
+  // Guide profile fields (only for GUIDE role)
+  const [gHeadline, setGHeadline] = useState("");
+  const [gBio, setGBio] = useState("");
+  const [gYears, setGYears] = useState("");
+  const [gTraining, setGTraining] = useState("");
+  const [gRegions, setGRegions] = useState("");
+  const [gInterests, setGInterests] = useState("");
+  const [gYoutube, setGYoutube] = useState("");
+  const [gPodcast, setGPodcast] = useState("");
 
   // Info fields
   const [name, setName] = useState("");
@@ -39,10 +60,13 @@ export default function ProfilePage() {
   const [birthYear, setBirthYear] = useState("");
   const [bio, setBio] = useState("");
   const [phone, setPhone] = useState("");
+  const [fitnessLevel, setFitnessLevel] = useState("");
 
   // Preferences
   const [prefRegions, setPrefRegions] = useState<string[]>([]);
   const [prefDiffs, setPrefDiffs] = useState<string[]>([]);
+  const [prefLengthKm, setPrefLengthKm] = useState("");
+  const [prefDays, setPrefDays] = useState<number[]>([]);
 
   // Password
   const [currentPwd, setCurrentPwd] = useState("");
@@ -66,12 +90,46 @@ export default function ProfilePage() {
         setBirthYear(data.birthYear ? String(data.birthYear) : "");
         setBio(data.bio ?? "");
         setPhone(data.phone ?? "");
+        setFitnessLevel(data.fitnessLevel ?? "");
         setPrefRegions(data.preferredRegions ?? []);
         setPrefDiffs(data.preferredDifficulties ?? []);
+        setPrefLengthKm(data.preferredTripLengthKm ? String(data.preferredTripLengthKm) : "");
+        setPrefDays(data.preferredDays ?? []);
         setLoading(false);
+        if (data.role === "GUIDE") {
+          fetch("/api/guide/profile").then((r) => r.ok ? r.json() : null).then((g) => {
+            if (!g) return;
+            setGHeadline(g.headline ?? "");
+            setGBio(g.bio ?? "");
+            setGYears(g.yearsActive ? String(g.yearsActive) : "");
+            setGTraining(g.trainingInstitution ?? "");
+            setGRegions((g.specialtyRegions ?? []).join(", "));
+            setGInterests((g.interests ?? []).join(", "));
+            setGYoutube(g.youtubeUrl ?? "");
+            setGPodcast(g.podcastUrl ?? "");
+          }).catch(() => {});
+        }
       })
       .catch(() => setLoading(false));
   }, [status, router]);
+
+  async function handleSaveGuide() {
+    setSaving(true);
+    setSaveMsg("");
+    const res = await fetch("/api/guide/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        headline: gHeadline, bio: gBio, yearsActive: gYears ? Number(gYears) : null,
+        trainingInstitution: gTraining,
+        specialtyRegions: gRegions.split(",").map((s) => s.trim()).filter(Boolean),
+        interests: gInterests.split(",").map((s) => s.trim()).filter(Boolean),
+        youtubeUrl: gYoutube, podcastUrl: gPodcast,
+      }),
+    });
+    setSaving(false);
+    setSaveMsg(res.ok ? "פרופיל המדריך נשמר" : "שגיאה בשמירה");
+  }
 
   async function handleSaveInfo() {
     setSaving(true);
@@ -79,7 +137,7 @@ export default function ProfilePage() {
     const res = await fetch("/api/profile", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, gender, birthYear: birthYear ? Number(birthYear) : null, bio, phone }),
+      body: JSON.stringify({ name, gender, birthYear: birthYear ? Number(birthYear) : null, bio, phone, fitnessLevel }),
     });
     setSaving(false);
     if (res.ok) setSaveMsg("השינויים נשמרו בהצלחה");
@@ -92,7 +150,7 @@ export default function ProfilePage() {
     const res = await fetch("/api/profile", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ preferredRegions: prefRegions, preferredDifficulties: prefDiffs }),
+      body: JSON.stringify({ preferredRegions: prefRegions, preferredDifficulties: prefDiffs, preferredTripLengthKm: prefLengthKm ? Number(prefLengthKm) : null, preferredDays: prefDays }),
     });
     setSaving(false);
     if (res.ok) setSaveMsg("ההעדפות נשמרו");
@@ -196,7 +254,7 @@ export default function ProfilePage() {
         {/* Tabs */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="flex border-b border-gray-100">
-            {([["info", "פרטים אישיים"], ["prefs", "העדפות טיולים"], ["password", "שינוי סיסמה"]] as const).map(([tab, label]) => (
+            {([["info", "פרטים אישיים"], ["prefs", "העדפות טיולים"], ...(profile?.role === "GUIDE" ? [["guide", "פרופיל מדריך"] as const] : []), ["password", "שינוי סיסמה"]] as const).map(([tab, label]) => (
               <button
                 key={tab}
                 type="button"
@@ -255,16 +313,28 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-500">טלפון</label>
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="05X-XXXXXXX"
-                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
-                    dir="ltr"
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-gray-500">טלפון</label>
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="05X-XXXXXXX"
+                      className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+                      dir="ltr"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-gray-500">רמת כושר</label>
+                    <select
+                      value={fitnessLevel}
+                      onChange={(e) => setFitnessLevel(e.target.value)}
+                      className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] bg-white"
+                    >
+                      {FITNESS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                  </div>
                 </div>
 
                 <div className="flex flex-col gap-1">
@@ -338,6 +408,39 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-500">אורך טיול מועדף (ק״מ)</label>
+                  <input
+                    type="number"
+                    value={prefLengthKm}
+                    onChange={(e) => setPrefLengthKm(e.target.value)}
+                    placeholder="למשל: 10"
+                    min="0"
+                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+                    dir="ltr"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-medium text-gray-500">ימים מועדפים</label>
+                  <div className="flex flex-wrap gap-2">
+                    {WEEKDAYS.map((d, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setPrefDays(prefDays.includes(i) ? prefDays.filter((x) => x !== i) : [...prefDays, i])}
+                        className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                          prefDays.includes(i)
+                            ? "border-[#1A6B4A] bg-[#D6EDE3] text-[#1A6B4A]"
+                            : "border-gray-200 text-gray-500 hover:border-gray-300"
+                        }`}
+                      >
+                        {d}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {saveMsg && (
                   <p className={`text-xs text-center ${saveMsg.includes("שגיאה") ? "text-red-500" : "text-[#1A6B4A]"}`}>
                     {saveMsg}
@@ -351,6 +454,61 @@ export default function ProfilePage() {
                   className="w-full py-2.5 bg-[#1A6B4A] text-white text-sm rounded-xl font-medium hover:bg-[#155a3e] transition-colors disabled:opacity-60"
                 >
                   {saving ? "שומר..." : "שמור העדפות"}
+                </button>
+              </>
+            )}
+
+            {/* Guide profile */}
+            {activeTab === "guide" && (
+              <>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-500">כותרת (למשל: מדריך טיולים מוסמך)</label>
+                  <input type="text" value={gHeadline} onChange={(e) => setGHeadline(e.target.value)}
+                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-500">ביוגרפיה</label>
+                  <textarea value={gBio} onChange={(e) => setGBio(e.target.value)} rows={3}
+                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] resize-none" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-gray-500">שנות ניסיון</label>
+                    <input type="number" value={gYears} onChange={(e) => setGYears(e.target.value)} dir="ltr"
+                      className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-gray-500">מוסד הכשרה</label>
+                    <input type="text" value={gTraining} onChange={(e) => setGTraining(e.target.value)}
+                      className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-500">אזורי התמחות (מופרדים בפסיק)</label>
+                  <input type="text" value={gRegions} onChange={(e) => setGRegions(e.target.value)} placeholder="גליל, כרמל, ירושלים"
+                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-500">תחומי עניין (מופרדים בפסיק)</label>
+                  <input type="text" value={gInterests} onChange={(e) => setGInterests(e.target.value)} placeholder="נחלים, היסטוריה, בוטניקה"
+                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-gray-500">קישור יוטיוב</label>
+                    <input type="url" value={gYoutube} onChange={(e) => setGYoutube(e.target.value)} dir="ltr"
+                      className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-gray-500">קישור פודקאסט</label>
+                    <input type="url" value={gPodcast} onChange={(e) => setGPodcast(e.target.value)} dir="ltr"
+                      className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+                  </div>
+                </div>
+                {saveMsg && <p className={`text-xs text-center ${saveMsg.includes("שגיאה") ? "text-red-500" : "text-[#1A6B4A]"}`}>{saveMsg}</p>}
+                <button type="button" onClick={handleSaveGuide} disabled={saving}
+                  className="w-full py-2.5 bg-[#1A6B4A] text-white text-sm rounded-xl font-medium hover:bg-[#155a3e] transition-colors disabled:opacity-60">
+                  {saving ? "שומר..." : "שמור פרופיל מדריך"}
                 </button>
               </>
             )}

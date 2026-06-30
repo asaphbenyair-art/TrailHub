@@ -5,165 +5,157 @@
 *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif}
 body{background:#f5f5f5;padding:16px;direction:rtl}
 .note{background:#fffbe6;border:1px solid #e8d44d;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#555}
-.cards{display:flex;flex-direction:column;gap:16px;max-width:480px}
-.card{background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e5e5e5}
-.card-img{position:relative;height:180px;overflow:hidden}
-.card-img-bg{width:100%;height:100%;object-fit:cover;display:block}
-.img-nature{background:#3d6b35;width:100%;height:100%}
-.card-badges{position:absolute;top:12px;right:12px;display:flex;gap:6px}
-.badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:500}
-.badge-region{background:rgba(255,255,255,0.92);color:#27500A}
-.badge-diff-med{background:#FAEEDA;color:#633806}
-.badge-diff-hard{background:#FADBD8;color:#791F1F}
-.badge-diff-easy{background:#EAF3DE;color:#27500A}
-.card-fav{position:absolute;top:12px;left:12px;background:rgba(0,0,0,0.4);border:none;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:16px}
-.card-overlay{position:absolute;bottom:0;left:0;right:0;padding:12px 14px;background:linear-gradient(to top,rgba(0,0,0,0.65),transparent)}
-.card-title{font-size:16px;font-weight:500;color:#fff;line-height:1.3;margin-bottom:5px}
-.card-guide{display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,0.88)}
-.guide-avatar{width:22px;height:22px;border-radius:50%;background:#854F0B;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:500}
-.card-body{padding:12px 14px}
-.card-meta{display:flex;flex-wrap:wrap;margin-bottom:10px;gap:0}
-.mi{display:flex;align-items:center;gap:4px;font-size:12px;color:#666;padding-left:10px;margin-left:10px;border-left:1px solid #eee}
+.cards{display:flex;flex-direction:column;gap:14px;max-width:480px}
+.card{background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e5e5e5;cursor:pointer}
+.card-img{position:relative;height:170px;overflow:hidden}
+.card-badges{position:absolute;top:10px;right:10px;display:flex;gap:5px;flex-wrap:wrap}
+.badge{padding:3px 8px;border-radius:20px;font-size:10px;font-weight:500}
+.b-region{background:rgba(255,255,255,0.92);color:#27500A}
+.b-med{background:#FAEEDA;color:#633806}
+.b-easy{background:#EAF3DE;color:#27500A}
+.b-hard{background:#FADBD8;color:#791F1F}
+.b-journey{background:rgba(44,95,138,0.85);color:#fff}
+.b-private{background:rgba(0,0,0,0.55);color:#fff}
+.card-fav{position:absolute;top:10px;left:10px;background:rgba(0,0,0,0.4);border:none;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:14px}
+.card-fav.liked{color:#ED93B1}
+.card-ov{position:absolute;bottom:0;left:0;right:0;padding:10px 12px;background:linear-gradient(to top,rgba(0,0,0,0.65),transparent)}
+.card-title{font-size:14px;font-weight:500;color:#fff;line-height:1.3;margin-bottom:4px}
+.card-guide{font-size:11px;color:rgba(255,255,255,0.88);display:flex;align-items:center;gap:5px}
+.gav{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:500;color:#fff;flex-shrink:0;border:1.5px solid rgba(255,255,255,0.6)}
+.card-body{padding:10px 12px}
+.cmeta{display:flex;flex-wrap:wrap;margin-bottom:8px;font-size:11px;color:#666}
+.mi{padding-left:8px;margin-left:8px;border-left:1px solid #eee}
 .mi:first-child{border-left:none;padding-left:0;margin-left:0}
-.spots-bar{margin-bottom:10px}
-.spots-track{height:4px;background:#f0f0f0;border-radius:2px;overflow:hidden}
-.spots-fill{height:100%;border-radius:2px;background:#1A6B4A}
-.spots-label{display:flex;justify-content:space-between;font-size:11px;color:#999;margin-top:3px}
-.spots-label span:last-child{color:#1A6B4A;font-weight:500}
-.card-footer{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid #f0f0f0}
-.price{font-size:20px;font-weight:500;color:#111}
-.price-sub{font-size:11px;color:#999;font-weight:400}
-.btns{display:flex;gap:8px;align-items:center}
-.btn-int{padding:7px 13px;background:#f5f5f5;color:#555;border:1px solid #ddd;border-radius:20px;font-size:12px;cursor:pointer}
-.btn-reg{padding:7px 16px;background:#1A6B4A;color:#fff;border:none;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer}
-.waitlist-bar{margin:0 14px 10px;padding:8px 12px;background:#FDF3DC;border-radius:8px;display:flex;align-items:center;justify-content:space-between;font-size:12px;color:#633806}
+.sbar{height:3px;background:#f0f0f0;border-radius:2px;overflow:hidden;margin-bottom:5px}
+.sfill{height:100%;border-radius:2px}
+.spots-lbl{font-size:11px;color:#999;margin-bottom:7px;display:flex;justify-content:space-between}
+.spots-lbl span:last-child{color:#1A6B4A;font-weight:500}
+.card-footer{display:flex;align-items:center;justify-content:space-between}
+.price{font-size:17px;font-weight:500;color:#111}
+.psub{font-size:11px;color:#999;font-weight:400}
+.btns{display:flex;gap:6px;align-items:center}
+.bi{padding:6px 11px;background:#f5f5f5;color:#555;border:1px solid #ddd;border-radius:20px;font-size:11px;cursor:pointer}
+.br{padding:6px 13px;background:#1A6B4A;color:#fff;border:none;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer}
+.br.full{background:#C0392B}
+.waitlist-bar{margin:0 12px 8px;padding:7px 10px;background:#FDF3DC;border-radius:7px;display:flex;align-items:center;justify-content:space-between;font-size:11px;color:#633806}
+.section-label{font-size:12px;font-weight:500;color:#999;margin-bottom:8px;text-transform:none;letter-spacing:0}
 </style>
 </head>
 <body>
 <div class="note">
   <strong>כרטיס טיול — רמה 1 (תצוגת רשימה)</strong><br>
-  שלושה מצבים: פתוח עם מקומות · מלא עם Waitlist · פתוח עם מקומות רבים.<br>
-  לחיצה על הכרטיס → דף טיול מלא (wireframe 02). לחיצה על "להרשמה" → זרימת הרשמה (wireframe 03).
+  ארבעה מצבים: טיול רגיל פתוח · מסע רב-יומי · טיול מלא עם Waitlist · טיול פרטי (Private).<br>
+  שני מדריכים: מציגים שני אווטרים זה לצד זה על התמונה.<br>
+  לחיצה על הכרטיס → דף טיול מלא (02) או דף מסע (03).
 </div>
 <div class="cards">
-
-  <!-- מצב 1: פתוח עם מקומות -->
+  <div class="section-label">טיול רגיל — פתוח</div>
   <div class="card">
-    <div class="card-img">
-      <div class="img-nature" style="background:linear-gradient(160deg,#3d6b35,#1a3d16)"></div>
-      <div class="card-badges">
-        <span class="badge badge-region">📍 ירושלים</span>
-        <span class="badge badge-diff-med">בינוני</span>
-      </div>
-      <button class="card-fav">♡</button>
-      <div class="card-overlay">
+    <div class="card-img" style="background:linear-gradient(160deg,#3d6b35,#1a3d16)">
+      <div class="card-badges"><span class="badge b-region">📍 ירושלים</span><span class="badge b-med">בינוני</span></div>
+      <button class="card-fav liked">♥</button>
+      <div class="card-ov">
         <div class="card-title">טיול נחל קלט — ממעיין פרת לעין פרת</div>
         <div class="card-guide">
-          <div class="guide-avatar">רל</div>
+          <div class="gav" style="background:#854F0B">רל</div>
           <span>רועי לוי · ★4.9</span>
         </div>
       </div>
     </div>
     <div class="card-body">
-      <div class="card-meta">
-        <div class="mi">📅 שישי 14 פבר'</div>
-        <div class="mi">🕖 07:00</div>
-        <div class="mi">📍 12.4 ק"מ</div>
-        <div class="mi">⏱ 5-6 שע'</div>
-      </div>
-      <div class="spots-bar">
-        <div class="spots-track"><div class="spots-fill" style="width:75%"></div></div>
-        <div class="spots-label"><span>18 מתוך 24 רשומים</span><span>6 מקומות נותרו</span></div>
-      </div>
+      <div class="cmeta"><span>📅 שישי 14 פבר'</span><span class="mi">🕖 07:00</span><span class="mi">📍 12.4 ק"מ</span><span class="mi">⏱ 5-6 שע'</span></div>
+      <div class="sbar"><div class="sfill" style="width:75%;background:#1A6B4A"></div></div>
+      <div class="spots-lbl"><span>18 מתוך 24 רשומים</span><span>6 מקומות נותרו</span></div>
       <div class="card-footer">
-        <div><span class="price">₪120 <span class="price-sub">לאדם</span></span></div>
-        <div class="btns">
-          <button class="btn-int">מתעניין</button>
-          <button class="btn-reg">להרשמה</button>
-        </div>
+        <span class="price">₪120 <span class="psub">לאדם</span></span>
+        <div class="btns"><button class="bi">מתעניין</button><button class="br">להרשמה</button></div>
       </div>
     </div>
   </div>
 
-  <!-- מצב 2: מלא + Waitlist -->
+  <div class="section-label">מסע רב-יומי — שני מדריכים</div>
   <div class="card">
-    <div class="card-img">
-      <div class="img-nature" style="background:linear-gradient(160deg,#8B6914,#5c4208)"></div>
+    <div class="card-img" style="background:linear-gradient(160deg,#2d5228,#0f2a0d)">
       <div class="card-badges">
-        <span class="badge badge-region">📍 נגב</span>
-        <span class="badge badge-diff-hard">קשה</span>
+        <span class="badge b-journey">מסע · 5 ימים</span>
+        <span class="badge b-region">📍 גליל</span>
+        <span class="badge b-hard">קשה</span>
       </div>
-      <button class="card-fav" style="color:#ED93B1">♥</button>
-      <div class="card-overlay">
+      <button class="card-fav">♡</button>
+      <div class="card-ov">
+        <div class="card-title">טרק הגליל העליון — מהחרמון לכנרת</div>
+        <div class="card-guide">
+          <div class="gav" style="background:#854F0B">רל</div>
+          <div class="gav" style="background:#185FA5;margin-right:-6px">נש</div>
+          <span style="margin-right:4px">רועי לוי ונועה שרון</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="cmeta"><span>📅 14–18 יולי</span><span class="mi">📍 68 ק"מ סה"כ</span><span class="mi">🌙 5 לילות</span></div>
+      <div class="sbar"><div class="sfill" style="width:40%;background:#1A6B4A"></div></div>
+      <div class="spots-lbl"><span>8 מתוך 20 רשומים</span><span>12 מקומות נותרו</span></div>
+      <div class="card-footer">
+        <span class="price">₪890 <span class="psub">למסע</span></span>
+        <div class="btns"><button class="bi">מתעניין</button><button class="br">להרשמה</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">טיול מלא — Waitlist</div>
+  <div class="card">
+    <div class="card-img" style="background:linear-gradient(160deg,#9a7a4a,#5c4208)">
+      <div class="card-badges"><span class="badge b-region">📍 נגב</span><span class="badge b-hard">קשה</span></div>
+      <button class="card-fav">♡</button>
+      <div class="card-ov">
         <div class="card-title">מסביב למכתש רמון — 2 ימים</div>
         <div class="card-guide">
-          <div class="guide-avatar" style="background:#185FA5">מד</div>
+          <div class="gav" style="background:#185FA5">מד</div>
           <span>בית ספר שדה הנגב</span>
         </div>
       </div>
     </div>
     <div class="waitlist-bar">
       <span>⏰ הטיול מלא — רשימת המתנה פתוחה</span>
-      <a href="#" style="color:#854F0B;font-weight:500">הצטרף</a>
+      <span style="font-weight:500;cursor:pointer">הצטרף</span>
     </div>
     <div class="card-body">
-      <div class="card-meta">
-        <div class="mi">📅 ה'-ו' 20-21 פבר'</div>
-        <div class="mi">🕕 06:00</div>
-        <div class="mi">📍 34 ק"מ</div>
-        <div class="mi">🌙 לינה</div>
-      </div>
-      <div class="spots-bar">
-        <div class="spots-track"><div class="spots-fill" style="width:100%;background:#C0392B"></div></div>
-        <div class="spots-label"><span>20 מתוך 20</span><span style="color:#C0392B">מלא · 4 ממתינים</span></div>
-      </div>
+      <div class="cmeta"><span>📅 ה'-ו' 20-21 פבר'</span><span class="mi">🕕 06:00</span><span class="mi">📍 34 ק"מ</span><span class="mi">🌙 לינה</span></div>
+      <div class="sbar"><div class="sfill" style="width:100%;background:#C0392B"></div></div>
+      <div class="spots-lbl"><span>20 מתוך 20</span><span style="color:#C0392B">מלא · 4 ממתינים</span></div>
       <div class="card-footer">
-        <div><span class="price">₪380 <span class="price-sub">כולל לינה</span></span></div>
-        <div class="btns">
-          <button class="btn-int">מתעניין</button>
-        </div>
+        <span class="price">₪380 <span class="psub">כולל לינה</span></span>
+        <div class="btns"><button class="bi">מתעניין</button></div>
       </div>
     </div>
   </div>
 
-  <!-- מצב 3: פתוח, מקומות רבים -->
-  <div class="card">
-    <div class="card-img">
-      <div class="img-nature" style="background:linear-gradient(160deg,#4a6a8a,#1a2d40)"></div>
+  <div class="section-label">טיול פרטי (Private) — נגיש דרך לינק בלבד</div>
+  <div class="card" style="border-color:#2C5F8A">
+    <div class="card-img" style="background:linear-gradient(160deg,#4a6a8a,#1a2d40)">
       <div class="card-badges">
-        <span class="badge badge-region">📍 ירושלים</span>
-        <span class="badge badge-diff-easy">קל</span>
+        <span class="badge b-private">🔒 פרטי</span>
+        <span class="badge b-easy">קל</span>
       </div>
       <button class="card-fav">♡</button>
-      <div class="card-overlay">
-        <div class="card-title">סיור רגלי בעיר העתיקה</div>
+      <div class="card-ov">
+        <div class="card-title">סיור משפחתי — עיר עתיקה</div>
         <div class="card-guide">
-          <div class="guide-avatar" style="background:#3B6D11">נש</div>
+          <div class="gav" style="background:#3B6D11">נש</div>
           <span>נועה שרון · ★4.7</span>
         </div>
       </div>
     </div>
     <div class="card-body">
-      <div class="card-meta">
-        <div class="mi">📅 שבת 22 פבר'</div>
-        <div class="mi">🕘 09:00</div>
-        <div class="mi">📍 4 ק"מ</div>
-        <div class="mi">⏱ 3 שע'</div>
-      </div>
-      <div class="spots-bar">
-        <div class="spots-track"><div class="spots-fill" style="width:30%"></div></div>
-        <div class="spots-label"><span>6 מתוך 20</span><span>14 מקומות נותרו</span></div>
-      </div>
+      <div class="cmeta"><span>📅 שבת 22 פבר'</span><span class="mi">🕘 09:00</span><span class="mi">📍 4 ק"מ</span><span class="mi">⏱ 3 שע'</span></div>
+      <div class="sbar"><div class="sfill" style="width:30%;background:#2C5F8A"></div></div>
+      <div class="spots-lbl"><span>6 מתוך 20</span><span style="color:#2C5F8A">14 מקומות נותרו</span></div>
       <div class="card-footer">
-        <div><span class="price">₪65 <span class="price-sub">לאדם</span></span></div>
-        <div class="btns">
-          <button class="btn-int">מתעניין</button>
-          <button class="btn-reg">להרשמה</button>
-        </div>
+        <span class="price">₪65 <span class="psub">לאדם</span></span>
+        <div class="btns"><button class="bi">מתעניין</button><button class="br">להרשמה</button></div>
       </div>
     </div>
   </div>
-
 </div>
 </body>
 </html>

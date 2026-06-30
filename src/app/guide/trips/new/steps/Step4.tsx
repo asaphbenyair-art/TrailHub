@@ -46,7 +46,9 @@ export default function Step4({ data, onChange }: Props) {
 
       {/* Base price */}
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-medium text-gray-500">מחיר רגיל לאדם (₪)</label>
+        <label className="text-xs font-medium text-gray-500">
+          {data.tripType !== "DAY_HIKE" ? "מחיר למסע שלם (₪)" : "מחיר רגיל לאדם (₪)"}
+        </label>
         <input
           type="number"
           min="0"
@@ -58,6 +60,23 @@ export default function Step4({ data, onChange }: Props) {
         />
         <p className="text-xs text-gray-400 mt-1">עמלת הפלטפורמה תנוכה אוטומטית</p>
       </div>
+
+      {/* Per-day price for journeys with individual-day registration */}
+      {data.registrationMode === "INDIVIDUAL_DAYS" && (
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-gray-500">מחיר ליום בודד (₪)</label>
+          <input
+            type="number"
+            min="0"
+            value={data.individualDayPrice}
+            onChange={(e) => onChange("individualDayPrice", e.target.value)}
+            placeholder="מחיר להרשמה ליום אחד"
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+            dir="ltr"
+          />
+          <p className="text-xs text-gray-400 mt-1">מאחר שאיפשרת הרשמה לימים בודדים</p>
+        </div>
+      )}
 
       {/* Price tiers for special groups */}
       <div className="flex flex-col gap-2">

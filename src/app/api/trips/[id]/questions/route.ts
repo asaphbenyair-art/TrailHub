@@ -28,13 +28,29 @@ export async function POST(
   const { body } = await req.json();
   if (!body?.trim()) return NextResponse.json({ error: "שאלה ריקה" }, { status: 400 });
 
-  const trip = await prisma.trip.findUnique({ where: { id } });
+  const trip = await prisma.trip.findUnique({
+    where: { id },
+    include: { guide: { select: { userId: true } } },
+  });
   if (!trip) return NextResponse.json({ error: "טיול לא נמצא" }, { status: 404 });
 
   const question = await prisma.tripQuestion.create({
     data: { tripId: id, userId: session.user.id!, body: body.trim() },
     include: { user: { select: { name: true, image: true } } },
   });
+
+  // Notify the guide of the new question (don't notify if the guide asks on their own trip)
+  if (trip.guide.userId !== session.user.id) {
+    await prisma.notification.create({
+      data: {
+        userId: trip.guide.userId,
+        tripId: id,
+        type: "NEW_MESSAGE",
+        title: "שאלה חדשה על הטיול",
+        body: `בטיול "${trip.title}": ${body.trim().slice(0, 60)}`,
+      },
+    });
+  }
 
   return NextResponse.json(question, { status: 201 });
 }

@@ -27,6 +27,7 @@ enum TripStatus {
   REJECTED
   OPEN
   FULL
+  POSTPONED
   CANCELLED
   COMPLETED
 }
@@ -41,12 +42,16 @@ enum RegistrationStatus {
   CONFIRMED
   WAITLIST
   CANCELLED
+  INTERESTED
+  CONDITIONAL
 }
 
 enum PaymentStatus {
   PENDING
+  AUTHORIZED
   PAID
   REFUNDED
+  FAILED
 }
 
 enum NotificationType {
@@ -54,12 +59,44 @@ enum NotificationType {
   TRIP_CANCELLED
   QUESTION_ANSWERED
   NEW_MESSAGE
+  NEW_TRIP_FROM_GUIDE
+  RIDESHARE_UPDATE
+  PAYMENT_UPDATE
 }
 
 enum TripType {
   DAY_HIKE
   EXPEDITION
   MULTI_SITE
+  SELF_GUIDED
+}
+
+enum ComplaintStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+enum TripVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum RegistrationMode {
+  FULL_ONLY
+  INDIVIDUAL_DAYS
+  FLEXIBLE
+}
+
+enum TripGuideRole {
+  PRIMARY
+  SECONDARY
+  EQUAL
+}
+
+enum RideDirection {
+  ROUND_TRIP
+  ONE_WAY
 }
 
 // ─── NextAuth required models ───────────────────────────────────────────────
@@ -117,8 +154,12 @@ model User {
   birthYear             Int?
   bio                   String?  @db.Text
   phone                 String?
+  fitnessLevel          String?
   preferredRegions      String[]
   preferredDifficulties String[]
+  preferredTripLengthKm Int?
+  preferredDays         Int[]
+  activeMode            String?  // "guide" | "hiker" — last active mode
 
   accounts      Account[]
   sessions      Session[]
@@ -131,6 +172,46 @@ model User {
   sentMessages         ChatMessage[] @relation("SentMessages")
   receivedMessages     ChatMessage[] @relation("ReceivedMessages")
   orgMemberships       OrganizationMembership[]
+  follows              GuideFollow[]
+  managedTrips         TripManager[]
+  rideOffers           RideshareOffer[]
+  rideClaims           RideshareClaim[]
+  purchases            SelfGuidedPurchase[]
+  complaints           Complaint[]
+}
+
+model SelfGuidedPurchase {
+  id            String   @id @default(cuid())
+  tripId        String
+  userId        String
+  price         Float
+  purchasedAt   DateTime @default(now())
+  accessExpiresAt DateTime?
+  sharedWith    String[] // emails of up to 3 additional people
+  revoked       Boolean  @default(false)
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tripId, userId])
+  @@index([userId])
+  @@index([tripId])
+}
+
+model Complaint {
+  id        String          @id @default(cuid())
+  tripId    String
+  userId    String
+  category  String
+  body      String          @db.Text
+  status    ComplaintStatus @default(OPEN)
+  createdAt DateTime        @default(now())
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+  @@index([status])
 }
 
 model Guide {
@@ -145,10 +226,34 @@ model Guide {
   yearsActive    Int?
   organizationId String?
 
+  headline             String?
+  specialtyRegions     String[]
+  interests            String[]
+  youtubeUrl           String?
+  podcastUrl           String?
+  trainingInstitution  String?
+  selfGuidedRating     Float   @default(0)
+  selfGuidedReviewCount Int    @default(0)
+
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   trips        Trip[]
   coupons      Coupon[]
+  followers    GuideFollow[]
+  tripGuides   TripGuide[]
+}
+
+model GuideFollow {
+  id        String   @id @default(cuid())
+  userId    String
+  guideId   String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guide Guide @relation(fields: [guideId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, guideId])
+  @@index([guideId])
 }
 
 model Trip {
@@ -175,6 +280,32 @@ model Trip {
   tripType  TripType @default(DAY_HIKE)
   endDate   DateTime?
   priceTiers Json?
+  routeGpx          String? @db.Text
+  waypointsJson     Json?
+  individualDayPrice Float?
+
+  visibility       TripVisibility   @default(PUBLIC)
+  registrationMode RegistrationMode @default(FULL_ONLY)
+  registrationFields Json?
+  routeType        String?
+  minAge           Int?
+  maxAge           Int?
+  fitnessLevel     String?
+  minSpots         Int?
+
+  // Attribute tags + multi-person + source materials
+  attributeTags    String[]
+  multiPersonMode  String?  // "simple" | "detailed"
+  sourceMaterials  Json?    // [{ type:"pdf"|"link", url, title }]
+  sourceMaterialsVisibility String? // "preview" | "during"
+
+  // Self-guided trip fields
+  unlimitedCapacity Boolean @default(false)
+  accessWindowDays  Int?
+
+  // Postponed state
+  postponeCategory  String?
+  postponeReason    String?  @db.Text
 
   meetingPoint    String?
   waypoints       String? @db.Text
@@ -196,11 +327,46 @@ model Trip {
   chatMessages  ChatMessage[]
   days          TripDay[]
   coupons       Coupon[]
+  guides        TripGuide[]
+  managers      TripManager[]
+  rideOffers    RideshareOffer[]
+  purchases     SelfGuidedPurchase[]
+  complaints    Complaint[]
 
   @@index([guideId])
   @@index([status])
   @@index([date])
   @@index([region])
+  @@index([visibility])
+}
+
+model TripGuide {
+  id        String        @id @default(cuid())
+  tripId    String
+  guideId   String
+  role      TripGuideRole @default(PRIMARY)
+  createdAt DateTime      @default(now())
+
+  trip  Trip  @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  guide Guide @relation(fields: [guideId], references: [id], onDelete: Cascade)
+
+  @@unique([tripId, guideId])
+  @@index([tripId])
+  @@index([guideId])
+}
+
+model TripManager {
+  id        String   @id @default(cuid())
+  tripId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tripId, userId])
+  @@index([tripId])
+  @@index([userId])
 }
 
 model Registration {
@@ -215,6 +381,30 @@ model Registration {
   waitlistPosition Int?
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
+
+  // Dynamic registration field answers + signed policy
+  fieldAnswers Json?
+  signedPolicy Boolean @default(false)
+
+  // Interest / conditional interest
+  interestThreshold Int?
+  conditions        Json?
+  autoRegister      Boolean @default(false)
+
+  // Journey day selection (for INDIVIDUAL_DAYS / FLEXIBLE modes)
+  dayNumbers Int[]
+
+  // Payment (Stripe-shaped state machine)
+  paymentIntentId     String?
+  authorizedAt        DateTime?
+  capturedAt          DateTime?
+  refundedAt          DateTime?
+  alertThresholdHours Int?
+  alertSentAt         DateTime?
+
+  // Comp (free volunteer invite) + multi-person detail
+  isComp              Boolean   @default(false)
+  participantsDetail  Json?     // [{ name, fieldAnswers }] for detailed multi-person
 
   trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -346,10 +536,56 @@ model TripDay {
   endPoint    String?
   waypoints   String? @db.Text
 
+  date        DateTime?
+  startTime   String?
+  isRestDay   Boolean  @default(false)
+  gpxData     String?  @db.Text
+  equipment   String?
+  guides      Json?    // [{ guideId, role }] per-day guide assignment
+  price       Float?
+  waypointsJson Json?
+  sourceMaterials Json?
+
   trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
 
   @@index([tripId])
   @@unique([tripId, dayNumber])
+}
+
+// ─── Rideshare board ─────────────────────────────────────────────────────────
+
+model RideshareOffer {
+  id            String        @id @default(cuid())
+  tripId        String
+  posterId      String
+  departureCity String
+  spots         Int           @default(1)
+  direction     RideDirection @default(ROUND_TRIP)
+  costSharing   Boolean       @default(false)
+  note          String?
+  isCancelled   Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+
+  trip   Trip             @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  poster User             @relation(fields: [posterId], references: [id], onDelete: Cascade)
+  claims RideshareClaim[]
+
+  @@index([tripId])
+  @@index([posterId])
+}
+
+model RideshareClaim {
+  id        String   @id @default(cuid())
+  offerId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  offer RideshareOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([offerId, userId])
+  @@index([offerId])
+  @@index([userId])
 }
 
 model Coupon {
@@ -360,6 +596,7 @@ model Coupon {
   usedCount   Int      @default(0)
   expiresAt   DateTime?
   isActive    Boolean  @default(true)
+  isComp      Boolean  @default(false)
   guideId     String
   tripId      String?
   createdAt   DateTime @default(now())

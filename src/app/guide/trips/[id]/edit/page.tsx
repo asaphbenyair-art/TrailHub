@@ -7,7 +7,7 @@ import Step2 from "../../new/steps/Step2";
 import Step3 from "../../new/steps/Step3";
 import Step4 from "../../new/steps/Step4";
 import Step5 from "../../new/steps/Step5";
-import { WizardData, DEFAULT_WIZARD_DATA, TripDayData, PriceTier, CouponData } from "../../new/types";
+import { WizardData, DEFAULT_WIZARD_DATA, TripDayData, PriceTier, CouponData, RegFieldData, WaypointData } from "../../new/types";
 
 const STEPS = [
   { label: "פרטים" },
@@ -42,6 +42,10 @@ function tripToWizard(trip: Record<string, unknown>): WizardData {
         durationHours: d.durationMin ? String(Number(d.durationMin) / 60) : "",
         startPoint: String(d.startPoint ?? ""),
         endPoint: String(d.endPoint ?? ""),
+        date: d.date ? new Date(d.date as string).toISOString().slice(0, 10) : "",
+        startTime: String(d.startTime ?? ""),
+        isRestDay: Boolean(d.isRestDay),
+        equipment: String(d.equipment ?? ""),
       }))
     : [];
   return {
@@ -54,24 +58,51 @@ function tripToWizard(trip: Record<string, unknown>): WizardData {
     meetingPoint: String(trip.meetingPoint ?? ""),
     mainImagePreview: images[0] ?? "",
     extraImagePreviews: images.slice(1),
-    tripType: (trip.tripType as "DAY_HIKE" | "EXPEDITION" | "MULTI_SITE") ?? "DAY_HIKE",
+    tripType: (trip.tripType as "DAY_HIKE" | "EXPEDITION" | "MULTI_SITE" | "SELF_GUIDED") ?? "DAY_HIKE",
+    registrationMode: (trip.registrationMode as "FULL_ONLY" | "INDIVIDUAL_DAYS" | "FLEXIBLE") ?? "FULL_ONLY",
+    accessWindowDays: trip.accessWindowDays != null ? String(trip.accessWindowDays) : "30",
+    attributeTags: Array.isArray(trip.attributeTags) ? trip.attributeTags as string[] : [],
     tripDays,
-    routeType: "one-way",
+    routeGpx: String(trip.routeGpx ?? ""),
+    waypointsJson: Array.isArray(trip.waypointsJson)
+      ? (trip.waypointsJson as Record<string, unknown>[]).map((w) => ({
+          lat: Number(w.lat ?? 0), lng: Number(w.lng ?? 0),
+          name: String(w.name ?? ""), description: String(w.description ?? ""),
+        }))
+      : [],
+    individualDayPrice: trip.individualDayPrice != null ? String(trip.individualDayPrice) : "",
+    secondGuideRole: (() => {
+      const guides = Array.isArray(trip.guides) ? trip.guides as { role: string }[] : [];
+      return guides.some((g) => g.role === "EQUAL") ? "EQUAL" as const : "SECONDARY" as const;
+    })(),
+    routeType: String(trip.routeType ?? "one-way"),
     distanceKm: String(trip.distanceKm ?? ""),
     durationHours: durationMin > 0 ? String(durationMin / 60) : "",
     waypoints: "",
     difficulty: String(trip.difficulty ?? "MEDIUM"),
-    ageMin: "",
-    ageMax: "",
-    fitnessLevel: "",
+    ageMin: trip.minAge != null ? String(trip.minAge) : "",
+    ageMax: trip.maxAge != null ? String(trip.maxAge) : "",
+    fitnessLevel: String(trip.fitnessLevel ?? ""),
     maxSpots: String(trip.maxSpots ?? "20"),
-    minSpots: "",
+    minSpots: trip.minSpots != null ? String(trip.minSpots) : "",
     equipmentList: trip.whatToBring
       ? String(trip.whatToBring).split(",").map((s) => s.trim()).filter(Boolean)
       : [],
     whatToBring: "",
+    registrationFields: Array.isArray(trip.registrationFields)
+      ? (trip.registrationFields as RegFieldData[])
+      : [],
     price: String(trip.price ?? ""),
     priceTiers: priceTiers.map((t) => ({ label: t.label, price: String(t.price) })),
+    visibility: (trip.visibility as "PUBLIC" | "PRIVATE") ?? "PUBLIC",
+    secondGuideEmail: (() => {
+      const guides = Array.isArray(trip.guides) ? trip.guides as { role: string; guide: { user: { email: string } } }[] : [];
+      const sec = guides.find((g) => g.role === "SECONDARY");
+      return sec?.guide?.user?.email ?? "";
+    })(),
+    managerEmails: Array.isArray(trip.managers)
+      ? (trip.managers as { user: { email: string } }[]).map((m) => m.user.email)
+      : [],
     coupons: [],
     cancelTier1Hours: "72",
     cancelTier1Refund: "100%",
@@ -102,7 +133,7 @@ export default function EditTripPage() {
       .catch(() => router.replace("/guide/dashboard"));
   }, [id, router]);
 
-  function onChange(field: keyof WizardData, value: string | string[] | TripDayData[] | PriceTier[] | CouponData[]) {
+  function onChange(field: keyof WizardData, value: string | string[] | TripDayData[] | PriceTier[] | CouponData[] | WaypointData[]) {
     setData((prev) => ({ ...prev, [field]: value }));
   }
 
@@ -160,11 +191,28 @@ export default function EditTripPage() {
       whatToBring: allEquipment || null,
       cancellationPolicy,
       status: data.status === "PREVIEW" ? "DRAFT" : data.status,
+      visibility: data.visibility || "PUBLIC",
       images,
       tripType: data.tripType || "DAY_HIKE",
+      registrationMode: data.registrationMode || "FULL_ONLY",
       priceTiers: data.priceTiers.length > 0 ? data.priceTiers : null,
       tripDays: data.tripDays,
       coupons: data.coupons,
+      registrationFields: data.registrationFields.filter((f) => f.label.trim()),
+      routeType: data.routeType || null,
+      minAge: data.ageMin || null,
+      maxAge: data.ageMax || null,
+      fitnessLevel: data.fitnessLevel || null,
+      minSpots: data.minSpots || null,
+      secondGuideEmail: data.secondGuideEmail || null,
+      secondGuideRole: data.secondGuideRole || "SECONDARY",
+      managerEmails: data.managerEmails || [],
+      routeGpx: data.routeGpx || null,
+      waypointsJson: data.waypointsJson.length > 0 ? data.waypointsJson : null,
+      individualDayPrice: data.individualDayPrice || null,
+      unlimitedCapacity: data.tripType === "SELF_GUIDED",
+      accessWindowDays: data.tripType === "SELF_GUIDED" ? (data.accessWindowDays || "30") : null,
+      attributeTags: data.attributeTags || [],
     };
 
     const res = await fetch(`/api/guide/trips/${id}`, {

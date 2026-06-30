@@ -41,25 +41,28 @@ function dayBadgeStyle(dayTrips: Trip[]): { bg: string; text: string } | null {
   return { bg: "#D6EDE3", text: "#0F5038" };
 }
 
+export interface DateRange { start: Date | null; end: Date | null }
+
 // ── Compact Month Panel (side panel) ──────────────────────────────
 function CompactMonthPanel({
-  trips, selectedDate, onDateSelect,
+  trips, range, onRangeChange,
 }: {
   trips: Trip[];
-  selectedDate: Date | null;
-  onDateSelect: (d: Date | null) => void;
+  range: DateRange;
+  onRangeChange: (r: DateRange) => void;
 }) {
   const today = new Date();
-  const [viewYear, setViewYear] = useState(selectedDate?.getFullYear() ?? today.getFullYear());
-  const [viewMonth, setViewMonth] = useState(selectedDate?.getMonth() ?? today.getMonth());
+  const anchor = range.start;
+  const [viewYear, setViewYear] = useState(anchor?.getFullYear() ?? today.getFullYear());
+  const [viewMonth, setViewMonth] = useState(anchor?.getMonth() ?? today.getMonth());
   const [jumpValue, setJumpValue] = useState("");
 
   useEffect(() => {
-    if (selectedDate) {
-      setViewYear(selectedDate.getFullYear());
-      setViewMonth(selectedDate.getMonth());
+    if (range.start) {
+      setViewYear(range.start.getFullYear());
+      setViewMonth(range.start.getMonth());
     }
-  }, [selectedDate]);
+  }, [range.start]);
 
   const tripsByDay = useMemo(() => {
     const map: Record<string, Trip[]> = {};
@@ -103,10 +106,19 @@ function CompactMonthPanel({
   }
   function handleDayClick(day: number) {
     const clicked = new Date(viewYear, viewMonth, day);
-    if (selectedDate && sameDay(clicked, selectedDate)) {
-      onDateSelect(null); // deselect
+    const { start, end } = range;
+    // No selection yet, or a complete range exists → start a fresh selection
+    if (!start || (start && end)) {
+      onRangeChange({ start: clicked, end: null });
     } else {
-      onDateSelect(clicked);
+      // A start is set, no end yet
+      if (sameDay(clicked, start)) {
+        onRangeChange({ start: null, end: null }); // click same day → clear
+      } else if (clicked < start) {
+        onRangeChange({ start: clicked, end: null }); // earlier day → restart from it
+      } else {
+        onRangeChange({ start, end: clicked }); // later day → close the range
+      }
     }
   }
 
@@ -133,6 +145,21 @@ function CompactMonthPanel({
         />
       </div>
 
+      {/* Selected range summary / hint */}
+      {(range.start || range.end) && (
+        <div className="mb-2 flex items-center justify-between gap-2 text-[10px] bg-[#F2F9F5] rounded-lg px-2 py-1.5">
+          <span className="text-[#0F5038] font-medium">
+            {range.start && range.end
+              ? `${range.start.toLocaleDateString("he-IL", { day: "numeric", month: "short" })} – ${range.end.toLocaleDateString("he-IL", { day: "numeric", month: "short" })}`
+              : range.start
+                ? `${range.start.toLocaleDateString("he-IL", { day: "numeric", month: "short" })} · בחר תאריך סיום`
+                : ""}
+          </span>
+          <button type="button" onClick={() => onRangeChange({ start: null, end: null })}
+            className="text-gray-400 hover:text-[#1A6B4A] shrink-0">נקה</button>
+        </div>
+      )}
+
       {/* Weekday headers */}
       <div className="grid grid-cols-7 mb-1">
         {WEEKDAY_NAMES.map((n) => (
@@ -143,8 +170,13 @@ function CompactMonthPanel({
       {/* Day cells */}
       <div className="grid grid-cols-7 gap-y-0.5">
         {cells.map((cell, i) => {
-          const isToday = cell.curr && sameDay(new Date(viewYear, viewMonth, cell.day), today);
-          const isSelected = cell.curr && selectedDate && sameDay(new Date(viewYear, viewMonth, cell.day), selectedDate);
+          const cellDate = cell.curr ? new Date(viewYear, viewMonth, cell.day) : null;
+          const isToday = !!cellDate && sameDay(cellDate, today);
+          const isStart = !!cellDate && !!range.start && sameDay(cellDate, range.start);
+          const isEnd = !!cellDate && !!range.end && sameDay(cellDate, range.end);
+          const isEndpoint = isStart || isEnd;
+          const inRange = !!cellDate && !!range.start && !!range.end && cellDate > range.start && cellDate < range.end;
+          const isSelected = isEndpoint; // endpoints render like the old single-selected day
           const dayTrips = cell.curr ? (tripsByDay[cell.day.toString()] ?? []) : [];
           const badge = dayBadgeStyle(dayTrips);
           const count = dayTrips.length;
@@ -155,13 +187,15 @@ function CompactMonthPanel({
               type="button"
               disabled={!cell.curr}
               onClick={() => cell.curr && handleDayClick(cell.day)}
-              className={`flex flex-col items-center py-1 rounded-lg transition-colors ${
-                isSelected ? "bg-[#1A6B4A]" :
-                cell.curr ? "hover:bg-gray-100 cursor-pointer" : "cursor-default"
+              className={`flex flex-col items-center py-1 transition-colors ${
+                isEndpoint ? "bg-[#1A6B4A] rounded-lg" :
+                inRange ? "bg-[#D6EDE3] rounded-none" :
+                cell.curr ? "hover:bg-gray-100 cursor-pointer rounded-lg" : "cursor-default rounded-lg"
               }`}
             >
               <span className={`text-xs leading-none ${
-                isSelected ? "text-white font-bold" :
+                isEndpoint ? "text-white font-bold" :
+                inRange ? "text-[#0F5038] font-semibold" :
                 isToday ? "text-[#1A6B4A] font-bold" :
                 cell.curr ? "text-gray-800" : "text-gray-300"
               }`}>
@@ -361,7 +395,7 @@ function WeekView({ trips, weekStart, activeDay, setActiveDay }: {
 }
 
 // ── Day View ──────────────────────────────────────────────────────
-function DayView({ trips, day }: { trips: Trip[]; day: Date }) {
+function DayView({ trips, day, regStatus }: { trips: Trip[]; day: Date; regStatus?: Record<string, string> }) {
   const router = useRouter();
   const dayTrips = useMemo(() => trips.filter((t) => sameDay(new Date(t.date), day))
     .sort((a, b) => a.startTime.localeCompare(b.startTime)), [trips, day]);
@@ -374,10 +408,14 @@ function DayView({ trips, day }: { trips: Trip[]; day: Date }) {
         const occ = t.maxSpots > 0 ? t.spotsBooked / t.maxSpots : 0;
         const diff = DIFF_COLOR[t.difficulty];
         const spotsLeft = Math.max(t.maxSpots - t.spotsBooked, 0);
+        const myStatus = regStatus?.[t.id];
+        const isRegistered = myStatus === "CONFIRMED";
+        const guideName = t.guide?.user?.name;
         return (
-          <div key={t.id} className="bg-white rounded-2xl overflow-hidden border border-gray-100">
+          <div key={t.id} className="bg-white rounded-2xl overflow-hidden border-2" style={{ borderColor: isRegistered ? "#1A6B4A" : "#f0f0f0" }}>
+            {isRegistered && <div className="text-center py-1 text-[10px] font-semibold text-[#0F5038] bg-[#D6EDE3]">✓ רשום לטיול זה</div>}
             <div className="relative cursor-pointer" style={{ height: 110 }} onClick={() => router.push(`/trips/${t.id}`)}>
-              {isFull && <div className="absolute top-0 left-0 right-0 z-10 text-center py-1 text-[10px] font-semibold text-white bg-[#C0392B]">מלא — אפשר רשימת המתנה</div>}
+              {isFull && !isRegistered && <div className="absolute top-0 left-0 right-0 z-10 text-center py-1 text-[10px] font-semibold text-white bg-[#C0392B]">מלא — אפשר רשימת המתנה</div>}
               {t.images?.[0]
                 ? <img src={t.images[0]} alt={t.title} className="w-full h-full object-cover" />
                 : <div className="w-full h-full" style={{ background: "linear-gradient(135deg,#2C5F8A,#0f2a0d)" }} />}
@@ -399,16 +437,24 @@ function DayView({ trips, day }: { trips: Trip[]; day: Date }) {
               <div className="h-[3px] bg-gray-100 rounded-full overflow-hidden mb-1">
                 <div className="h-full rounded-full" style={{ width: `${Math.min(occ*100,100)}%`, background: isFull ? "#C0392B" : "#1A6B4A" }} />
               </div>
+              {guideName && <p className="text-[11px] text-gray-500 mb-1">{guideName}{t.guide?.rating > 0 ? ` · ★${t.guide.rating.toFixed(1)}` : ""}</p>}
               <div className="flex justify-between items-center mt-1.5">
                 <div>
                   <p className="text-sm font-semibold text-gray-900">₪{t.price.toLocaleString("he-IL")} <span className="text-[10px] font-normal text-gray-400">לאדם</span></p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">{isFull ? "מלא" : `${spotsLeft} מקומות נותרו`}</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">{t.spotsBooked} מתוך {t.maxSpots} מקומות{isFull ? " — מלא" : ` — נותרו ${spotsLeft}`}</p>
                 </div>
-                <button type="button"
-                  onClick={() => router.push(isFull ? `/trips/${t.id}/register?flow=waitlist` : `/trips/${t.id}/register`)}
-                  className={`px-4 py-2 text-xs font-semibold rounded-full text-white ${isFull ? "bg-[#C0392B] hover:bg-[#a93226]" : "bg-[#1A6B4A] hover:bg-[#155a3e]"} transition-colors`}>
-                  {isFull ? "רשימת המתנה" : "הרשמה ←"}
-                </button>
+                {isRegistered ? (
+                  <button type="button" onClick={() => router.push("/my-trips")}
+                    className="px-4 py-2 text-xs font-semibold rounded-full bg-[#D6EDE3] text-[#0F5038] hover:bg-[#c3e6d6] transition-colors">
+                    הטיולים שלי
+                  </button>
+                ) : (
+                  <button type="button"
+                    onClick={() => router.push(isFull ? `/trips/${t.id}/register?flow=waitlist` : `/trips/${t.id}/register`)}
+                    className={`px-4 py-2 text-xs font-semibold rounded-full transition-colors ${isFull ? "bg-[#EEF5FC] text-[#185FA5] border border-[#185FA5]/30 hover:bg-[#dfeefb]" : "bg-[#1A6B4A] text-white hover:bg-[#155a3e]"}`}>
+                    {isFull ? "רשימת המתנה" : "הרשמה ←"}
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -426,9 +472,12 @@ interface CalendarViewProps {
   compact?: boolean;
   selectedDate?: Date | null;
   onDateSelect?: (d: Date | null) => void;
+  range?: DateRange;
+  onRangeChange?: (r: DateRange) => void;
+  regStatus?: Record<string, string>;
 }
 
-export default function CalendarView({ trips, compact, selectedDate, onDateSelect }: CalendarViewProps) {
+export default function CalendarView({ trips, compact, onDateSelect, range, onRangeChange, regStatus }: CalendarViewProps) {
   const today = new Date();
   const [calTab, setCalTab] = useState<CalTab>("month");
   const [viewYear, setViewYear] = useState(today.getFullYear());
@@ -445,8 +494,8 @@ export default function CalendarView({ trips, compact, selectedDate, onDateSelec
     return (
       <CompactMonthPanel
         trips={trips}
-        selectedDate={selectedDate ?? null}
-        onDateSelect={onDateSelect ?? (() => {})}
+        range={range ?? { start: null, end: null }}
+        onRangeChange={onRangeChange ?? (() => {})}
       />
     );
   }
@@ -509,7 +558,7 @@ export default function CalendarView({ trips, compact, selectedDate, onDateSelec
       </div>
       {calTab === "month" && <MonthView trips={trips} year={viewYear} month={viewMonth} onDayClick={handleDayClick} selectedDay={selectedDay} />}
       {calTab === "week" && <WeekView trips={trips} weekStart={weekStart} activeDay={selectedDay} setActiveDay={setSelectedDay} />}
-      {calTab === "day" && <DayView trips={trips} day={selectedDay} />}
+      {calTab === "day" && <DayView trips={trips} day={selectedDay} regStatus={regStatus} />}
     </div>
   );
 }

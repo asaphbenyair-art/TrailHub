@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { WizardData } from "../types";
+import { WizardData, RegFieldData } from "../types";
+import { TRIP_TAGS } from "@/lib/tripTags";
 
 const DIFFICULTIES = [
   { value: "EASY", label: "קל", cls: "border-[#1A6B4A] bg-[#D6EDE3] text-[#0F5038]" },
@@ -43,6 +44,20 @@ export default function Step3({ data, onChange }: Props) {
   }
 
   const visibleEquipment = showMoreEq ? EQUIPMENT_PRESETS : EQUIPMENT_PRESETS.slice(0, 5);
+
+  const regFields = data.registrationFields || [];
+  function updateFields(next: RegFieldData[]) {
+    onChange("registrationFields" as keyof WizardData, next as unknown as string);
+  }
+  function addField() {
+    updateFields([...regFields, { id: Math.random().toString(36).slice(2, 9), label: "", type: "text", required: false, options: [] }]);
+  }
+  function patchField(i: number, patch: Partial<RegFieldData>) {
+    updateFields(regFields.map((f, idx) => (idx === i ? { ...f, ...patch } : f)));
+  }
+  function removeField(i: number) {
+    updateFields(regFields.filter((_, idx) => idx !== i));
+  }
 
   return (
     <div className="p-5 flex flex-col gap-4">
@@ -202,6 +217,121 @@ export default function Step3({ data, onChange }: Props) {
           >
             הוסף
           </button>
+        </div>
+      </div>
+
+      {/* Attribute tags */}
+      <div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
+        <label className="text-xs font-medium text-gray-500">מאפייני הטיול (לסינון בחיפוש)</label>
+        <div className="flex flex-wrap gap-1.5">
+          {TRIP_TAGS.filter((t) => !t.selfGuidedOnly || data.tripType === "SELF_GUIDED").map((t) => {
+            const on = (data.attributeTags || []).includes(t.value);
+            return (
+              <button key={t.value} type="button"
+                onClick={() => {
+                  const cur = data.attributeTags || [];
+                  const next = on ? cur.filter((x) => x !== t.value) : [...cur, t.value];
+                  onChange("attributeTags" as keyof WizardData, next as unknown as string);
+                }}
+                className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                  on ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-gray-200 text-gray-600"}`}>
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Dynamic registration fields */}
+      <div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-medium text-gray-500">שדות הרשמה מותאמים</label>
+          <button
+            type="button"
+            onClick={addField}
+            className="text-xs text-[#1A6B4A] font-medium border border-[#1A6B4A] rounded-full px-3 py-1 hover:bg-[#D6EDE3] transition-colors"
+          >
+            + הוסף שדה
+          </button>
+        </div>
+        <p className="text-[11px] text-gray-400">שדות שהנרשם ימלא בעת ההרשמה (למשל: הצהרת בריאות, ניסיון קודם)</p>
+
+        {regFields.map((f, i) => (
+          <div key={f.id} className="border border-gray-200 rounded-xl p-3 flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={f.label}
+                onChange={(e) => patchField(i, { label: e.target.value })}
+                placeholder="שם השדה (למשל: הצהרת בריאות)"
+                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+              />
+              <button type="button" onClick={() => removeField(i)} className="text-xs text-red-400 hover:text-red-600 px-1">הסר</button>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <select
+                value={f.type}
+                onChange={(e) => patchField(i, { type: e.target.value as RegFieldData["type"] })}
+                className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1A6B4A] bg-white"
+              >
+                <option value="text">טקסט חופשי</option>
+                <option value="boolean">כן / לא</option>
+                <option value="select">בחירה מרשימה</option>
+              </select>
+              <label className="flex items-center gap-1 text-xs text-gray-600">
+                <input type="checkbox" checked={f.required} onChange={(e) => patchField(i, { required: e.target.checked })} />
+                חובה
+              </label>
+            </div>
+            {f.type === "select" && (
+              <input
+                type="text"
+                value={f.options.join(", ")}
+                onChange={(e) => patchField(i, { options: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
+                placeholder="אפשרויות מופרדות בפסיק: מתחיל, בינוני, מתקדם"
+                className="border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#1A6B4A]"
+              />
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Shared management: second guide + co-managers */}
+      <div className="flex flex-col gap-3 border-t border-gray-100 pt-4">
+        <label className="text-xs font-medium text-gray-500">צוות הטיול (ניהול משותף)</label>
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] text-gray-400">מדריך שני (אופציונלי) — אימייל</label>
+          <input
+            type="email"
+            value={data.secondGuideEmail}
+            onChange={(e) => onChange("secondGuideEmail", e.target.value)}
+            placeholder="guide2@example.com"
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+            dir="ltr"
+          />
+          {data.secondGuideEmail && (
+            <div className="flex gap-2 mt-1">
+              {([["SECONDARY", "משני"], ["EQUAL", "שווה (ללא הבחנה)"]] as const).map(([val, label]) => (
+                <button key={val} type="button" onClick={() => onChange("secondGuideRole", val)}
+                  className={`flex-1 py-1.5 rounded-lg border text-xs transition-colors ${
+                    data.secondGuideRole === val ? "border-[#1A6B4A] bg-[#D6EDE3] text-[#0F5038]" : "border-gray-200 text-gray-500"}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] text-gray-400">מנהלי-משנה (גישה מלאה) — אימיילים מופרדים בפסיק</label>
+          <input
+            type="text"
+            value={(data.managerEmails || []).join(", ")}
+            onChange={(e) => onChange("managerEmails" as keyof WizardData, e.target.value.split(",").map((s) => s.trim()).filter(Boolean) as unknown as string)}
+            placeholder="manager@example.com, ..."
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+            dir="ltr"
+          />
+          <p className="text-[11px] text-gray-400">מנהל-משנה רואה ויכול לעשות הכל כמו המדריך, אך אינו מוצג כמדריך בטיול.</p>
         </div>
       </div>
     </div>

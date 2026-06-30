@@ -7,7 +7,7 @@ import Step2 from "./steps/Step2";
 import Step3 from "./steps/Step3";
 import Step4 from "./steps/Step4";
 import Step5 from "./steps/Step5";
-import { WizardData, DEFAULT_WIZARD_DATA, TripDayData, PriceTier, CouponData } from "./types";
+import { WizardData, DEFAULT_WIZARD_DATA, TripDayData, PriceTier, CouponData, WaypointData } from "./types";
 
 const STEPS = [
   { label: "פרטים" },
@@ -20,7 +20,7 @@ const STEPS = [
 function validateStep(step: number, data: WizardData): string | null {
   if (step === 1) {
     if (!data.title.trim()) return "נא להזין שם טיול";
-    if (!data.date) return "נא לבחור תאריך";
+    if (data.tripType !== "SELF_GUIDED" && !data.date) return "נא לבחור תאריך";
     if (!data.region) return "נא לבחור איזור";
   }
   if (step === 4) {
@@ -36,7 +36,7 @@ export default function NewTripWizard() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
-  function onChange(field: keyof WizardData, value: string | string[] | TripDayData[] | PriceTier[] | CouponData[]) {
+  function onChange(field: keyof WizardData, value: string | string[] | TripDayData[] | PriceTier[] | CouponData[] | WaypointData[]) {
     setData((prev) => ({ ...prev, [field]: value }));
   }
 
@@ -94,11 +94,15 @@ export default function NewTripWizard() {
     const rawUrls = [data.mainImagePreview, ...data.extraImagePreviews].filter(Boolean);
     const images = (await Promise.all(rawUrls.map(resolveImageUrl))).filter(Boolean);
 
+    const isSelfGuided = data.tripType === "SELF_GUIDED";
     const body = {
       title: data.title,
       description: data.description,
       region: data.region,
-      date: new Date(data.date).toISOString(),
+      date: new Date(data.date || Date.now()).toISOString(),
+      unlimitedCapacity: isSelfGuided,
+      accessWindowDays: isSelfGuided ? (data.accessWindowDays || "30") : null,
+      attributeTags: data.attributeTags || [],
       endDate: data.endDate ? new Date(data.endDate).toISOString() : null,
       startTime: data.startTime,
       meetingPoint: data.meetingPoint,
@@ -111,11 +115,25 @@ export default function NewTripWizard() {
       whatToBring: allEquipment || null,
       cancellationPolicy,
       status: data.status === "PREVIEW" ? "DRAFT" : data.status,
+      visibility: data.visibility || "PUBLIC",
       images,
       tripType: data.tripType || "DAY_HIKE",
+      registrationMode: data.registrationMode || "FULL_ONLY",
+      routeGpx: data.routeGpx || null,
+      waypointsJson: data.waypointsJson.length > 0 ? data.waypointsJson : null,
+      individualDayPrice: data.individualDayPrice || null,
       priceTiers: data.priceTiers.length > 0 ? data.priceTiers : null,
       tripDays: data.tripDays,
       coupons: data.coupons,
+      registrationFields: data.registrationFields.filter((f) => f.label.trim()),
+      routeType: data.routeType || null,
+      minAge: data.ageMin || null,
+      maxAge: data.ageMax || null,
+      fitnessLevel: data.fitnessLevel || null,
+      minSpots: data.minSpots || null,
+      secondGuideEmail: data.secondGuideEmail || null,
+      secondGuideRole: data.secondGuideRole || "SECONDARY",
+      managerEmails: data.managerEmails || [],
     };
 
     const res = await fetch("/api/guide/trips", {

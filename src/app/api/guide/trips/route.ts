@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { syncTripTeam } from "@/lib/tripAccess";
+import { mapTripDay } from "@/lib/tripDay";
 
 export async function GET() {
   const session = await auth();
@@ -14,7 +16,23 @@ export async function GET() {
   });
   if (!guide) return NextResponse.json({ error: "מדריך לא נמצא" }, { status: 404 });
 
-  return NextResponse.json({ guide, trips: guide.trips });
+  // Also surface trips this user co-manages or co-guides (secondary)
+  const shared = await prisma.trip.findMany({
+    where: {
+      guideId: { not: guide.id },
+      OR: [
+        { managers: { some: { userId: session.user.id! } } },
+        { guides: { some: { guide: { userId: session.user.id! } } } },
+      ],
+    },
+    orderBy: { date: "asc" },
+    take: 20,
+  });
+
+  const byId = new Map<string, (typeof guide.trips)[number]>();
+  for (const t of [...guide.trips, ...shared]) byId.set(t.id, t);
+
+  return NextResponse.json({ guide, trips: Array.from(byId.values()) });
 }
 
 export async function POST(req: NextRequest) {
@@ -39,6 +57,12 @@ export async function POST(req: NextRequest) {
     distanceKm, durationMin, whatToBring,
     cancellationPolicy, status, images,
     tripType, priceTiers, tripDays, coupons,
+    visibility, registrationFields, routeType,
+    minAge, maxAge, fitnessLevel, minSpots, registrationMode,
+    secondGuideEmail, secondGuideRole, managerEmails,
+    routeGpx, waypointsJson, individualDayPrice,
+    unlimitedCapacity, accessWindowDays, attributeTags,
+    sourceMaterials, sourceMaterialsVisibility, multiPersonMode,
   } = body;
 
   if (!title || !region || !date || !startTime || !price) {
@@ -64,6 +88,23 @@ export async function POST(req: NextRequest) {
         whatToBring: whatToBring || null,
         cancellationPolicy: cancellationPolicy || null,
         status: status || "DRAFT",
+        visibility: visibility === "PRIVATE" ? "PRIVATE" : "PUBLIC",
+        registrationMode: registrationMode || "FULL_ONLY",
+        registrationFields: Array.isArray(registrationFields) && registrationFields.length > 0 ? registrationFields : undefined,
+        routeType: routeType || null,
+        minAge: minAge ? parseInt(minAge) : null,
+        maxAge: maxAge ? parseInt(maxAge) : null,
+        fitnessLevel: fitnessLevel || null,
+        minSpots: minSpots ? parseInt(minSpots) : null,
+        routeGpx: routeGpx || null,
+        waypointsJson: waypointsJson ?? undefined,
+        individualDayPrice: individualDayPrice ? parseFloat(individualDayPrice) : null,
+        unlimitedCapacity: !!unlimitedCapacity,
+        accessWindowDays: accessWindowDays ? parseInt(accessWindowDays) : null,
+        attributeTags: Array.isArray(attributeTags) ? attributeTags : [],
+        sourceMaterials: sourceMaterials ?? undefined,
+        sourceMaterialsVisibility: sourceMaterialsVisibility || null,
+        multiPersonMode: multiPersonMode || null,
         images: Array.isArray(images) ? images : [],
         guideId: guide.id,
         tripType: tripType || "DAY_HIKE",
@@ -73,18 +114,7 @@ export async function POST(req: NextRequest) {
 
     // Create TripDay records
     if (Array.isArray(tripDays) && tripDays.length > 0) {
-      await prisma.tripDay.createMany({
-        data: tripDays.map((d: { dayNumber: number; title?: string; description?: string; distanceKm?: string; durationHours?: string; startPoint?: string; endPoint?: string }) => ({
-          tripId: trip.id,
-          dayNumber: d.dayNumber,
-          title: d.title || null,
-          description: d.description || null,
-          distanceKm: d.distanceKm ? parseFloat(d.distanceKm) : null,
-          durationMin: d.durationHours ? Math.round(parseFloat(d.durationHours) * 60) : null,
-          startPoint: d.startPoint || null,
-          endPoint: d.endPoint || null,
-        })),
-      });
+      await prisma.tripDay.createMany({ data: tripDays.map(mapTripDay(trip.id)) });
     }
 
     // Create Coupon records
@@ -105,6 +135,34 @@ export async function POST(req: NextRequest) {
         } catch {
           // Skip duplicate coupon codes silently
         }
+      }
+    }
+
+    // Sync guides team (owner primary + optional secondary) and co-managers
+    await syncTripTeam({
+      tripId: trip.id,
+      ownerGuideId: guide.id,
+      secondGuideEmail,
+      secondGuideRole,
+      managerEmails,
+    });
+
+    // Notify followers when a brand-new public trip is published
+    if (trip.status === "OPEN" && trip.visibility === "PUBLIC") {
+      const followers = await prisma.guideFollow.findMany({
+        where: { guideId: guide.id },
+        select: { userId: true },
+      });
+      if (followers.length > 0) {
+        await prisma.notification.createMany({
+          data: followers.map((f) => ({
+            userId: f.userId,
+            tripId: trip.id,
+            type: "NEW_TRIP_FROM_GUIDE" as const,
+            title: "טיול חדש ממדריך שאתה עוקב אחריו",
+            body: `טיול חדש: "${trip.title}"`,
+          })),
+        });
       }
     }
 
