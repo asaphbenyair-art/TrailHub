@@ -9,21 +9,20 @@ import Step4 from "../../new/steps/Step4";
 import Step5 from "../../new/steps/Step5";
 import { WizardData, DEFAULT_WIZARD_DATA, TripDayData, PriceTier, CouponData, RegFieldData, WaypointData, SourceMaterial } from "../../new/types";
 
-const STEPS = [
-  { label: "פרטים" },
-  { label: "מסלול" },
-  { label: "פרמטרים" },
-  { label: "תשלום" },
-  { label: "פרסום" },
+const REGULAR_STEPS = [
+  { label: "פרטים" }, { label: "מסלול" }, { label: "פרמטרים" }, { label: "תשלום" }, { label: "פרסום" },
+];
+const SELF_GUIDED_STEPS = [
+  { label: "פרטים" }, { label: "מסלול" }, { label: "פרמטרים" }, { label: "פרסום" },
 ];
 
-function validateStep(step: number, data: WizardData): string | null {
+function validateStep(step: number, data: WizardData, isSelfGuided: boolean): string | null {
   if (step === 1) {
     if (!data.title.trim()) return "נא להזין שם טיול";
-    if (!data.date) return "נא לבחור תאריך";
+    if (!isSelfGuided && !data.date) return "נא לבחור תאריך";
     if (!data.region) return "נא לבחור איזור";
   }
-  if (step === 4) {
+  if ((isSelfGuided && step === 3) || (!isSelfGuided && step === 4)) {
     if (!data.price && data.price !== "0") return "נא להזין מחיר (0 לחינם)";
   }
   return null;
@@ -130,6 +129,9 @@ export default function EditTripPage() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const isSelfGuided = data.tripType === "SELF_GUIDED";
+  const STEPS = isSelfGuided ? SELF_GUIDED_STEPS : REGULAR_STEPS;
+
   useEffect(() => {
     fetch(`/api/trips/${id}`)
       .then((r) => r.json())
@@ -146,10 +148,10 @@ export default function EditTripPage() {
   }
 
   function goNext() {
-    const err = validateStep(step, data);
+    const err = validateStep(step, data, isSelfGuided);
     if (err) { setError(err); return; }
     setError("");
-    setStep((s) => Math.min(s + 1, 5));
+    setStep((s) => Math.min(s + 1, STEPS.length));
   }
 
   function goPrev() {
@@ -293,11 +295,12 @@ export default function EditTripPage() {
             })}
           </div>
 
-          {step === 1 && <Step1 data={data} onChange={onChange} />}
+          {step === 1 && <Step1 data={data} onChange={onChange} selfGuided={isSelfGuided} />}
           {step === 2 && <Step2 data={data} onChange={onChange} />}
-          {step === 3 && <Step3 data={data} onChange={onChange} />}
-          {step === 4 && <Step4 data={data} onChange={onChange} />}
-          {step === 5 && <Step5 data={data} onChange={onChange} />}
+          {step === 3 && <Step3 data={data} onChange={onChange} selfGuided={isSelfGuided} />}
+          {!isSelfGuided && step === 4 && <Step4 data={data} onChange={onChange} />}
+          {!isSelfGuided && step === 5 && <Step5 data={data} onChange={onChange} />}
+          {isSelfGuided && step === 4 && <Step5 data={data} onChange={onChange} />}
 
           <div className="border-t border-gray-100 bg-gray-50">
             {error && (
@@ -314,7 +317,7 @@ export default function EditTripPage() {
                 חזור
               </button>
 
-              <span className="text-xs text-gray-400">שלב {step} מתוך 5</span>
+              <span className="text-xs text-gray-400">שלב {step} מתוך {STEPS.length}</span>
 
               <div className="flex gap-2">
                 <button
@@ -325,7 +328,7 @@ export default function EditTripPage() {
                 >
                   {saving ? "שומר..." : "שמור"}
                 </button>
-                {step < 5 && (
+                {step < STEPS.length && (
                   <button
                     type="button"
                     onClick={goNext}

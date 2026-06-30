@@ -19,9 +19,10 @@ const EQUIPMENT_PRESETS = [
 interface Props {
   data: WizardData;
   onChange: (field: keyof WizardData, value: string) => void;
+  selfGuided?: boolean;
 }
 
-export default function Step3({ data, onChange }: Props) {
+export default function Step3({ data, onChange, selfGuided = false }: Props) {
   const [showMoreEq, setShowMoreEq] = useState(false);
   const [customInput, setCustomInput] = useState("");
   const customRef = useRef<HTMLInputElement>(null);
@@ -85,6 +86,24 @@ export default function Step3({ data, onChange }: Props) {
         </div>
       </div>
 
+      {/* Self-guided: single fixed price + access window (no participants/team/cancellation) */}
+      {selfGuided && (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-500">מחיר לרכישה (₪)</label>
+            <input type="number" min="0" value={data.price} onChange={(e) => onChange("price", e.target.value)}
+              placeholder="0 = חינם" className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" dir="ltr" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-500">חלון גישה (ימים)</label>
+            <input type="number" min="1" value={data.accessWindowDays} onChange={(e) => onChange("accessWindowDays", e.target.value)}
+              placeholder="30" className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" dir="ltr" />
+          </div>
+          <p className="col-span-2 text-[11px] text-gray-400">מחיר אחד קבוע לכל הרכישה — תשלום מיידי וסופי, ללא מדיניות ביטולים.</p>
+        </div>
+      )}
+
+      {!selfGuided && (
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
           <label className="text-xs font-medium text-gray-500">גיל מינימום</label>
@@ -111,7 +130,9 @@ export default function Step3({ data, onChange }: Props) {
           />
         </div>
       </div>
+      )}
 
+      {!selfGuided && (
       <div className="flex flex-col gap-1">
         <label className="text-xs font-medium text-gray-500">רמה גופנית נדרשת</label>
         <textarea
@@ -122,7 +143,9 @@ export default function Step3({ data, onChange }: Props) {
           className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] resize-none"
         />
       </div>
+      )}
 
+      {!selfGuided && (
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
           <label className="text-xs font-medium text-gray-500">מקסימום משתתפים</label>
@@ -149,6 +172,7 @@ export default function Step3({ data, onChange }: Props) {
           />
         </div>
       </div>
+      )}
 
       <div className="flex flex-col gap-2">
         <label className="text-xs font-medium text-gray-500">ציוד נדרש</label>
@@ -220,7 +244,8 @@ export default function Step3({ data, onChange }: Props) {
         </div>
       </div>
 
-      {/* Multi-person registration mode */}
+      {/* Multi-person registration mode (not for self-guided) */}
+      {!selfGuided && (
       <div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
         <label className="text-xs font-medium text-gray-500">הרשמת מספר משתתפים</label>
         <div className="grid grid-cols-3 gap-2">
@@ -234,6 +259,7 @@ export default function Step3({ data, onChange }: Props) {
         </div>
         {data.multiPersonMode === "detailed" && <p className="text-[11px] text-gray-400">הנרשם ימלא שם ושדות דינמיים לכל משתתף</p>}
       </div>
+      )}
 
       {/* Attribute tags */}
       <div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
@@ -257,7 +283,8 @@ export default function Step3({ data, onChange }: Props) {
         </div>
       </div>
 
-      {/* Dynamic registration fields */}
+      {/* Dynamic registration fields (not for self-guided) */}
+      {!selfGuided && (
       <div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
         <div className="flex items-center justify-between">
           <label className="text-xs font-medium text-gray-500">שדות הרשמה מותאמים</label>
@@ -310,8 +337,10 @@ export default function Step3({ data, onChange }: Props) {
           </div>
         ))}
       </div>
+      )}
 
-      {/* Shared management: second guide + co-managers */}
+      {/* Shared management: second guide + co-managers (not for self-guided) */}
+      {!selfGuided && (
       <div className="flex flex-col gap-3 border-t border-gray-100 pt-4">
         <label className="text-xs font-medium text-gray-500">צוות הטיול (ניהול משותף)</label>
         <div className="flex flex-col gap-1">
@@ -349,6 +378,7 @@ export default function Step3({ data, onChange }: Props) {
           <p className="text-[11px] text-gray-400">מנהל-משנה רואה ויכול לעשות הכל כמו המדריך, אך אינו מוצג כמדריך בטיול.</p>
         </div>
       </div>
+      )}
     </div>
   );
 }

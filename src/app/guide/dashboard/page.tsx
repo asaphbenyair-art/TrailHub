@@ -74,6 +74,19 @@ export default function GuideDashboard() {
   const [tab, setTab] = useState<"trips" | "selfguided" | "stats">("trips");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [selfGuided, setSelfGuided] = useState<SelfGuidedTrip[]>([]);
+  const [publishId, setPublishId] = useState<string | null>(null);
+
+  async function publish(tripId: string, visibility: "PUBLIC" | "PRIVATE") {
+    const res = await fetch(`/api/guide/trips/${tripId}/publish`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ visibility }),
+    });
+    if (res.ok) {
+      setTrips((prev) => prev.map((t) => t.id === tripId ? { ...t, status: "OPEN", visibility } : t));
+      setSelfGuided((prev) => prev.map((t) => t.id === tripId ? { ...t, status: "OPEN" } : t));
+      setPublishId(null);
+    }
+  }
 
   async function broadcast(tripId: string) {
     const message = window.prompt("הודעה לכל הנרשמים:");
@@ -153,10 +166,10 @@ export default function GuideDashboard() {
             <ModeSwitch current="guide" />
             <NotificationBell />
             <Link
-              href="/guide/trips/new"
-              className="bg-[#1A6B4A] text-white text-sm rounded-full px-4 py-2 font-medium hover:bg-[#155a3e] transition-colors"
+              href={tab === "selfguided" ? "/guide/trips/new?type=self_guided" : "/guide/trips/new"}
+              className="bg-[#1A6B4A] text-white text-sm rounded-full px-4 py-2 font-medium hover:bg-[#155a3e] transition-colors whitespace-nowrap"
             >
-              + טיול חדש
+              {tab === "selfguided" ? "+ טיול עצמאי" : "+ טיול חדש"}
             </Link>
           </div>
         </div>
@@ -179,9 +192,6 @@ export default function GuideDashboard() {
         {/* Self-guided tab */}
         {!loading && tab === "selfguided" && (
           <div className="flex flex-col gap-3">
-            <div className="flex justify-end">
-              <Link href="/guide/trips/new" className="text-xs text-[#1A6B4A] border border-[#1A6B4A] rounded-full px-3 py-1.5 hover:bg-[#D6EDE3]">+ טיול עצמאי חדש</Link>
-            </div>
             {selfGuided.length === 0 ? (
               <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center shadow-sm text-gray-500 text-sm">עוד אין טיולים עצמאיים</div>
             ) : selfGuided.map((t) => (
@@ -207,6 +217,17 @@ export default function GuideDashboard() {
                     <Link href={`/guide/trips/${t.id}/edit`} className="flex-1 text-center text-[11px] text-gray-600 border border-gray-200 rounded-lg py-1.5 hover:bg-gray-50">עריכה</Link>
                     <Link href={`/trips/${t.id}`} className="flex-1 text-center text-[11px] text-[#1A6B4A] border border-[#1A6B4A]/25 rounded-lg py-1.5 hover:bg-[#D6EDE3]">תצוגה</Link>
                   </div>
+                  {(t.status === "DRAFT" || t.status === "PENDING_REVIEW") && (
+                    publishId === t.id ? (
+                      <div className="flex gap-2 mt-2">
+                        <button type="button" onClick={() => publish(t.id, "PUBLIC")} className="flex-1 py-1.5 text-[11px] font-semibold rounded-lg bg-[#1A6B4A] text-white">🌍 ציבורי</button>
+                        <button type="button" onClick={() => publish(t.id, "PRIVATE")} className="flex-1 py-1.5 text-[11px] font-semibold rounded-lg border border-[#185FA5] text-[#185FA5]">🔒 פרטי</button>
+                        <button type="button" onClick={() => setPublishId(null)} className="px-2 text-[11px] text-gray-400">✕</button>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={() => setPublishId(t.id)} className="w-full mt-2 py-1.5 text-[11px] font-semibold rounded-lg border-2 border-dashed border-[#1A6B4A] text-[#1A6B4A] hover:bg-[#D6EDE3]">העבר לפרסום ↑</button>
+                    )
+                  )}
                 </div>
               </div>
             ))}
@@ -372,29 +393,22 @@ export default function GuideDashboard() {
                     <span className="text-xs text-gray-400">{trip.spotsBooked}/{trip.maxSpots} מקומות</span>
                   </div>
 
-                  {/* Submit for review — shown only for DRAFT or REJECTED */}
-                  {(trip.status === "DRAFT" || trip.status === "REJECTED") && (
-                    <button
-                      type="button"
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        await fetch(`/api/guide/trips/${trip.id}/submit`, { method: "POST" });
-                        setTrips((prev) => prev.map((t) => t.id === trip.id ? { ...t, status: "PENDING_REVIEW" } : t));
-                      }}
-                      className="w-full mt-2 py-1.5 text-xs font-semibold rounded-full border-2 border-dashed border-[#1A6B4A] text-[#1A6B4A] hover:bg-[#D6EDE3] transition-colors"
-                    >
-                      {trip.status === "REJECTED" ? "שלח לאישור מחדש ↑" : "שלח לאישור ↑"}
-                    </button>
-                  )}
-                  {trip.status === "PENDING_REVIEW" && (
-                    <div className="w-full mt-2 py-1.5 text-xs text-center text-amber-700 bg-amber-50 rounded-full border border-amber-200">
-                      ⏳ ממתין לאישור מנהל
-                    </div>
-                  )}
-                  {trip.status === "REJECTED" && trip.approvalNote && (
-                    <div className="mt-1 text-xs text-red-600 bg-red-50 rounded-lg px-2 py-1">
-                      סיבת דחייה: {trip.approvalNote}
-                    </div>
+                  {/* Move a draft to published — choose Public or Private */}
+                  {(trip.status === "DRAFT" || trip.status === "PENDING_REVIEW" || trip.status === "REJECTED") && (
+                    publishId === trip.id ? (
+                      <div className="mt-2 flex gap-2" onClick={(e) => e.stopPropagation()}>
+                        <button type="button" onClick={() => publish(trip.id, "PUBLIC")}
+                          className="flex-1 py-1.5 text-xs font-semibold rounded-full bg-[#1A6B4A] text-white hover:bg-[#155a3e]">🌍 ציבורי</button>
+                        <button type="button" onClick={() => publish(trip.id, "PRIVATE")}
+                          className="flex-1 py-1.5 text-xs font-semibold rounded-full border border-[#185FA5] text-[#185FA5] hover:bg-[#EEF5FC]">🔒 פרטי</button>
+                        <button type="button" onClick={() => setPublishId(null)} className="px-2 text-xs text-gray-400">✕</button>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setPublishId(trip.id); }}
+                        className="w-full mt-2 py-1.5 text-xs font-semibold rounded-full border-2 border-dashed border-[#1A6B4A] text-[#1A6B4A] hover:bg-[#D6EDE3] transition-colors">
+                        העבר לפרסום ↑
+                      </button>
+                    )
                   )}
 
                   {/* Communication links */}
