@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import NotificationBell from "@/components/NotificationBell";
 import ModeSwitch from "@/components/ModeSwitch";
+import { googleCalendarUrl } from "@/lib/calendar";
 
 const DIFF_BADGE: Record<string, { bg: string; color: string; label: string }> = {
   EASY: { bg: "#EAF3DE", color: "#27500A", label: "קל" },
@@ -429,6 +430,11 @@ export default function GuideDashboard() {
                         className="flex-1 text-center text-[11px] text-[#7A5010] border border-[#E8A020]/40 rounded-lg py-1.5 hover:bg-[#FDF6E8] transition-colors">
                         ⏸ דחה
                       </button>
+                      <a href={googleCalendarUrl({ title: trip.title, dateISO: trip.date, startTime: trip.startTime, location: trip.region })}
+                        target="_blank" rel="noreferrer"
+                        className="flex-1 text-center text-[11px] text-[#185FA5] border border-[#185FA5]/30 rounded-lg py-1.5 hover:bg-[#EEF5FC] transition-colors">
+                        📅 ליומן
+                      </a>
                       {trip.visibility === "PRIVATE" && (
                         <button type="button" onClick={() => copyLink(trip.id)}
                           className="flex-1 text-center text-[11px] text-[#185FA5] border border-[#185FA5]/25 rounded-lg py-1.5 hover:bg-[#EEF5FC] transition-colors">

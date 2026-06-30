@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import NotificationBell from "@/components/NotificationBell";
 import RideshareBoard from "@/components/RideshareBoard";
 import { TAG_LABEL } from "@/lib/tripTags";
+import { googleCalendarUrl } from "@/lib/calendar";
 
 const TripDetailMap = dynamic(() => import("@/components/TripDetailMap"), { ssr: false });
 
@@ -637,6 +638,14 @@ export default function TripDetailPage() {
                   📅 {formatDateLong(trip.date)} · {trip.startTime}
                 </div>
               </div>
+            )}
+
+            {!isSelfGuided && (
+              <a href={googleCalendarUrl({ title: trip.title, dateISO: trip.date, startTime: trip.startTime, durationMin: trip.durationMin, endDateISO: trip.endDate, location: trip.meetingPoint || trip.region })}
+                target="_blank" rel="noreferrer"
+                className="mt-2 inline-flex items-center gap-1.5 text-xs text-[#185FA5] border border-[#185FA5]/30 rounded-full px-3 py-1.5 hover:bg-[#EEF5FC]">
+                📅 הוסף ליומן Google
+              </a>
             )}
 
             {/* Waypoints list */}

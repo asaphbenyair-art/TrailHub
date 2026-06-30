@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { googleCalendarUrl } from "@/lib/calendar";
 
 const DIFF_LABEL: Record<string, string> = { EASY: "קל", MEDIUM: "בינוני", HARD: "קשה", EXTREME: "קיצוני" };
 
@@ -191,6 +192,9 @@ function TripCard({
           )}
           {isConfirmed && !isPast && (
             <>
+              <a href={googleCalendarUrl({ title: trip.title, dateISO: trip.date, startTime: trip.startTime, location: trip.meetingPoint })}
+                target="_blank" rel="noreferrer"
+                className="px-2.5 py-1 border border-[#185FA5]/30 text-[#185FA5] rounded-full text-[11px]">📅 ליומן</a>
               <button type="button" onClick={() => router.push(`/trips/${trip.id}`)}
                 className="px-2.5 py-1 border border-gray-200 rounded-full text-[11px] text-gray-600">
                 שאלה למדריך
