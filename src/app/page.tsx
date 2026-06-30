@@ -23,6 +23,14 @@ export default async function Home() {
 
       {session?.user ? (
         <div className="text-center flex flex-col items-center gap-4">
+          {session.user.image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={session.user.image} alt="" className="w-20 h-20 rounded-full object-cover border-2 border-[#1A6B4A]/20" />
+          ) : (
+            <div className="w-20 h-20 rounded-full bg-[#D6EDE3] flex items-center justify-center text-2xl text-[#1A6B4A]">
+              {(session.user.name ?? "?")[0]}
+            </div>
+          )}
           <p className="text-gray-600">שלום, {session.user.name} 👋</p>
           <p className="text-xs text-gray-400">{session.user.email} · {role}</p>
           <div className="flex gap-3">

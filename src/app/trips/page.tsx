@@ -120,10 +120,13 @@ export default function TripsPage() {
     if (!localStorage.getItem("trailhub_intent")) setShowIntent(true);
   }, []);
 
-  // Remember that the user is in hiker mode
+  // Remember that the user is in hiker mode + remember avatar for the login screen
   useEffect(() => {
     if (!session) return;
     fetch("/api/me/mode", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode: "hiker" }) }).catch(() => {});
+    try {
+      localStorage.setItem("trailhub_last_user", JSON.stringify({ name: session.user?.name ?? null, image: session.user?.image ?? null }));
+    } catch { /* noop */ }
   }, [session]);
 
   function chooseIntent(opt: "when" | "kind" | "soon" | "browse") {

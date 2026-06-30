@@ -24,10 +24,12 @@ export async function GET() {
       preferredDays: true,
       role: true,
       createdAt: true,
+      password: true,
     },
   });
   if (!user) return NextResponse.json({ error: "משתמש לא נמצא" }, { status: 404 });
-  return NextResponse.json(user);
+  const { password, ...rest } = user;
+  return NextResponse.json({ ...rest, hasPassword: !!password });
 }
 
 export async function PATCH(req: NextRequest) {

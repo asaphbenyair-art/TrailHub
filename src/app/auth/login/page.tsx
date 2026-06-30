@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -36,6 +36,14 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [remembered, setRemembered] = useState<{ name?: string | null; image?: string | null } | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("trailhub_last_user");
+      if (raw) setRemembered(JSON.parse(raw));
+    } catch { /* noop */ }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -61,9 +69,19 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-[420px]">
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 flex flex-col items-center">
+          {remembered && (remembered.image || remembered.name) && (
+            remembered.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={remembered.image} alt="" className="w-16 h-16 rounded-full object-cover border-2 border-[#1A6B4A]/20 mb-2" />
+            ) : (
+              <div className="w-16 h-16 rounded-full bg-[#D6EDE3] flex items-center justify-center text-2xl text-[#1A6B4A] mb-2">
+                {(remembered.name ?? "?")[0]}
+              </div>
+            )
+          )}
           <h1 className="text-2xl font-semibold text-[#1A6B4A] mb-1">TrailHub</h1>
-          <p className="text-gray-500 text-sm">ברוך הבא בחזרה</p>
+          <p className="text-gray-500 text-sm">{remembered?.name ? `ברוך שובך, ${remembered.name}` : "ברוך הבא בחזרה"}</p>
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
