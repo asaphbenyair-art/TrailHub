@@ -210,8 +210,17 @@ export default function TripDetailPage() {
   const [following, setFollowing] = useState(false);
   const [fav, setFav] = useState(false);
   const [purchase, setPurchase] = useState<{ purchased: boolean; expired?: boolean } | null>(null);
-  const [buying, setBuying] = useState(false);
   const [showLoc, setShowLoc] = useState(false);
+
+  async function requestRefund() {
+    const reason = window.prompt("סיבת בקשת ההחזר (פגם בתוכן / רכישה בטעות / אחר):");
+    if (!reason?.trim()) return;
+    const res = await fetch("/api/complaints", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tripId: id, category: "refund_request", body: reason }),
+    });
+    window.alert(res.ok ? "הבקשה נשלחה למנהלי הפלטפורמה ולמדריך. תיבדק בהקדם." : "שגיאה");
+  }
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewComment, setReviewComment] = useState("");
   const [reviewDone, setReviewDone] = useState(false);
@@ -230,22 +239,6 @@ export default function TripDetailPage() {
     if (!isSelfGuided || !id) return;
     fetch(`/api/trips/${id}/purchase`).then((r) => r.json()).then(setPurchase).catch(() => {});
   }, [isSelfGuided, id]);
-
-  async function handlePurchase() {
-    if (!session) { router.push(`/auth/login?callbackUrl=/trips/${id}`); return; }
-    setBuying(true);
-    const res = await fetch(`/api/trips/${id}/purchase`, { method: "POST" });
-    setBuying(false);
-    if (res.ok) setPurchase({ purchased: true });
-  }
-
-  function speak(text: string) {
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = "he-IL";
-    window.speechSynthesis.speak(u);
-  }
 
   async function handleShare() {
     const url = typeof window !== "undefined" ? window.location.href : "";
@@ -593,6 +586,13 @@ export default function TripDetailPage() {
             </div>
           )}
 
+          {/* Self-guided pre-purchase preview note */}
+          {isSelfGuided && !purchase?.purchased && (
+            <div className="bg-[#FDF6E8] border border-[#E8A020]/40 rounded-xl p-3 text-xs text-[#7A5010]">
+              🔒 זוהי תצוגה מקדימה. לאחר רכישה ייפתח התוכן המלא: ניווט צעד-אחר-צעד, חומרי הדרכה והקראה בכל תחנה, ואזהרות בטיחות.
+            </div>
+          )}
+
           {/* ── Route / map section ── */}
           <div>
             <div className="text-sm font-semibold text-gray-900 mb-2">🗺 מסלול ונקודת מפגש</div>
@@ -896,14 +896,20 @@ export default function TripDetailPage() {
           <div className="flex gap-2">
             {isSelfGuided ? (
               purchase?.purchased && !purchase?.expired ? (
-                <button type="button" onClick={() => router.push(`/trips/${trip.id}/start`)}
-                  className="px-5 py-2 text-sm bg-[#1A6B4A] text-white rounded-full font-medium hover:bg-[#155a3e]">
-                  ▶ התחל טיול
-                </button>
+                <>
+                  <button type="button" onClick={requestRefund}
+                    className="px-3 py-2 text-xs text-[#C0392B] border border-[#C0392B]/30 rounded-full hover:bg-[#FADBD8]">
+                    בקשה להחזר
+                  </button>
+                  <button type="button" onClick={() => router.push(`/trips/${trip.id}/start`)}
+                    className="px-5 py-2 text-sm bg-[#1A6B4A] text-white rounded-full font-medium hover:bg-[#155a3e]">
+                    ▶ התחל טיול
+                  </button>
+                </>
               ) : (
-                <button type="button" onClick={handlePurchase} disabled={buying}
+                <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)}
                   className="px-5 py-2 text-sm bg-[#1A6B4A] text-white rounded-full font-medium hover:bg-[#155a3e] disabled:opacity-60">
-                  {buying ? "רוכש..." : "רכוש טיול עצמאי ←"}
+                  {"רכוש טיול עצמאי ←"}
                 </button>
               )
             ) : myRegStatus === "CONFIRMED" ? (

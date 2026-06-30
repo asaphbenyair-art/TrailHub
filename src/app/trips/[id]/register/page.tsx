@@ -30,6 +30,8 @@ interface Trip {
   cancellationPolicy: string | null;
   registrationFields: RegField[] | null;
   multiPersonMode: string | null;
+  tripType: string | null;
+  accessWindowDays: number | null;
   guide: { user: { name: string | null } };
 }
 
@@ -39,6 +41,7 @@ function formatDateFull(d: string) {
 
 function TripSummary({ trip }: { trip: Trip }) {
   const spotsLeft = Math.max(trip.maxSpots - trip.spotsBooked, 0);
+  const isSG = trip.tripType === "SELF_GUIDED";
   return (
     <div className="flex items-center gap-3 p-4 border-b border-gray-100">
       <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0">
@@ -52,12 +55,14 @@ function TripSummary({ trip }: { trip: Trip }) {
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium text-gray-900 leading-snug mb-0.5 truncate">{trip.title}</div>
         <div className="text-xs text-gray-500">
-          {formatDateFull(trip.date)} · {trip.startTime} · {trip.guide?.user?.name || "מדריך"} · {spotsLeft} מקומות נותרו
+          {isSG
+            ? `🎒 טיול עצמאי · ${trip.guide?.user?.name || "מדריך"}`
+            : `${formatDateFull(trip.date)} · ${trip.startTime} · ${trip.guide?.user?.name || "מדריך"} · ${spotsLeft} מקומות נותרו`}
         </div>
       </div>
       <div className="text-right flex-shrink-0">
         <div className="text-lg font-semibold text-gray-900">₪{trip.price}</div>
-        <div className="text-[11px] text-gray-400">לאדם</div>
+        <div className="text-[11px] text-gray-400">{isSG ? "לחבילה" : "לאדם"}</div>
       </div>
     </div>
   );
@@ -583,6 +588,76 @@ function WaitlistFlow({ trip }: { trip: Trip }) {
   );
 }
 
+// ── Self-guided purchase flow (single fixed price, immediate final payment) ──────
+function SelfGuidedPurchaseFlow({ trip }: { trip: Trip }) {
+  const router = useRouter();
+  const [buying, setBuying] = useState(false);
+  const [done, setDone] = useState(false);
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
+
+  async function buy() {
+    setBuying(true);
+    const res = await fetch(`/api/trips/${trip.id}/purchase`, { method: "POST" });
+    setBuying(false);
+    if (res.ok) {
+      const d = await res.json().catch(() => ({}));
+      setExpiresAt(d.purchase?.accessExpiresAt ?? null);
+      setDone(true);
+    }
+  }
+
+  const fmt = (iso: string | null) => iso ? new Date(iso).toLocaleDateString("he-IL", { day: "numeric", month: "long", year: "numeric" }) : "";
+
+  if (done) {
+    return (
+      <div className="p-6 text-center">
+        <div className="w-14 h-14 rounded-full bg-[#D6EDE3] flex items-center justify-center mx-auto mb-4 text-2xl">✓</div>
+        <div className="text-lg font-semibold text-gray-900 mb-1">הטיול נרכש 🎒</div>
+        <div className="text-sm text-gray-500 mb-4 leading-relaxed">
+          {expiresAt ? `התוכן זמין לך מהיום ועד ${fmt(expiresAt)}.` : `התוכן זמין לך למשך ${trip.accessWindowDays ?? 30} ימים.`}
+        </div>
+        <div className="flex flex-col gap-2">
+          <button type="button" onClick={() => router.push(`/trips/${trip.id}/start`)}
+            className="w-full py-3 bg-[#1A6B4A] text-white rounded-full text-sm font-medium hover:bg-[#155a3e]">▶ התחל טיול</button>
+          <button type="button" onClick={() => router.push("/my-trips")}
+            className="w-full py-2.5 text-sm text-gray-500 border border-gray-200 rounded-full">הטיולים שלי</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="p-4 border-b border-gray-100">
+        <div className="bg-[#EEF5FC] rounded-xl p-3 text-xs text-[#185FA5] mb-3">
+          🎒 טיול עצמאי — תוכן הדרכה מלא לרכישה. תשלום מיידי וסופי, ללא תאריך וללא הגבלת משתתפים.
+        </div>
+        <div className="bg-gray-50 rounded-xl p-3">
+          <div className="flex justify-between text-sm py-1">
+            <span className="text-gray-500">מחיר לחבילה</span><span className="font-medium">₪{trip.price}</span>
+          </div>
+          <div className="flex justify-between text-xs py-1 text-gray-400">
+            <span>חלון גישה</span><span>{trip.accessWindowDays ?? 30} ימים מרגע הרכישה</span>
+          </div>
+          <div className="flex justify-between text-sm font-semibold pt-2 mt-1 border-t border-gray-200">
+            <span>סה"כ לתשלום</span><span>₪{trip.price}</span>
+          </div>
+        </div>
+      </div>
+      <div className="p-4 border-b border-gray-100">
+        <div className="text-sm font-medium text-gray-900 mb-3">פרטי תשלום</div>
+        <CardForm note="תשלום מיידי וסופי — לאחר הרכישה התוכן המלא ייפתח לך מיד." />
+      </div>
+      <div className="p-4">
+        <button type="button" onClick={buy} disabled={buying}
+          className="w-full py-3 bg-[#1A6B4A] text-white rounded-full text-sm font-medium hover:bg-[#155a3e] disabled:opacity-60">
+          {buying ? "רוכש..." : `רכוש עכשיו · ₪${trip.price}`}
+        </button>
+      </div>
+    </>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function RegisterPage() {
   const { id } = useParams<{ id: string }>();
@@ -625,8 +700,10 @@ export default function RegisterPage() {
   }
 
   const isFull = trip.status === "FULL" || trip.spotsBooked >= trip.maxSpots;
+  const isSelfGuided = trip.tripType === "SELF_GUIDED";
 
   function flowTitle() {
+    if (isSelfGuided) return "רכישת טיול עצמאי";
     if (flow === "interest") return "מתעניין על תנאי";
     if (flow === "waitlist") return "הצטרף לרשימת המתנה";
     return "הרשמה לטיול";
@@ -645,7 +722,9 @@ export default function RegisterPage() {
         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
           <TripSummary trip={trip} />
 
-          {success ? (
+          {isSelfGuided ? (
+            <SelfGuidedPurchaseFlow trip={trip} />
+          ) : success ? (
             <SuccessScreen trip={trip} />
           ) : flow === "interest" ? (
             <InterestFlow trip={trip} />
