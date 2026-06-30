@@ -90,6 +90,7 @@ function tripToWizard(trip: Record<string, unknown>): WizardData {
     fitnessLevel: String(trip.fitnessLevel ?? ""),
     maxSpots: String(trip.maxSpots ?? "20"),
     minSpots: trip.minSpots != null ? String(trip.minSpots) : "",
+    multiPersonMode: (trip.multiPersonMode as "" | "simple" | "detailed") ?? "",
     equipmentList: trip.whatToBring
       ? String(trip.whatToBring).split(",").map((s) => s.trim()).filter(Boolean)
       : [],
@@ -222,6 +223,7 @@ export default function EditTripPage() {
       attributeTags: data.attributeTags || [],
       sourceMaterials: data.sourceMaterials.length > 0 ? data.sourceMaterials : null,
       sourceMaterialsVisibility: data.sourceMaterialsVisibility || "preview",
+      multiPersonMode: data.multiPersonMode || null,
     };
 
     const res = await fetch(`/api/guide/trips/${id}`, {

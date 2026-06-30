@@ -83,6 +83,12 @@ function TripCard({
       if (res.ok) onCancel(reg.id);
     } finally { setCancelling(false); setConfirmCancel(false); }
   }
+  async function doPartialCancel() {
+    const res = await fetch(`/api/registrations/${reg.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ reduceBy: 1 }),
+    });
+    if (res.ok) window.location.reload();
+  }
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden" style={{ opacity: isCancelled ? 0.7 : 1 }}>
@@ -189,6 +195,12 @@ function TripCard({
                 className="px-2.5 py-1 border border-gray-200 rounded-full text-[11px] text-gray-600">
                 שאלה למדריך
               </button>
+              {reg.participantCount > 1 && (
+                <button type="button" onClick={doPartialCancel}
+                  className="px-2.5 py-1 border border-[#E8A020] text-[#7A5010] rounded-full text-[11px]">
+                  בטל 1 מ-{reg.participantCount}
+                </button>
+              )}
               <button type="button" onClick={() => setConfirmCancel(true)}
                 className="px-2.5 py-1 border border-[#C0392B] text-[#C0392B] rounded-full text-[11px]">
                 ביטול

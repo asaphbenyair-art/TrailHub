@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   if (!session?.user) return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
 
   const body = await req.json();
-  const { tripId, type, notes, fieldAnswers, signedPolicy, alertThresholdHours, interestThreshold, conditions, autoRegister, compCode } = body as {
+  const { tripId, type, notes, fieldAnswers, signedPolicy, alertThresholdHours, interestThreshold, conditions, autoRegister, compCode, participantCount, participantsDetail } = body as {
     tripId: string;
     type: "REGISTER" | "INTEREST" | "WAITLIST";
     notes?: string;
@@ -19,7 +19,10 @@ export async function POST(req: NextRequest) {
     conditions?: string[];
     autoRegister?: boolean;
     compCode?: string;
+    participantCount?: number;
+    participantsDetail?: { name: string }[];
   };
+  const count = Math.max(1, Number(participantCount) || 1);
 
   if (!tripId) return NextResponse.json({ error: "חסר tripId" }, { status: 400 });
 
@@ -61,7 +64,9 @@ export async function POST(req: NextRequest) {
     paymentStatus = "PENDING";
   } else {
     const spotsLeft = trip.maxSpots - trip.spotsBooked;
-    if (spotsLeft <= 0) return NextResponse.json({ error: "הטיול מלא" }, { status: 409 });
+    if (!trip.unlimitedCapacity && spotsLeft < count) {
+      return NextResponse.json({ error: spotsLeft <= 0 ? "הטיול מלא" : `נותרו ${spotsLeft} מקומות בלבד` }, { status: 409 });
+    }
     status = "CONFIRMED";
     const now = new Date();
     const inWindow = withinNoRefundWindow(trip.date, trip.cancellationPolicy, now);
@@ -75,7 +80,10 @@ export async function POST(req: NextRequest) {
   }
 
   const cleanConditions = Array.isArray(conditions) ? conditions.filter((c) => c && c.trim()) : [];
+  const totalPrice = trip.price * count;
   const extraData = {
+    participantCount: count,
+    ...(Array.isArray(participantsDetail) && participantsDetail.length > 0 && { participantsDetail }),
     ...(fieldAnswers && Object.keys(fieldAnswers).length > 0 && { fieldAnswers }),
     ...(signedPolicy !== undefined && { signedPolicy: !!signedPolicy }),
     ...(alertThresholdHours !== undefined && { alertThresholdHours: Number(alertThresholdHours) || null }),
@@ -88,10 +96,10 @@ export async function POST(req: NextRequest) {
   if (existing && existing.status !== "CANCELLED") {
     const reg = await prisma.registration.update({
       where: { id: existing.id },
-      data: { status, paymentStatus, notes: notes || null, totalPrice: trip.price, ...extraData },
+      data: { status, paymentStatus, notes: notes || null, totalPrice, ...extraData },
     });
-    if (type === "REGISTER" && existing.status !== "CONFIRMED") {
-      await prisma.trip.update({ where: { id: tripId }, data: { spotsBooked: { increment: 1 } } });
+    if (type === "REGISTER" && existing.status !== "CONFIRMED" && !trip.unlimitedCapacity) {
+      await prisma.trip.update({ where: { id: tripId }, data: { spotsBooked: { increment: count } } });
     }
     return NextResponse.json(reg);
   }
@@ -102,14 +110,14 @@ export async function POST(req: NextRequest) {
       userId,
       status,
       paymentStatus,
-      totalPrice: trip.price,
+      totalPrice,
       notes: notes || null,
       ...extraData,
     },
   });
 
-  if (type === "REGISTER") {
-    await prisma.trip.update({ where: { id: tripId }, data: { spotsBooked: { increment: 1 } } });
+  if (type === "REGISTER" && !trip.unlimitedCapacity) {
+    await prisma.trip.update({ where: { id: tripId }, data: { spotsBooked: { increment: count } } });
   }
 
   return NextResponse.json(reg, { status: 201 });

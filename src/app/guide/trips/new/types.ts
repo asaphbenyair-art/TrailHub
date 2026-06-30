@@ -82,6 +82,7 @@ export interface WizardData {
   fitnessLevel: string;
   maxSpots: string;
   minSpots: string;
+  multiPersonMode: "" | "simple" | "detailed";
   equipmentList: string[];
   whatToBring: string;
   registrationFields: RegFieldData[];
@@ -136,6 +137,7 @@ export const DEFAULT_WIZARD_DATA: WizardData = {
   fitnessLevel: "",
   maxSpots: "20",
   minSpots: "",
+  multiPersonMode: "",
   equipmentList: [],
   whatToBring: "",
   registrationFields: [],

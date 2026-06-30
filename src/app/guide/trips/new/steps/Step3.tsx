@@ -220,6 +220,21 @@ export default function Step3({ data, onChange }: Props) {
         </div>
       </div>
 
+      {/* Multi-person registration mode */}
+      <div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
+        <label className="text-xs font-medium text-gray-500">הרשמת מספר משתתפים</label>
+        <div className="grid grid-cols-3 gap-2">
+          {([["", "אדם בודד"], ["simple", "כמות בלבד"], ["detailed", "פרטים לכל אחד"]] as const).map(([val, lbl]) => (
+            <button key={val} type="button" onClick={() => onChange("multiPersonMode" as keyof WizardData, val as unknown as string)}
+              className={`py-2 rounded-lg border text-xs transition-colors ${
+                data.multiPersonMode === val ? "border-[#1A6B4A] bg-[#D6EDE3] text-[#0F5038]" : "border-gray-200 text-gray-500"}`}>
+              {lbl}
+            </button>
+          ))}
+        </div>
+        {data.multiPersonMode === "detailed" && <p className="text-[11px] text-gray-400">הנרשם ימלא שם ושדות דינמיים לכל משתתף</p>}
+      </div>
+
       {/* Attribute tags */}
       <div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
         <label className="text-xs font-medium text-gray-500">מאפייני הטיול (לסינון בחיפוש)</label>

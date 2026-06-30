@@ -29,6 +29,7 @@ interface Trip {
   images: string[];
   cancellationPolicy: string | null;
   registrationFields: RegField[] | null;
+  multiPersonMode: string | null;
   guide: { user: { name: string | null } };
 }
 
@@ -74,15 +75,26 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: () => void }
   const [alertHours, setAlertHours] = useState("24");
   const [compCode, setCompCode] = useState("");
 
+  const isMulti = trip.multiPersonMode === "simple" || trip.multiPersonMode === "detailed";
+  const isDetailed = trip.multiPersonMode === "detailed";
+  const spotsLeft = Math.max(trip.maxSpots - trip.spotsBooked, 1);
+  const [count, setCount] = useState(1);
+  const [names, setNames] = useState<string[]>([""]);
+
   const policy = trip.cancellationPolicy
     ? trip.cancellationPolicy.split("\n").filter(Boolean)
     : ["עד 72 שעות לפני — החזר 100%", "עד 24 שעות לפני — החזר 50%", "פחות מ-24 שעות — ללא החזר"];
 
   const serviceFee = SERVICE_FEE;
-  const total = trip.price + serviceFee;
+  const total = trip.price * count + serviceFee;
 
   function setAnswer(id: string, val: string) {
     setAnswers((a) => ({ ...a, [id]: val }));
+  }
+  function changeCount(n: number) {
+    const c = Math.max(1, Math.min(n, spotsLeft));
+    setCount(c);
+    setNames((prev) => Array.from({ length: c }, (_, i) => prev[i] ?? ""));
   }
 
   async function confirm() {
@@ -93,6 +105,11 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: () => void }
         return;
       }
     }
+    if (isDetailed) {
+      for (let i = 0; i < count; i++) {
+        if (!(names[i] ?? "").trim()) { setError(`נא להזין שם משתתף ${i + 1}`); return; }
+      }
+    }
     if (!signed) { setError("נא לאשר את מדיניות הביטולים"); return; }
     setSaving(true);
     setError("");
@@ -100,7 +117,12 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: () => void }
       const res = await fetch("/api/registrations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tripId: trip.id, type: "REGISTER", fieldAnswers: answers, signedPolicy: signed, alertThresholdHours: Number(alertHours) || 24, compCode: compCode.trim() || undefined }),
+        body: JSON.stringify({
+          tripId: trip.id, type: "REGISTER", fieldAnswers: answers, signedPolicy: signed,
+          alertThresholdHours: Number(alertHours) || 24, compCode: compCode.trim() || undefined,
+          participantCount: count,
+          participantsDetail: isDetailed ? names.slice(0, count).map((n) => ({ name: n.trim() })) : undefined,
+        }),
       });
       if (!res.ok) {
         const d = await res.json();
@@ -117,6 +139,29 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: () => void }
 
   return (
     <>
+      {/* Multi-person quantity */}
+      {isMulti && (
+        <div className="p-4 border-b border-gray-100">
+          <div className="text-sm font-medium text-gray-900 mb-2">כמה משתתפים?</div>
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={() => changeCount(count - 1)} className="w-8 h-8 rounded-full border border-gray-200 text-lg">−</button>
+            <span className="text-lg font-semibold w-8 text-center">{count}</span>
+            <button type="button" onClick={() => changeCount(count + 1)} className="w-8 h-8 rounded-full border border-gray-200 text-lg">+</button>
+            <span className="text-[11px] text-gray-400 mr-2">עד {spotsLeft} מקומות פנויים</span>
+          </div>
+          {isDetailed && (
+            <div className="flex flex-col gap-1.5 mt-3">
+              {Array.from({ length: count }).map((_, i) => (
+                <input key={i} type="text" value={names[i] ?? ""}
+                  onChange={(e) => setNames((prev) => prev.map((x, j) => j === i ? e.target.value : x))}
+                  placeholder={`שם משתתף ${i + 1}`}
+                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Dynamic registration fields */}
       {fields.length > 0 && (
         <div className="p-4 border-b border-gray-100 flex flex-col gap-3">
@@ -172,7 +217,7 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: () => void }
       <div className="p-4 border-b border-gray-100">
         <div className="bg-gray-50 rounded-xl p-3">
           <div className="flex justify-between text-sm py-1">
-            <span className="text-gray-500">מחיר לאדם</span><span>₪{trip.price}</span>
+            <span className="text-gray-500">מחיר לאדם{count > 1 ? ` × ${count}` : ""}</span><span>₪{trip.price * count}</span>
           </div>
           <div className="flex justify-between text-sm py-1">
             <span className="text-gray-500">עמלת שירות</span><span>₪{serviceFee}</span>

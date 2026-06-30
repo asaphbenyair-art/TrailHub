@@ -105,6 +105,7 @@ export default function NewTripWizard() {
       attributeTags: data.attributeTags || [],
       sourceMaterials: data.sourceMaterials.length > 0 ? data.sourceMaterials : null,
       sourceMaterialsVisibility: data.sourceMaterialsVisibility || "preview",
+      multiPersonMode: data.multiPersonMode || null,
       endDate: data.endDate ? new Date(data.endDate).toISOString() : null,
       startTime: data.startTime,
       meetingPoint: data.meetingPoint,
