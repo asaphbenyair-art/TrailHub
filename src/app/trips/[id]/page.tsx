@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import NotificationBell from "@/components/NotificationBell";
 import RideshareBoard from "@/components/RideshareBoard";
 import { TAG_LABEL } from "@/lib/tripTags";
+import { googleCalendarUrl } from "@/lib/calendar";
 
 const TripDetailMap = dynamic(() => import("@/components/TripDetailMap"), { ssr: false });
 
@@ -55,11 +56,29 @@ interface Review {
   user: { name: string | null };
 }
 
+interface SourceMaterial { type: "pdf" | "link"; url: string; title: string; description?: string }
 interface Waypoint {
   lat: number;
   lng: number;
   label: string;
   description?: string;
+  sources?: SourceMaterial[];
+}
+
+function SourceList({ items }: { items: SourceMaterial[] }) {
+  return (
+    <div className="flex flex-col gap-1">
+      {items.map((m, i) => (
+        <div key={i}>
+          <a href={m.url} target="_blank" rel="noreferrer"
+            className="flex items-center gap-1.5 text-xs text-[#185FA5] hover:underline">
+            <span>{m.type === "pdf" ? "📄" : "🔗"}</span>{m.title}
+          </a>
+          {m.description && <div className="text-[11px] text-gray-400 pr-5">{m.description}</div>}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 interface Trip {
@@ -88,6 +107,8 @@ interface Trip {
   fitnessLevel: string | null;
   attributeTags: string[] | null;
   registrationFields: { id: string; label: string; type: string; required: boolean; options: string[] }[] | null;
+  sourceMaterials: SourceMaterial[] | null;
+  sourceMaterialsVisibility: string | null;
   postponeCategory?: string | null;
   postponeReason?: string | null;
   guide: {
@@ -192,29 +213,35 @@ export default function TripDetailPage() {
   const [following, setFollowing] = useState(false);
   const [fav, setFav] = useState(false);
   const [purchase, setPurchase] = useState<{ purchased: boolean; expired?: boolean } | null>(null);
-  const [buying, setBuying] = useState(false);
+  const [showLoc, setShowLoc] = useState(false);
+
+  async function requestRefund() {
+    const reason = window.prompt("סיבת בקשת ההחזר (פגם בתוכן / רכישה בטעות / אחר):");
+    if (!reason?.trim()) return;
+    const res = await fetch("/api/complaints", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tripId: id, category: "refund_request", body: reason }),
+    });
+    window.alert(res.ok ? "הבקשה נשלחה למנהלי הפלטפורמה ולמדריך. תיבדק בהקדם." : "שגיאה");
+  }
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewDone, setReviewDone] = useState(false);
+
+  async function submitReview() {
+    if (!reviewRating) return;
+    const res = await fetch(`/api/trips/${id}/reviews`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rating: reviewRating, comment: reviewComment }),
+    });
+    if (res.ok) setReviewDone(true);
+  }
 
   const isSelfGuided = trip?.tripType === "SELF_GUIDED";
   useEffect(() => {
     if (!isSelfGuided || !id) return;
     fetch(`/api/trips/${id}/purchase`).then((r) => r.json()).then(setPurchase).catch(() => {});
   }, [isSelfGuided, id]);
-
-  async function handlePurchase() {
-    if (!session) { router.push(`/auth/login?callbackUrl=/trips/${id}`); return; }
-    setBuying(true);
-    const res = await fetch(`/api/trips/${id}/purchase`, { method: "POST" });
-    setBuying(false);
-    if (res.ok) setPurchase({ purchased: true });
-  }
-
-  function speak(text: string) {
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = "he-IL";
-    window.speechSynthesis.speak(u);
-  }
 
   async function handleShare() {
     const url = typeof window !== "undefined" ? window.location.href : "";
@@ -337,6 +364,7 @@ export default function TripDetailPage() {
     parsedWaypoints = trip.waypointsJson.map((w) => ({
       lat: Number(w.lat ?? 0), lng: Number(w.lng ?? 0),
       label: w.name ?? "", description: w.description ?? "",
+      sources: Array.isArray((w as { sources?: SourceMaterial[] }).sources) ? (w as { sources?: SourceMaterial[] }).sources : undefined,
     }));
   } else if (trip.waypoints) {
     try { parsedWaypoints = JSON.parse(trip.waypoints); } catch { /* ignore */ }
@@ -534,6 +562,18 @@ export default function TripDetailPage() {
             </div>
           )}
 
+          {/* ── Source materials (trip-level, visibility-gated) ── */}
+          {Array.isArray(trip.sourceMaterials) && trip.sourceMaterials.length > 0 && (
+            trip.sourceMaterialsVisibility === "preview" || !!myRegStatus || purchase?.purchased ? (
+              <div>
+                <div className="text-sm font-semibold text-gray-900 mb-2">📚 חומרי מקור</div>
+                <div className="bg-gray-50 rounded-xl p-3"><SourceList items={trip.sourceMaterials} /></div>
+              </div>
+            ) : (
+              <div className="text-xs text-gray-400 bg-gray-50 rounded-xl p-3">📚 חומרי מקור ייחשפו במהלך הטיול</div>
+            )
+          )}
+
           {/* ── Dynamic registration fields preview ── */}
           {Array.isArray(trip.registrationFields) && trip.registrationFields.length > 0 && (
             <div>
@@ -549,6 +589,13 @@ export default function TripDetailPage() {
             </div>
           )}
 
+          {/* Self-guided pre-purchase preview note */}
+          {isSelfGuided && !purchase?.purchased && (
+            <div className="bg-[#FDF6E8] border border-[#E8A020]/40 rounded-xl p-3 text-xs text-[#7A5010]">
+              🔒 זוהי תצוגה מקדימה. לאחר רכישה ייפתח התוכן המלא: ניווט צעד-אחר-צעד, חומרי הדרכה והקראה בכל תחנה, ואזהרות בטיחות.
+            </div>
+          )}
+
           {/* ── Route / map section ── */}
           <div>
             <div className="text-sm font-semibold text-gray-900 mb-2">🗺 מסלול ונקודת מפגש</div>
@@ -558,7 +605,14 @@ export default function TripDetailPage() {
               meetingPoint={trip.meetingPoint}
               waypoints={parsedWaypoints}
               height={180}
+              liveLocation={showLoc}
             />
+            <button type="button" onClick={() => setShowLoc((v) => !v)}
+              className={`mt-2 text-xs rounded-full px-3 py-1.5 transition-colors ${
+                showLoc ? "bg-[#2C5F8A] text-white" : "border border-[#2C5F8A]/40 text-[#2C5F8A] hover:bg-[#EEF5FC]"
+              }`}>
+              {showLoc ? "● המיקום שלי פעיל" : "📍 הצג את המיקום שלי"}
+            </button>
 
             {/* Route stats */}
             {(trip.distanceKm > 0 || trip.durationMin > 0) && (
@@ -589,6 +643,14 @@ export default function TripDetailPage() {
               </div>
             )}
 
+            {!isSelfGuided && (
+              <a href={googleCalendarUrl({ title: trip.title, dateISO: trip.date, startTime: trip.startTime, durationMin: trip.durationMin, endDateISO: trip.endDate, location: trip.meetingPoint || trip.region })}
+                target="_blank" rel="noreferrer"
+                className="mt-2 inline-flex items-center gap-1.5 text-xs text-[#185FA5] border border-[#185FA5]/30 rounded-full px-3 py-1.5 hover:bg-[#EEF5FC]">
+                📅 הוסף ליומן Google
+              </a>
+            )}
+
             {/* Waypoints list */}
             {parsedWaypoints.length > 0 && (
               <div className="mt-3">
@@ -613,6 +675,9 @@ export default function TripDetailPage() {
                             <div className="text-xs text-gray-500 mt-0.5">{wp.description}</div>
                           ) : (
                             <div className="text-xs text-gray-400 mt-0.5">{wp.lat.toFixed(5)}, {wp.lng.toFixed(5)}</div>
+                          )}
+                          {Array.isArray(wp.sources) && wp.sources.length > 0 && (
+                            <div className="mt-1"><SourceList items={wp.sources} /></div>
                           )}
                         </div>
                       </div>
@@ -726,6 +791,30 @@ export default function TripDetailPage() {
           </div>
           )}
 
+          {/* ── Write a review (eligible: registered or purchased) ── */}
+          {session && (!!myRegStatus || purchase?.purchased) && (
+            <div className="bg-[#F0FAF5] border border-[#1A6B4A]/15 rounded-xl p-3">
+              {reviewDone ? (
+                <div className="text-xs text-[#0F5038]">תודה! הביקורת נשמרה.</div>
+              ) : (
+                <>
+                  <div className="text-sm font-semibold text-gray-900 mb-1.5">כתוב ביקורת</div>
+                  <div className="flex gap-1 mb-2">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button key={n} type="button" onClick={() => setReviewRating(n)}
+                        className={`text-xl ${n <= reviewRating ? "text-amber-500" : "text-gray-300"}`}>★</button>
+                    ))}
+                  </div>
+                  <textarea value={reviewComment} onChange={(e) => setReviewComment(e.target.value)} rows={2}
+                    placeholder="ספר על החוויה (אופציונלי)"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-[#1A6B4A] mb-2" />
+                  <button type="button" onClick={submitReview} disabled={!reviewRating}
+                    className="px-4 py-1.5 bg-[#1A6B4A] text-white rounded-full text-xs font-medium disabled:opacity-50">שלח ביקורת</button>
+                </>
+              )}
+            </div>
+          )}
+
           {/* ── Reviews ── */}
           {trip.reviews.length > 0 && (
             <div>
@@ -810,14 +899,20 @@ export default function TripDetailPage() {
           <div className="flex gap-2">
             {isSelfGuided ? (
               purchase?.purchased && !purchase?.expired ? (
-                <button type="button" onClick={() => router.push(`/trips/${trip.id}/start`)}
-                  className="px-5 py-2 text-sm bg-[#1A6B4A] text-white rounded-full font-medium hover:bg-[#155a3e]">
-                  ▶ התחל טיול
-                </button>
+                <>
+                  <button type="button" onClick={requestRefund}
+                    className="px-3 py-2 text-xs text-[#C0392B] border border-[#C0392B]/30 rounded-full hover:bg-[#FADBD8]">
+                    בקשה להחזר
+                  </button>
+                  <button type="button" onClick={() => router.push(`/trips/${trip.id}/start`)}
+                    className="px-5 py-2 text-sm bg-[#1A6B4A] text-white rounded-full font-medium hover:bg-[#155a3e]">
+                    ▶ התחל טיול
+                  </button>
+                </>
               ) : (
-                <button type="button" onClick={handlePurchase} disabled={buying}
+                <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)}
                   className="px-5 py-2 text-sm bg-[#1A6B4A] text-white rounded-full font-medium hover:bg-[#155a3e] disabled:opacity-60">
-                  {buying ? "רוכש..." : "רכוש טיול עצמאי ←"}
+                  {"רכוש טיול עצמאי ←"}
                 </button>
               )
             ) : myRegStatus === "CONFIRMED" ? (

@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import NotificationBell from "@/components/NotificationBell";
 import CalendarView from "@/components/CalendarView";
+import ModeSwitch from "@/components/ModeSwitch";
 import { TRIP_TAGS } from "@/lib/tripTags";
 
 const REGIONS = ["גליל עליון","גליל תחתון","כרמל","ירושלים","שפלה","נגב","ערבה","גולן","עמק יזרעאל"];
@@ -51,7 +52,7 @@ interface Trip {
   id: string; title: string; region: string; difficulty: string; status: string;
   date: string; startTime: string; durationMin: number; distanceKm: number;
   price: number; maxSpots: number; spotsBooked: number; images: string[];
-  tripType?: string; endDate?: string | null; _count?: { days: number };
+  tripType?: string; endDate?: string | null; _count?: { days: number }; accessWindowDays?: number | null;
   guide: { rating: number; user: { name: string | null } };
   guides?: { role: string; guide: { user: { name: string | null } } }[];
 }
@@ -107,10 +108,56 @@ export default function TripsPage() {
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [draft, setDraft] = useState<Filters>(EMPTY_FILTERS);
   const [myRegMap, setMyRegMap] = useState<Record<string, string>>({});
+  const [favIds, setFavIds] = useState<Set<string>>(new Set());
+  const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set());
+  const [purchasesOnly, setPurchasesOnly] = useState(false);
+
+  async function toggleFav(tripId: string) {
+    if (!session) { router.push("/auth/login"); return; }
+    const has = favIds.has(tripId);
+    setFavIds((prev) => { const n = new Set(prev); if (has) n.delete(tripId); else n.add(tripId); return n; });
+    await fetch("/api/favorites", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tripId }) }).catch(() => {});
+  }
   const [range, setRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
   const [mobileCalOpen, setMobileCalOpen] = useState(false);
   const [view, setView] = useState<"list" | "calendar">("list");
+  const [showIntent, setShowIntent] = useState(false);
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Search intent flow — ask once, remember choice
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!localStorage.getItem("trailhub_intent")) setShowIntent(true);
+  }, []);
+
+  // Remember that the user is in hiker mode + remember avatar for the login screen
+  useEffect(() => {
+    if (!session) return;
+    fetch("/api/me/mode", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode: "hiker" }) }).catch(() => {});
+    try {
+      localStorage.setItem("trailhub_last_user", JSON.stringify({ name: session.user?.name ?? null, image: session.user?.image ?? null }));
+    } catch { /* noop */ }
+    fetch("/api/favorites").then((r) => r.json()).then((d) => setFavIds(new Set(d.ids ?? []))).catch(() => {});
+    fetch("/api/my-purchases").then((r) => r.ok ? r.json() : []).then((d) => {
+      if (Array.isArray(d)) setPurchasedIds(new Set(d.map((p: { trip: { id: string } }) => p.trip.id)));
+    }).catch(() => {});
+  }, [session]);
+
+  function chooseIntent(opt: "when" | "kind" | "soon" | "browse") {
+    if (typeof window !== "undefined") localStorage.setItem("trailhub_intent", opt);
+    setShowIntent(false);
+    if (opt === "when") {
+      setView("calendar");
+    } else if (opt === "kind") {
+      setView("list"); setPanelOpen(true); setDraft(filters);
+    } else if (opt === "soon") {
+      setView("list");
+      const next = { ...filters, sort: "date" }; setFilters(next); fetchTrips(next);
+    } else {
+      // browse — preferences already seed filters; just show the list
+      setView("list");
+    }
+  }
 
   const fetchTrips = useCallback(async (f: Filters) => {
     setLoading(true);
@@ -198,11 +245,13 @@ export default function TripsPage() {
 
   // Client-side date filter — single day (start only) or inclusive range (start..end)
   const displayedTrips = (() => {
-    if (!range.start) return trips;
+    let list = trips;
+    if (purchasesOnly && filters.category === "self_guided") list = list.filter((t) => purchasedIds.has(t.id));
+    if (!range.start) return list;
     const startMs = new Date(range.start.getFullYear(), range.start.getMonth(), range.start.getDate()).getTime();
     const endRef = range.end ?? range.start;
     const endMs = new Date(endRef.getFullYear(), endRef.getMonth(), endRef.getDate(), 23, 59, 59).getTime();
-    return trips.filter((t) => {
+    return list.filter((t) => {
       const ms = new Date(t.date).getTime();
       return ms >= startMs && ms <= endMs;
     });
@@ -224,6 +273,30 @@ export default function TripsPage() {
     <div dir="rtl" className="min-h-screen bg-[#f5f5f5]">
       <style>{`@keyframes fadeIn{from{opacity:0}to{opacity:1}}`}</style>
 
+      {/* Search intent flow */}
+      {showIntent && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-end md:items-center justify-center p-4" onClick={() => setShowIntent(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-[420px] p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="text-base font-semibold text-gray-900 mb-1">מה אתה מחפש?</div>
+            <div className="text-xs text-gray-500 mb-4">נתאים לך את החיפוש</div>
+            <div className="flex flex-col gap-2">
+              {([
+                ["when", "🗓 אני יודע מתי אני פנוי", "אבחר תאריך ואראה מה יוצא"],
+                ["kind", "🎯 מחפש סוג טיול מסוים", "אסנן לפי קושי, איזור ומאפיינים"],
+                ["soon", "⏱ מה קורה בקרוב", "הקרובים ביותר, ללא סינון"],
+                ["browse", "✨ סתם מדפדף, הפתע אותי", "מותאם להעדפות שלי"],
+              ] as const).map(([key, title, sub]) => (
+                <button key={key} type="button" onClick={() => chooseIntent(key)}
+                  className="text-right border border-gray-200 rounded-xl p-3 hover:border-[#1A6B4A] hover:bg-[#F0FAF5] transition-colors">
+                  <div className="text-sm font-medium text-gray-900">{title}</div>
+                  <div className="text-[11px] text-gray-400 mt-0.5">{sub}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top bar */}
       <div className="px-3 py-3">
         <div className="max-w-5xl mx-auto bg-white rounded-xl px-3 py-2.5 flex items-center gap-2.5">
@@ -242,6 +315,7 @@ export default function TripsPage() {
           </div>
           {session ? (
             <div className="flex items-center gap-1.5">
+              <ModeSwitch current="hiker" />
               <NotificationBell />
               <Link href="/profile">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-semibold text-white flex-shrink-0"
@@ -257,11 +331,13 @@ export default function TripsPage() {
       </div>
 
       {/* Category: guided vs self-guided */}
-      <div className="max-w-5xl mx-auto px-3 mb-2 flex justify-center md:justify-start">
+      <div className="max-w-5xl mx-auto px-3 mb-2 flex items-center gap-2 justify-center md:justify-start">
+        <button type="button" onClick={() => setShowIntent(true)}
+          className="text-[11px] text-gray-400 hover:text-[#1A6B4A] underline shrink-0">שנה מה אני מחפש</button>
         <div className="inline-flex bg-white rounded-full border border-gray-200 p-0.5">
           {([["guided", "🧭 טיולים מודרכים"], ["self_guided", "🎒 טיולים עצמאיים"]] as const).map(([v, label]) => (
             <button key={v} type="button"
-              onClick={() => { const next = { ...filters, category: v }; setFilters(next); setDraft(next); fetchTrips(next); }}
+              onClick={() => { const next = { ...filters, category: v }; setFilters(next); setDraft(next); setTrips([]); setPurchasesOnly(false); fetchTrips(next); }}
               className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
                 filters.category === v ? "bg-[#1A6B4A] text-white" : "text-gray-500 hover:text-gray-700"
               }`}>
@@ -269,6 +345,13 @@ export default function TripsPage() {
             </button>
           ))}
         </div>
+        {filters.category === "self_guided" && session && (
+          <button type="button" onClick={() => setPurchasesOnly((v) => !v)}
+            className={`text-[11px] rounded-full px-3 py-1.5 border transition-colors shrink-0 ${
+              purchasesOnly ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-gray-200 text-gray-500"}`}>
+            🎒 הרכישות שלי
+          </button>
+        )}
       </div>
 
       {/* List / Calendar view toggle */}
@@ -532,13 +615,15 @@ export default function TripsPage() {
               </div>
             )}
 
-            {displayedTrips.map((trip) => {
+            {!loading && displayedTrips.map((trip) => {
               const spotsLeft = Math.max(trip.maxSpots - trip.spotsBooked, 0);
               const occupancy = trip.maxSpots > 0 ? trip.spotsBooked / trip.maxSpots : 0;
               const isFull = trip.status === "FULL" || occupancy >= 1;
               const guideName = trip.guide?.user?.name ?? null;
               const diff = DIFF_STYLE[trip.difficulty];
-              const myStatus = myRegMap[trip.id];
+              const isSG = trip.tripType === "SELF_GUIDED";
+              const isPurchased = purchasedIds.has(trip.id);
+              const myStatus = isSG ? null : myRegMap[trip.id];
 
               return (
                 <div key={trip.id} className="bg-white rounded-2xl overflow-hidden border border-gray-100 cursor-pointer"
@@ -551,6 +636,9 @@ export default function TripsPage() {
                       {myStatus === "CONFIRMED" ? "✓ רשום לטיול" :
                        myStatus === "WAITLIST"  ? "⏰ ברשימת המתנה" : "👀 מתעניין"}
                     </div>
+                  )}
+                  {isSG && isPurchased && (
+                    <div className="px-3 py-1.5 flex items-center gap-1.5 text-xs font-medium bg-[#D6EDE3] text-[#0F5038]">✓ הטיול נרכש</div>
                   )}
 
                   {/* Hero with image slideshow */}
@@ -582,9 +670,10 @@ export default function TripsPage() {
                       </div>
                     )}
 
-                    <button type="button" onClick={(e) => e.stopPropagation()}
-                      className="absolute top-2.5 left-2.5 bg-black/40 rounded-full w-7 h-7 flex items-center justify-center text-white text-sm z-10">
-                      ♡
+                    <button type="button" onClick={(e) => { e.stopPropagation(); toggleFav(trip.id); }}
+                      className="absolute top-2.5 left-2.5 bg-black/40 rounded-full w-7 h-7 flex items-center justify-center text-sm z-10"
+                      style={{ color: favIds.has(trip.id) ? "#ff6b81" : "#fff" }}>
+                      {favIds.has(trip.id) ? "♥" : "♡"}
                     </button>
                     <div className="absolute bottom-0 left-0 right-0 px-3 py-2.5 z-10"
                       style={{ background: "linear-gradient(to top,rgba(0,0,0,0.68),transparent)" }}>
@@ -622,9 +711,15 @@ export default function TripsPage() {
                   )}
 
                   {(() => {
-                    const isJourney = !!trip.tripType && trip.tripType !== "DAY_HIKE";
+                    const isJourney = !!trip.tripType && trip.tripType !== "DAY_HIKE" && !isSG;
                     const nDays = tripDayCount(trip);
-                    const meta = isJourney
+                    const meta = isSG
+                      ? [
+                          { t: `🎒 טיול עצמאי` },
+                          { t: `🔓 גישה ל-${trip.accessWindowDays ?? 30} ימים` },
+                          ...(trip.distanceKm > 0 ? [{ t: `📍 ${trip.distanceKm} ק"מ` }] : []),
+                        ]
+                      : isJourney
                       ? [
                           { t: `📅 ${formatDate(trip.date)}${trip.endDate ? `–${formatDate(trip.endDate)}` : ""}` },
                           ...(nDays > 1 ? [{ t: `🌙 ${nDays - 1} לילות` }] : []),
@@ -646,6 +741,7 @@ export default function TripsPage() {
                         </span>
                       ))}
                     </div>
+                    {!isSG && (
                     <div className="mb-2">
                       <div className="h-[3px] bg-gray-100 rounded-full overflow-hidden">
                         <div className="h-full rounded-full transition-all"
@@ -658,21 +754,34 @@ export default function TripsPage() {
                         </span>
                       </div>
                     </div>
+                    )}
                     <div className="flex items-center justify-between pt-2 border-t border-gray-50">
                       <div>
                         <span className="text-[17px] font-medium text-gray-900">₪{trip.price.toLocaleString("he-IL")}</span>
-                        <span className="text-[11px] text-gray-400 mr-1">{trip.tripType && trip.tripType !== "DAY_HIKE" ? "למסע" : "לאדם"}</span>
+                        <span className="text-[11px] text-gray-400 mr-1">{isSG ? "לחבילה" : trip.tripType && trip.tripType !== "DAY_HIKE" ? "למסע" : "לאדם"}</span>
                       </div>
                       <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
-                        <button type="button" onClick={() => router.push(`/trips/${trip.id}/register?flow=interest`)}
-                          className="px-3 py-1.5 bg-gray-50 border border-gray-200 text-gray-600 rounded-full text-[11px]">
-                          מתעניין
-                        </button>
-                        {!isFull && (
-                          <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)}
-                            className="px-3.5 py-1.5 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">
-                            להרשמה
-                          </button>
+                        {isSG ? (
+                          isPurchased ? (
+                            <button type="button" onClick={() => router.push(`/trips/${trip.id}/start`)}
+                              className="px-3.5 py-1.5 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">▶ התחל</button>
+                          ) : (
+                            <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)}
+                              className="px-3.5 py-1.5 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">רכוש</button>
+                          )
+                        ) : (
+                          <>
+                            <button type="button" onClick={() => router.push(`/trips/${trip.id}/register?flow=interest`)}
+                              className="px-3 py-1.5 bg-gray-50 border border-gray-200 text-gray-600 rounded-full text-[11px]">
+                              מתעניין
+                            </button>
+                            {!isFull && (
+                              <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)}
+                                className="px-3.5 py-1.5 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">
+                                להרשמה
+                              </button>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>

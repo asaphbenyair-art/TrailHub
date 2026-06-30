@@ -7,23 +7,22 @@ import Step2 from "../../new/steps/Step2";
 import Step3 from "../../new/steps/Step3";
 import Step4 from "../../new/steps/Step4";
 import Step5 from "../../new/steps/Step5";
-import { WizardData, DEFAULT_WIZARD_DATA, TripDayData, PriceTier, CouponData, RegFieldData, WaypointData } from "../../new/types";
+import { WizardData, DEFAULT_WIZARD_DATA, TripDayData, PriceTier, CouponData, RegFieldData, WaypointData, SourceMaterial } from "../../new/types";
 
-const STEPS = [
-  { label: "פרטים" },
-  { label: "מסלול" },
-  { label: "פרמטרים" },
-  { label: "תשלום" },
-  { label: "פרסום" },
+const REGULAR_STEPS = [
+  { label: "פרטים" }, { label: "מסלול" }, { label: "פרמטרים" }, { label: "תשלום" }, { label: "פרסום" },
+];
+const SELF_GUIDED_STEPS = [
+  { label: "פרטים" }, { label: "מסלול" }, { label: "פרמטרים" }, { label: "פרסום" },
 ];
 
-function validateStep(step: number, data: WizardData): string | null {
+function validateStep(step: number, data: WizardData, isSelfGuided: boolean): string | null {
   if (step === 1) {
     if (!data.title.trim()) return "נא להזין שם טיול";
-    if (!data.date) return "נא לבחור תאריך";
+    if (!isSelfGuided && !data.date) return "נא לבחור תאריך";
     if (!data.region) return "נא לבחור איזור";
   }
-  if (step === 4) {
+  if ((isSelfGuided && step === 3) || (!isSelfGuided && step === 4)) {
     if (!data.price && data.price !== "0") return "נא להזין מחיר (0 לחינם)";
   }
   return null;
@@ -46,6 +45,7 @@ function tripToWizard(trip: Record<string, unknown>): WizardData {
         startTime: String(d.startTime ?? ""),
         isRestDay: Boolean(d.isRestDay),
         equipment: String(d.equipment ?? ""),
+        sources: Array.isArray(d.sourceMaterials) ? (d.sourceMaterials as SourceMaterial[]) : undefined,
       }))
     : [];
   return {
@@ -68,6 +68,10 @@ function tripToWizard(trip: Record<string, unknown>): WizardData {
       ? (trip.waypointsJson as Record<string, unknown>[]).map((w) => ({
           lat: Number(w.lat ?? 0), lng: Number(w.lng ?? 0),
           name: String(w.name ?? ""), description: String(w.description ?? ""),
+          navInstructions: w.navInstructions ? String(w.navInstructions) : undefined,
+          guidance: w.guidance ? String(w.guidance) : undefined,
+          safety: w.safety ? String(w.safety) : undefined,
+          sources: Array.isArray(w.sources) ? (w.sources as SourceMaterial[]) : undefined,
         }))
       : [],
     individualDayPrice: trip.individualDayPrice != null ? String(trip.individualDayPrice) : "",
@@ -85,6 +89,7 @@ function tripToWizard(trip: Record<string, unknown>): WizardData {
     fitnessLevel: String(trip.fitnessLevel ?? ""),
     maxSpots: String(trip.maxSpots ?? "20"),
     minSpots: trip.minSpots != null ? String(trip.minSpots) : "",
+    multiPersonMode: (trip.multiPersonMode as "" | "simple" | "detailed") ?? "",
     equipmentList: trip.whatToBring
       ? String(trip.whatToBring).split(",").map((s) => s.trim()).filter(Boolean)
       : [],
@@ -95,6 +100,8 @@ function tripToWizard(trip: Record<string, unknown>): WizardData {
     price: String(trip.price ?? ""),
     priceTiers: priceTiers.map((t) => ({ label: t.label, price: String(t.price) })),
     visibility: (trip.visibility as "PUBLIC" | "PRIVATE") ?? "PUBLIC",
+    sourceMaterials: Array.isArray(trip.sourceMaterials) ? (trip.sourceMaterials as SourceMaterial[]) : [],
+    sourceMaterialsVisibility: (trip.sourceMaterialsVisibility as "preview" | "during") ?? "preview",
     secondGuideEmail: (() => {
       const guides = Array.isArray(trip.guides) ? trip.guides as { role: string; guide: { user: { email: string } } }[] : [];
       const sec = guides.find((g) => g.role === "SECONDARY");
@@ -122,6 +129,9 @@ export default function EditTripPage() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const isSelfGuided = data.tripType === "SELF_GUIDED";
+  const STEPS = isSelfGuided ? SELF_GUIDED_STEPS : REGULAR_STEPS;
+
   useEffect(() => {
     fetch(`/api/trips/${id}`)
       .then((r) => r.json())
@@ -133,15 +143,15 @@ export default function EditTripPage() {
       .catch(() => router.replace("/guide/dashboard"));
   }, [id, router]);
 
-  function onChange(field: keyof WizardData, value: string | string[] | TripDayData[] | PriceTier[] | CouponData[] | WaypointData[]) {
+  function onChange(field: keyof WizardData, value: string | string[] | TripDayData[] | PriceTier[] | CouponData[] | WaypointData[] | SourceMaterial[]) {
     setData((prev) => ({ ...prev, [field]: value }));
   }
 
   function goNext() {
-    const err = validateStep(step, data);
+    const err = validateStep(step, data, isSelfGuided);
     if (err) { setError(err); return; }
     setError("");
-    setStep((s) => Math.min(s + 1, 5));
+    setStep((s) => Math.min(s + 1, STEPS.length));
   }
 
   function goPrev() {
@@ -213,6 +223,9 @@ export default function EditTripPage() {
       unlimitedCapacity: data.tripType === "SELF_GUIDED",
       accessWindowDays: data.tripType === "SELF_GUIDED" ? (data.accessWindowDays || "30") : null,
       attributeTags: data.attributeTags || [],
+      sourceMaterials: data.sourceMaterials.length > 0 ? data.sourceMaterials : null,
+      sourceMaterialsVisibility: data.sourceMaterialsVisibility || "preview",
+      multiPersonMode: data.multiPersonMode || null,
     };
 
     const res = await fetch(`/api/guide/trips/${id}`, {
@@ -282,11 +295,12 @@ export default function EditTripPage() {
             })}
           </div>
 
-          {step === 1 && <Step1 data={data} onChange={onChange} />}
+          {step === 1 && <Step1 data={data} onChange={onChange} selfGuided={isSelfGuided} />}
           {step === 2 && <Step2 data={data} onChange={onChange} />}
-          {step === 3 && <Step3 data={data} onChange={onChange} />}
-          {step === 4 && <Step4 data={data} onChange={onChange} />}
-          {step === 5 && <Step5 data={data} onChange={onChange} />}
+          {step === 3 && <Step3 data={data} onChange={onChange} selfGuided={isSelfGuided} />}
+          {!isSelfGuided && step === 4 && <Step4 data={data} onChange={onChange} />}
+          {!isSelfGuided && step === 5 && <Step5 data={data} onChange={onChange} />}
+          {isSelfGuided && step === 4 && <Step5 data={data} onChange={onChange} />}
 
           <div className="border-t border-gray-100 bg-gray-50">
             {error && (
@@ -303,7 +317,7 @@ export default function EditTripPage() {
                 חזור
               </button>
 
-              <span className="text-xs text-gray-400">שלב {step} מתוך 5</span>
+              <span className="text-xs text-gray-400">שלב {step} מתוך {STEPS.length}</span>
 
               <div className="flex gap-2">
                 <button
@@ -314,7 +328,7 @@ export default function EditTripPage() {
                 >
                   {saving ? "שומר..." : "שמור"}
                 </button>
-                {step < 5 && (
+                {step < STEPS.length && (
                   <button
                     type="button"
                     onClick={goNext}

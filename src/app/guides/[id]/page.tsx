@@ -14,6 +14,8 @@ interface GuideProfile {
     location: string | null;
     rating: number;
     reviewCount: number;
+    selfGuidedRating: number;
+    selfGuidedReviewCount: number;
     isVerified: boolean;
     yearsActive: number | null;
     specialtyRegions: string[];
@@ -101,7 +103,14 @@ export default function GuideProfilePage() {
             </button>
           </div>
 
-          {/* Stat row */}
+          {guide.selfGuidedReviewCount > 0 && (
+            <div className="mt-3 bg-[#EEF5FC] rounded-xl px-3 py-2 text-xs text-[#185FA5] flex items-center justify-between">
+              <span>🎒 דירוג טיולים עצמאיים (נפרד)</span>
+              <span className="font-semibold">★ {guide.selfGuidedRating.toFixed(1)} · {guide.selfGuidedReviewCount} ביקורות</span>
+            </div>
+          )}
+
+          {/* Stat row (guided trips) */}
           <div className="grid grid-cols-4 gap-2 mt-4">
             {[
               { v: guide.rating > 0 ? `★ ${guide.rating.toFixed(1)}` : "—", l: "דירוג" },

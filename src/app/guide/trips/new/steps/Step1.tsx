@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { WizardData, TripDayData } from "../types";
+import { WizardData, TripDayData, SourceMaterial } from "../types";
+import SourceMaterialsEditor from "./SourceMaterialsEditor";
 
 const REGIONS = ["גליל עליון", "גליל תחתון", "כרמל", "ירושלים", "שפלה", "נגב", "ערבה", "גולן", "עמק יזרעאל"];
 
@@ -9,12 +10,12 @@ const TRIP_TYPES = [
   { value: "DAY_HIKE", label: "טיול יום", desc: "טיול חד-יומי" },
   { value: "EXPEDITION", label: "מסע", desc: "מספר ימים רצופים" },
   { value: "MULTI_SITE", label: "מרובה אתרים", desc: "מספר יעדים נפרדים" },
-  { value: "SELF_GUIDED", label: "טיול עצמאי", desc: "תוכן לרכישה, ללא מדריך" },
 ] as const;
 
 interface Props {
   data: WizardData;
   onChange: (field: keyof WizardData, value: string | string[] | TripDayData[]) => void;
+  selfGuided?: boolean;
 }
 
 async function uploadFile(file: File): Promise<string> {
@@ -128,7 +129,7 @@ function TripDayEditor({
   days: TripDayData[];
   onChange: (days: TripDayData[]) => void;
 }) {
-  function updateDay(idx: number, field: keyof TripDayData, value: string | boolean) {
+  function updateDay(idx: number, field: keyof TripDayData, value: string | boolean | SourceMaterial[]) {
     const next = days.map((d, i) => i === idx ? { ...d, [field]: value } : d);
     onChange(next);
   }
@@ -232,6 +233,10 @@ function TripDayEditor({
                 className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
             </>
           )}
+          <div className="pt-1.5 border-t border-gray-100">
+            <SourceMaterialsEditor label="חומרי מקור ליום זה" materials={day.sources ?? []}
+              onChange={(next) => updateDay(idx, "sources", next)} />
+          </div>
         </div>
       ))}
     </div>
@@ -290,27 +295,33 @@ export default function Step1({ data, onChange }: Props) {
         פרטים בסיסיים
       </div>
 
-      {/* Trip type selector */}
-      <div className="flex flex-col gap-2">
-        <label className="text-xs font-medium text-gray-500">סוג הטיול</label>
-        <div className="grid grid-cols-2 gap-2">
-          {TRIP_TYPES.map((t) => (
-            <button
-              key={t.value}
-              type="button"
-              onClick={() => onChange("tripType", t.value)}
-              className={`rounded-xl border p-2 text-center transition-colors ${
-                data.tripType === t.value
-                  ? "border-[#1A6B4A] bg-[#D6EDE3]"
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
-            >
-              <div className="text-xs font-semibold text-gray-800">{t.label}</div>
-              <div className="text-[10px] text-gray-400 mt-0.5">{t.desc}</div>
-            </button>
-          ))}
+      {/* Trip type selector — hidden for self-guided (type already chosen) */}
+      {isSelfGuided ? (
+        <div className="bg-[#EEF5FC] rounded-xl p-3 text-xs text-[#185FA5]">
+          🎒 טיול עצמאי — תוכן לרכישה, ללא תאריך, ללא הגבלת משתתפים, ללא מדריך בשטח.
         </div>
-      </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          <label className="text-xs font-medium text-gray-500">סוג הטיול</label>
+          <div className="grid grid-cols-3 gap-2">
+            {TRIP_TYPES.map((t) => (
+              <button
+                key={t.value}
+                type="button"
+                onClick={() => onChange("tripType", t.value)}
+                className={`rounded-xl border p-2 text-center transition-colors ${
+                  data.tripType === t.value
+                    ? "border-[#1A6B4A] bg-[#D6EDE3]"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <div className="text-xs font-semibold text-gray-800">{t.label}</div>
+                <div className="text-[10px] text-gray-400 mt-0.5">{t.desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col gap-1">
         <label className="text-xs font-medium text-gray-500">שם הטיול</label>
@@ -333,21 +344,6 @@ export default function Step1({ data, onChange }: Props) {
           className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] resize-none"
         />
       </div>
-
-      {isSelfGuided && (
-        <div className="flex flex-col gap-1 bg-[#EEF5FC] rounded-xl p-3">
-          <label className="text-xs font-medium text-[#185FA5]">חלון גישה לתוכן (ימים לאחר רכישה)</label>
-          <input
-            type="number" min="1"
-            value={data.accessWindowDays}
-            onChange={(e) => onChange("accessWindowDays", e.target.value)}
-            placeholder="30"
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] bg-white"
-            dir="ltr"
-          />
-          <p className="text-[11px] text-gray-500 mt-1">טיול עצמאי הוא תוכן לרכישה — ללא תאריך, ללא הגבלת משתתפים, ללא מדריך בשטח.</p>
-        </div>
-      )}
 
       {!isSelfGuided && (
       <div className="grid grid-cols-2 gap-3">

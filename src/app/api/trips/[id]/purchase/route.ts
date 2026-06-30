@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { simIntentId } from "@/lib/payment";
 
-// GET → has the current user purchased this self-guided trip? (+ access status)
+// GET → does the current user have access (own purchase OR shared with them)?
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -11,12 +11,52 @@ export async function GET(
   const session = await auth();
   if (!session?.user) return NextResponse.json({ purchased: false });
   const { id } = await params;
+
   const p = await prisma.selfGuidedPurchase.findUnique({
     where: { tripId_userId: { tripId: id, userId: session.user.id! } },
   });
-  if (!p || p.revoked) return NextResponse.json({ purchased: false });
-  const expired = p.accessExpiresAt ? new Date(p.accessExpiresAt) < new Date() : false;
-  return NextResponse.json({ purchased: true, expired, accessExpiresAt: p.accessExpiresAt, sharedWith: p.sharedWith });
+  if (p && !p.revoked) {
+    const expired = p.accessExpiresAt ? new Date(p.accessExpiresAt) < new Date() : false;
+    return NextResponse.json({ purchased: true, owner: true, expired, accessExpiresAt: p.accessExpiresAt, sharedWith: p.sharedWith });
+  }
+
+  // Shared access: someone shared this trip with the user's email
+  const email = session.user.email?.toLowerCase();
+  if (email) {
+    const shared = await prisma.selfGuidedPurchase.findFirst({
+      where: { tripId: id, revoked: false, sharedWith: { has: email } },
+    });
+    if (shared) {
+      const expired = shared.accessExpiresAt ? new Date(shared.accessExpiresAt) < new Date() : false;
+      return NextResponse.json({ purchased: true, owner: false, expired });
+    }
+  }
+
+  return NextResponse.json({ purchased: false });
+}
+
+// PATCH → owner shares access with up to 3 emails
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
+  const { id } = await params;
+  const { sharedWith } = await req.json();
+  const emails = Array.isArray(sharedWith)
+    ? [...new Set(sharedWith.map((e: string) => e.trim().toLowerCase()).filter(Boolean))].slice(0, 3)
+    : [];
+
+  const p = await prisma.selfGuidedPurchase.findUnique({
+    where: { tripId_userId: { tripId: id, userId: session.user.id! } },
+  });
+  if (!p || p.revoked) return NextResponse.json({ error: "אין רכישה לשיתוף" }, { status: 403 });
+
+  const updated = await prisma.selfGuidedPurchase.update({
+    where: { id: p.id }, data: { sharedWith: emails },
+  });
+  return NextResponse.json({ ok: true, sharedWith: updated.sharedWith });
 }
 
 // POST → purchase a self-guided trip (immediate final payment, simulated)

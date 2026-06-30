@@ -16,7 +16,6 @@ const FITNESS_OPTIONS = [
   { value: "high", label: "גבוה" },
   { value: "excellent", label: "מצוין" },
 ];
-const WEEKDAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
 
 interface UserProfile {
   id: string;
@@ -30,9 +29,8 @@ interface UserProfile {
   fitnessLevel: string | null;
   preferredRegions: string[];
   preferredDifficulties: string[];
-  preferredTripLengthKm: number | null;
-  preferredDays: number[];
   role: string;
+  hasPassword: boolean;
 }
 
 export default function ProfilePage() {
@@ -65,14 +63,13 @@ export default function ProfilePage() {
   // Preferences
   const [prefRegions, setPrefRegions] = useState<string[]>([]);
   const [prefDiffs, setPrefDiffs] = useState<string[]>([]);
-  const [prefLengthKm, setPrefLengthKm] = useState("");
-  const [prefDays, setPrefDays] = useState<number[]>([]);
 
   // Password
   const [currentPwd, setCurrentPwd] = useState("");
   const [newPwd, setNewPwd] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
   const [pwdMsg, setPwdMsg] = useState("");
+  const [showPwd, setShowPwd] = useState(false);
 
   // Avatar upload
   const fileRef = useRef<HTMLInputElement>(null);
@@ -93,8 +90,6 @@ export default function ProfilePage() {
         setFitnessLevel(data.fitnessLevel ?? "");
         setPrefRegions(data.preferredRegions ?? []);
         setPrefDiffs(data.preferredDifficulties ?? []);
-        setPrefLengthKm(data.preferredTripLengthKm ? String(data.preferredTripLengthKm) : "");
-        setPrefDays(data.preferredDays ?? []);
         setLoading(false);
         if (data.role === "GUIDE") {
           fetch("/api/guide/profile").then((r) => r.ok ? r.json() : null).then((g) => {
@@ -128,7 +123,8 @@ export default function ProfilePage() {
       }),
     });
     setSaving(false);
-    setSaveMsg(res.ok ? "פרופיל המדריך נשמר" : "שגיאה בשמירה");
+    if (res.ok) { setSaveMsg("פרופיל המדריך נשמר ✓"); setTimeout(() => router.back(), 800); }
+    else setSaveMsg("שגיאה בשמירה");
   }
 
   async function handleSaveInfo() {
@@ -140,7 +136,7 @@ export default function ProfilePage() {
       body: JSON.stringify({ name, gender, birthYear: birthYear ? Number(birthYear) : null, bio, phone, fitnessLevel }),
     });
     setSaving(false);
-    if (res.ok) setSaveMsg("השינויים נשמרו בהצלחה");
+    if (res.ok) { setSaveMsg("השינויים נשמרו ✓"); setTimeout(() => router.back(), 800); }
     else setSaveMsg("שגיאה בשמירה");
   }
 
@@ -150,10 +146,10 @@ export default function ProfilePage() {
     const res = await fetch("/api/profile", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ preferredRegions: prefRegions, preferredDifficulties: prefDiffs, preferredTripLengthKm: prefLengthKm ? Number(prefLengthKm) : null, preferredDays: prefDays }),
+      body: JSON.stringify({ preferredRegions: prefRegions, preferredDifficulties: prefDiffs }),
     });
     setSaving(false);
-    if (res.ok) setSaveMsg("ההעדפות נשמרו");
+    if (res.ok) { setSaveMsg("ההעדפות נשמרו ✓"); setTimeout(() => router.back(), 800); }
     else setSaveMsg("שגיאה בשמירה");
   }
 
@@ -254,7 +250,7 @@ export default function ProfilePage() {
         {/* Tabs */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="flex border-b border-gray-100">
-            {([["info", "פרטים אישיים"], ["prefs", "העדפות טיולים"], ...(profile?.role === "GUIDE" ? [["guide", "פרופיל מדריך"] as const] : []), ["password", "שינוי סיסמה"]] as const).map(([tab, label]) => (
+            {([["info", "פרטים אישיים"], ["prefs", "העדפות טיולים"], ...(profile?.role === "GUIDE" ? [["guide", "פרופיל מדריך"] as const] : []), ...(profile?.hasPassword ? [["password", "שינוי סיסמה"] as const] : [])] as const).map(([tab, label]) => (
               <button
                 key={tab}
                 type="button"
@@ -408,38 +404,9 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-500">אורך טיול מועדף (ק״מ)</label>
-                  <input
-                    type="number"
-                    value={prefLengthKm}
-                    onChange={(e) => setPrefLengthKm(e.target.value)}
-                    placeholder="למשל: 10"
-                    min="0"
-                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
-                    dir="ltr"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-medium text-gray-500">ימים מועדפים</label>
-                  <div className="flex flex-wrap gap-2">
-                    {WEEKDAYS.map((d, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => setPrefDays(prefDays.includes(i) ? prefDays.filter((x) => x !== i) : [...prefDays, i])}
-                        className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                          prefDays.includes(i)
-                            ? "border-[#1A6B4A] bg-[#D6EDE3] text-[#1A6B4A]"
-                            : "border-gray-200 text-gray-500 hover:border-gray-300"
-                        }`}
-                      >
-                        {d}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <p className="text-[11px] text-gray-400 bg-gray-50 rounded-lg p-2.5 leading-relaxed">
+                  💡 ההעדפות משמשות כברירת מחדל לפילטרים בחיפוש בלבד — הן לעולם לא חוסמות או מסתירות ממך טיולים אחרים. תמיד תוכל לשנות או לנקות את הפילטרים ולראות את הכל.
+                </p>
 
                 {saveMsg && (
                   <p className={`text-xs text-center ${saveMsg.includes("שגיאה") ? "text-red-500" : "text-[#1A6B4A]"}`}>
@@ -516,10 +483,14 @@ export default function ProfilePage() {
             {/* Password Change */}
             {activeTab === "password" && (
               <>
+                <button type="button" onClick={() => setShowPwd((v) => !v)}
+                  className="self-end text-[11px] text-gray-500 hover:text-[#1A6B4A] flex items-center gap-1">
+                  {showPwd ? "🙈 הסתר סיסמאות" : "👁 הצג סיסמאות"}
+                </button>
                 <div className="flex flex-col gap-1">
                   <label className="text-xs font-medium text-gray-500">סיסמה נוכחית</label>
                   <input
-                    type="password"
+                    type={showPwd ? "text" : "password"}
                     value={currentPwd}
                     onChange={(e) => setCurrentPwd(e.target.value)}
                     placeholder="הזן סיסמה נוכחית"
@@ -530,7 +501,7 @@ export default function ProfilePage() {
                 <div className="flex flex-col gap-1">
                   <label className="text-xs font-medium text-gray-500">סיסמה חדשה</label>
                   <input
-                    type="password"
+                    type={showPwd ? "text" : "password"}
                     value={newPwd}
                     onChange={(e) => setNewPwd(e.target.value)}
                     placeholder="לפחות 6 תווים"
@@ -541,7 +512,7 @@ export default function ProfilePage() {
                 <div className="flex flex-col gap-1">
                   <label className="text-xs font-medium text-gray-500">אימות סיסמה חדשה</label>
                   <input
-                    type="password"
+                    type={showPwd ? "text" : "password"}
                     value={confirmPwd}
                     onChange={(e) => setConfirmPwd(e.target.value)}
                     placeholder="חזור על הסיסמה החדשה"

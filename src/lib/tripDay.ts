@@ -10,6 +10,7 @@ export interface TripDayInput {
   startTime?: string;
   isRestDay?: boolean;
   equipment?: string;
+  sources?: unknown;
 }
 
 // Maps a wizard TripDay payload to a Prisma TripDay create row for a given trip.
@@ -27,5 +28,6 @@ export function mapTripDay(tripId: string) {
     startTime: d.startTime || null,
     isRestDay: !!d.isRestDay,
     equipment: d.equipment || null,
+    sourceMaterials: Array.isArray(d.sources) && d.sources.length > 0 ? (d.sources as object[]) : undefined,
   });
 }

@@ -1,10 +1,18 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import { SignOutButton } from "@/components/SignOutButton";
 
 export default async function Home() {
   const session = await auth();
   const role = (session?.user as { role?: string })?.role;
+
+  // Restore the user's last active mode on login
+  if (session?.user) {
+    const me = await prisma.user.findUnique({ where: { id: session.user.id! }, select: { activeMode: true } });
+    if (me?.activeMode === "guide" && (role === "GUIDE" || role === "ADMIN")) redirect("/guide/dashboard");
+  }
 
   return (
     <main className="flex flex-col items-center justify-center min-h-screen p-4">
@@ -15,6 +23,14 @@ export default async function Home() {
 
       {session?.user ? (
         <div className="text-center flex flex-col items-center gap-4">
+          {session.user.image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={session.user.image} alt="" className="w-20 h-20 rounded-full object-cover border-2 border-[#1A6B4A]/20" />
+          ) : (
+            <div className="w-20 h-20 rounded-full bg-[#D6EDE3] flex items-center justify-center text-2xl text-[#1A6B4A]">
+              {(session.user.name ?? "?")[0]}
+            </div>
+          )}
           <p className="text-gray-600">שלום, {session.user.name} 👋</p>
           <p className="text-xs text-gray-400">{session.user.email} · {role}</p>
           <div className="flex gap-3">

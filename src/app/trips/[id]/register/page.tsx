@@ -29,6 +29,9 @@ interface Trip {
   images: string[];
   cancellationPolicy: string | null;
   registrationFields: RegField[] | null;
+  multiPersonMode: string | null;
+  tripType: string | null;
+  accessWindowDays: number | null;
   guide: { user: { name: string | null } };
 }
 
@@ -38,6 +41,7 @@ function formatDateFull(d: string) {
 
 function TripSummary({ trip }: { trip: Trip }) {
   const spotsLeft = Math.max(trip.maxSpots - trip.spotsBooked, 0);
+  const isSG = trip.tripType === "SELF_GUIDED";
   return (
     <div className="flex items-center gap-3 p-4 border-b border-gray-100">
       <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0">
@@ -51,12 +55,14 @@ function TripSummary({ trip }: { trip: Trip }) {
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium text-gray-900 leading-snug mb-0.5 truncate">{trip.title}</div>
         <div className="text-xs text-gray-500">
-          {formatDateFull(trip.date)} · {trip.startTime} · {trip.guide?.user?.name || "מדריך"} · {spotsLeft} מקומות נותרו
+          {isSG
+            ? `🎒 טיול עצמאי · ${trip.guide?.user?.name || "מדריך"}`
+            : `${formatDateFull(trip.date)} · ${trip.startTime} · ${trip.guide?.user?.name || "מדריך"} · ${spotsLeft} מקומות נותרו`}
         </div>
       </div>
       <div className="text-right flex-shrink-0">
         <div className="text-lg font-semibold text-gray-900">₪{trip.price}</div>
-        <div className="text-[11px] text-gray-400">לאדם</div>
+        <div className="text-[11px] text-gray-400">{isSG ? "לחבילה" : "לאדם"}</div>
       </div>
     </div>
   );
@@ -74,15 +80,26 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: () => void }
   const [alertHours, setAlertHours] = useState("24");
   const [compCode, setCompCode] = useState("");
 
+  const isMulti = trip.multiPersonMode === "simple" || trip.multiPersonMode === "detailed";
+  const isDetailed = trip.multiPersonMode === "detailed";
+  const spotsLeft = Math.max(trip.maxSpots - trip.spotsBooked, 1);
+  const [count, setCount] = useState(1);
+  const [names, setNames] = useState<string[]>([""]);
+
   const policy = trip.cancellationPolicy
     ? trip.cancellationPolicy.split("\n").filter(Boolean)
     : ["עד 72 שעות לפני — החזר 100%", "עד 24 שעות לפני — החזר 50%", "פחות מ-24 שעות — ללא החזר"];
 
   const serviceFee = SERVICE_FEE;
-  const total = trip.price + serviceFee;
+  const total = trip.price * count + serviceFee;
 
   function setAnswer(id: string, val: string) {
     setAnswers((a) => ({ ...a, [id]: val }));
+  }
+  function changeCount(n: number) {
+    const c = Math.max(1, Math.min(n, spotsLeft));
+    setCount(c);
+    setNames((prev) => Array.from({ length: c }, (_, i) => prev[i] ?? ""));
   }
 
   async function confirm() {
@@ -93,6 +110,11 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: () => void }
         return;
       }
     }
+    if (isDetailed) {
+      for (let i = 0; i < count; i++) {
+        if (!(names[i] ?? "").trim()) { setError(`נא להזין שם משתתף ${i + 1}`); return; }
+      }
+    }
     if (!signed) { setError("נא לאשר את מדיניות הביטולים"); return; }
     setSaving(true);
     setError("");
@@ -100,7 +122,12 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: () => void }
       const res = await fetch("/api/registrations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tripId: trip.id, type: "REGISTER", fieldAnswers: answers, signedPolicy: signed, alertThresholdHours: Number(alertHours) || 24, compCode: compCode.trim() || undefined }),
+        body: JSON.stringify({
+          tripId: trip.id, type: "REGISTER", fieldAnswers: answers, signedPolicy: signed,
+          alertThresholdHours: Number(alertHours) || 24, compCode: compCode.trim() || undefined,
+          participantCount: count,
+          participantsDetail: isDetailed ? names.slice(0, count).map((n) => ({ name: n.trim() })) : undefined,
+        }),
       });
       if (!res.ok) {
         const d = await res.json();
@@ -117,6 +144,29 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: () => void }
 
   return (
     <>
+      {/* Multi-person quantity */}
+      {isMulti && (
+        <div className="p-4 border-b border-gray-100">
+          <div className="text-sm font-medium text-gray-900 mb-2">כמה משתתפים?</div>
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={() => changeCount(count - 1)} className="w-8 h-8 rounded-full border border-gray-200 text-lg">−</button>
+            <span className="text-lg font-semibold w-8 text-center">{count}</span>
+            <button type="button" onClick={() => changeCount(count + 1)} className="w-8 h-8 rounded-full border border-gray-200 text-lg">+</button>
+            <span className="text-[11px] text-gray-400 mr-2">עד {spotsLeft} מקומות פנויים</span>
+          </div>
+          {isDetailed && (
+            <div className="flex flex-col gap-1.5 mt-3">
+              {Array.from({ length: count }).map((_, i) => (
+                <input key={i} type="text" value={names[i] ?? ""}
+                  onChange={(e) => setNames((prev) => prev.map((x, j) => j === i ? e.target.value : x))}
+                  placeholder={`שם משתתף ${i + 1}`}
+                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Dynamic registration fields */}
       {fields.length > 0 && (
         <div className="p-4 border-b border-gray-100 flex flex-col gap-3">
@@ -172,7 +222,7 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: () => void }
       <div className="p-4 border-b border-gray-100">
         <div className="bg-gray-50 rounded-xl p-3">
           <div className="flex justify-between text-sm py-1">
-            <span className="text-gray-500">מחיר לאדם</span><span>₪{trip.price}</span>
+            <span className="text-gray-500">מחיר לאדם{count > 1 ? ` × ${count}` : ""}</span><span>₪{trip.price * count}</span>
           </div>
           <div className="flex justify-between text-sm py-1">
             <span className="text-gray-500">עמלת שירות</span><span>₪{serviceFee}</span>
@@ -538,6 +588,76 @@ function WaitlistFlow({ trip }: { trip: Trip }) {
   );
 }
 
+// ── Self-guided purchase flow (single fixed price, immediate final payment) ──────
+function SelfGuidedPurchaseFlow({ trip }: { trip: Trip }) {
+  const router = useRouter();
+  const [buying, setBuying] = useState(false);
+  const [done, setDone] = useState(false);
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
+
+  async function buy() {
+    setBuying(true);
+    const res = await fetch(`/api/trips/${trip.id}/purchase`, { method: "POST" });
+    setBuying(false);
+    if (res.ok) {
+      const d = await res.json().catch(() => ({}));
+      setExpiresAt(d.purchase?.accessExpiresAt ?? null);
+      setDone(true);
+    }
+  }
+
+  const fmt = (iso: string | null) => iso ? new Date(iso).toLocaleDateString("he-IL", { day: "numeric", month: "long", year: "numeric" }) : "";
+
+  if (done) {
+    return (
+      <div className="p-6 text-center">
+        <div className="w-14 h-14 rounded-full bg-[#D6EDE3] flex items-center justify-center mx-auto mb-4 text-2xl">✓</div>
+        <div className="text-lg font-semibold text-gray-900 mb-1">הטיול נרכש 🎒</div>
+        <div className="text-sm text-gray-500 mb-4 leading-relaxed">
+          {expiresAt ? `התוכן זמין לך מהיום ועד ${fmt(expiresAt)}.` : `התוכן זמין לך למשך ${trip.accessWindowDays ?? 30} ימים.`}
+        </div>
+        <div className="flex flex-col gap-2">
+          <button type="button" onClick={() => router.push(`/trips/${trip.id}/start`)}
+            className="w-full py-3 bg-[#1A6B4A] text-white rounded-full text-sm font-medium hover:bg-[#155a3e]">▶ התחל טיול</button>
+          <button type="button" onClick={() => router.push("/my-trips")}
+            className="w-full py-2.5 text-sm text-gray-500 border border-gray-200 rounded-full">הטיולים שלי</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="p-4 border-b border-gray-100">
+        <div className="bg-[#EEF5FC] rounded-xl p-3 text-xs text-[#185FA5] mb-3">
+          🎒 טיול עצמאי — תוכן הדרכה מלא לרכישה. תשלום מיידי וסופי, ללא תאריך וללא הגבלת משתתפים.
+        </div>
+        <div className="bg-gray-50 rounded-xl p-3">
+          <div className="flex justify-between text-sm py-1">
+            <span className="text-gray-500">מחיר לחבילה</span><span className="font-medium">₪{trip.price}</span>
+          </div>
+          <div className="flex justify-between text-xs py-1 text-gray-400">
+            <span>חלון גישה</span><span>{trip.accessWindowDays ?? 30} ימים מרגע הרכישה</span>
+          </div>
+          <div className="flex justify-between text-sm font-semibold pt-2 mt-1 border-t border-gray-200">
+            <span>סה"כ לתשלום</span><span>₪{trip.price}</span>
+          </div>
+        </div>
+      </div>
+      <div className="p-4 border-b border-gray-100">
+        <div className="text-sm font-medium text-gray-900 mb-3">פרטי תשלום</div>
+        <CardForm note="תשלום מיידי וסופי — לאחר הרכישה התוכן המלא ייפתח לך מיד." />
+      </div>
+      <div className="p-4">
+        <button type="button" onClick={buy} disabled={buying}
+          className="w-full py-3 bg-[#1A6B4A] text-white rounded-full text-sm font-medium hover:bg-[#155a3e] disabled:opacity-60">
+          {buying ? "רוכש..." : `רכוש עכשיו · ₪${trip.price}`}
+        </button>
+      </div>
+    </>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function RegisterPage() {
   const { id } = useParams<{ id: string }>();
@@ -580,8 +700,10 @@ export default function RegisterPage() {
   }
 
   const isFull = trip.status === "FULL" || trip.spotsBooked >= trip.maxSpots;
+  const isSelfGuided = trip.tripType === "SELF_GUIDED";
 
   function flowTitle() {
+    if (isSelfGuided) return "רכישת טיול עצמאי";
     if (flow === "interest") return "מתעניין על תנאי";
     if (flow === "waitlist") return "הצטרף לרשימת המתנה";
     return "הרשמה לטיול";
@@ -600,7 +722,9 @@ export default function RegisterPage() {
         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
           <TripSummary trip={trip} />
 
-          {success ? (
+          {isSelfGuided ? (
+            <SelfGuidedPurchaseFlow trip={trip} />
+          ) : success ? (
             <SuccessScreen trip={trip} />
           ) : flow === "interest" ? (
             <InterestFlow trip={trip} />

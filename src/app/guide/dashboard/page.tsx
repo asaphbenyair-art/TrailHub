@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import NotificationBell from "@/components/NotificationBell";
+import ModeSwitch from "@/components/ModeSwitch";
+import { googleCalendarUrl } from "@/lib/calendar";
 
 const DIFF_BADGE: Record<string, { bg: string; color: string; label: string }> = {
   EASY: { bg: "#EAF3DE", color: "#27500A", label: "קל" },
@@ -39,6 +41,12 @@ interface Trip {
   images: string[];
   approvalNote: string | null;
   visibility?: string;
+  tripType?: string;
+}
+
+interface SelfGuidedTrip {
+  id: string; title: string; region: string; images: string[]; price: number; status: string;
+  purchaseCount: number; revenue: number; reviewCount: number;
 }
 
 interface Guide {
@@ -63,8 +71,22 @@ export default function GuideDashboard() {
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
-  const [tab, setTab] = useState<"trips" | "stats">("trips");
+  const [tab, setTab] = useState<"trips" | "selfguided" | "stats">("trips");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [selfGuided, setSelfGuided] = useState<SelfGuidedTrip[]>([]);
+  const [publishId, setPublishId] = useState<string | null>(null);
+
+  async function publish(tripId: string, visibility: "PUBLIC" | "PRIVATE") {
+    const res = await fetch(`/api/guide/trips/${tripId}/publish`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ visibility }),
+    });
+    if (res.ok) {
+      setTrips((prev) => prev.map((t) => t.id === tripId ? { ...t, status: "OPEN", visibility } : t));
+      setSelfGuided((prev) => prev.map((t) => t.id === tripId ? { ...t, status: "OPEN" } : t));
+      setPublishId(null);
+    }
+  }
 
   async function broadcast(tripId: string) {
     const message = window.prompt("הודעה לכל הנרשמים:");
@@ -101,15 +123,18 @@ export default function GuideDashboard() {
     const data = await res.json();
     if (data.trips) {
       const now = new Date();
-      const upcoming = data.trips.filter((t: Trip) => new Date(t.date) >= now);
-      const past = data.trips.filter((t: Trip) => new Date(t.date) < now);
+      const regular = data.trips.filter((t: Trip) => t.tripType !== "SELF_GUIDED");
+      const upcoming = regular.filter((t: Trip) => new Date(t.date) >= now);
+      const past = regular.filter((t: Trip) => new Date(t.date) < now);
       setTrips([...upcoming, ...past]);
       setGuide(data.guide);
     }
+    fetch("/api/guide/self-guided").then((r) => r.ok ? r.json() : []).then((d) => setSelfGuided(Array.isArray(d) ? d : [])).catch(() => {});
     setLoading(false);
   }, []);
 
   useEffect(() => { loadTrips(); }, [loadTrips]);
+  useEffect(() => { fetch("/api/me/mode", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode: "guide" }) }).catch(() => {}); }, []);
 
   async function handleDelete(id: string) {
     setDeletingId(id);
@@ -138,19 +163,20 @@ export default function GuideDashboard() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            <ModeSwitch current="guide" />
             <NotificationBell />
             <Link
-              href="/guide/trips/new"
-              className="bg-[#1A6B4A] text-white text-sm rounded-full px-4 py-2 font-medium hover:bg-[#155a3e] transition-colors"
+              href={tab === "selfguided" ? "/guide/trips/new?type=self_guided" : "/guide/trips/new"}
+              className="bg-[#1A6B4A] text-white text-sm rounded-full px-4 py-2 font-medium hover:bg-[#155a3e] transition-colors whitespace-nowrap"
             >
-              + טיול חדש
+              {tab === "selfguided" ? "+ טיול עצמאי" : "+ טיול חדש"}
             </Link>
           </div>
         </div>
 
         {/* Tabs */}
         <div className="bg-white rounded-xl overflow-hidden flex shadow-sm">
-          {([["trips", "הטיולים שלי"], ["stats", "סטטיסטיקות"]] as const).map(([k, label]) => (
+          {([["trips", "הטיולים שלי"], ["selfguided", "עצמאיים"], ["stats", "סטטיסטיקות"]] as const).map(([k, label]) => (
             <button key={k} type="button" onClick={() => setTab(k)}
               className={`flex-1 py-2.5 text-xs font-medium border-b-2 transition-colors ${
                 tab === k ? "border-[#1A6B4A] text-[#1A6B4A]" : "border-transparent text-gray-400"}`}>
@@ -161,6 +187,51 @@ export default function GuideDashboard() {
 
         {loading && (
           <div className="bg-white rounded-xl p-10 text-center text-gray-400 text-sm shadow-sm">טוען...</div>
+        )}
+
+        {/* Self-guided tab */}
+        {!loading && tab === "selfguided" && (
+          <div className="flex flex-col gap-3">
+            {selfGuided.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center shadow-sm text-gray-500 text-sm">עוד אין טיולים עצמאיים</div>
+            ) : selfGuided.map((t) => (
+              <div key={t.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex">
+                <div className="w-24 flex-shrink-0" style={{ minHeight: 96 }}>
+                  {t.images?.[0] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={t.images[0]} alt="" className="w-full h-full object-cover" />
+                  ) : <div className="w-full h-full" style={{ background: "linear-gradient(160deg,#3d6b35,#1a3d16)", minHeight: 96 }} />}
+                </div>
+                <div className="flex-1 p-3 min-w-0">
+                  <div className="text-sm font-medium text-gray-900 truncate">{t.title}</div>
+                  <div className="text-[11px] text-gray-400 mb-2">📍 {t.region} · ₪{t.price}</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[[t.purchaseCount, "רכישות"], [`₪${t.revenue.toLocaleString("he-IL")}`, "הכנסה"], [t.reviewCount, "ביקורות"]].map(([v, l], i) => (
+                      <div key={i} className="bg-gray-50 rounded-lg py-1.5 text-center">
+                        <div className="text-sm font-semibold text-gray-900">{v}</div>
+                        <div className="text-[10px] text-gray-400">{l}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <Link href={`/guide/trips/${t.id}/edit`} className="flex-1 text-center text-[11px] text-gray-600 border border-gray-200 rounded-lg py-1.5 hover:bg-gray-50">עריכה</Link>
+                    <Link href={`/trips/${t.id}`} className="flex-1 text-center text-[11px] text-[#1A6B4A] border border-[#1A6B4A]/25 rounded-lg py-1.5 hover:bg-[#D6EDE3]">תצוגה</Link>
+                  </div>
+                  {(t.status === "DRAFT" || t.status === "PENDING_REVIEW") && (
+                    publishId === t.id ? (
+                      <div className="flex gap-2 mt-2">
+                        <button type="button" onClick={() => publish(t.id, "PUBLIC")} className="flex-1 py-1.5 text-[11px] font-semibold rounded-lg bg-[#1A6B4A] text-white">🌍 ציבורי</button>
+                        <button type="button" onClick={() => publish(t.id, "PRIVATE")} className="flex-1 py-1.5 text-[11px] font-semibold rounded-lg border border-[#185FA5] text-[#185FA5]">🔒 פרטי</button>
+                        <button type="button" onClick={() => setPublishId(null)} className="px-2 text-[11px] text-gray-400">✕</button>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={() => setPublishId(t.id)} className="w-full mt-2 py-1.5 text-[11px] font-semibold rounded-lg border-2 border-dashed border-[#1A6B4A] text-[#1A6B4A] hover:bg-[#D6EDE3]">העבר לפרסום ↑</button>
+                    )
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         )}
 
         {/* Statistics tab */}
@@ -322,29 +393,22 @@ export default function GuideDashboard() {
                     <span className="text-xs text-gray-400">{trip.spotsBooked}/{trip.maxSpots} מקומות</span>
                   </div>
 
-                  {/* Submit for review — shown only for DRAFT or REJECTED */}
-                  {(trip.status === "DRAFT" || trip.status === "REJECTED") && (
-                    <button
-                      type="button"
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        await fetch(`/api/guide/trips/${trip.id}/submit`, { method: "POST" });
-                        setTrips((prev) => prev.map((t) => t.id === trip.id ? { ...t, status: "PENDING_REVIEW" } : t));
-                      }}
-                      className="w-full mt-2 py-1.5 text-xs font-semibold rounded-full border-2 border-dashed border-[#1A6B4A] text-[#1A6B4A] hover:bg-[#D6EDE3] transition-colors"
-                    >
-                      {trip.status === "REJECTED" ? "שלח לאישור מחדש ↑" : "שלח לאישור ↑"}
-                    </button>
-                  )}
-                  {trip.status === "PENDING_REVIEW" && (
-                    <div className="w-full mt-2 py-1.5 text-xs text-center text-amber-700 bg-amber-50 rounded-full border border-amber-200">
-                      ⏳ ממתין לאישור מנהל
-                    </div>
-                  )}
-                  {trip.status === "REJECTED" && trip.approvalNote && (
-                    <div className="mt-1 text-xs text-red-600 bg-red-50 rounded-lg px-2 py-1">
-                      סיבת דחייה: {trip.approvalNote}
-                    </div>
+                  {/* Move a draft to published — choose Public or Private */}
+                  {(trip.status === "DRAFT" || trip.status === "PENDING_REVIEW" || trip.status === "REJECTED") && (
+                    publishId === trip.id ? (
+                      <div className="mt-2 flex gap-2" onClick={(e) => e.stopPropagation()}>
+                        <button type="button" onClick={() => publish(trip.id, "PUBLIC")}
+                          className="flex-1 py-1.5 text-xs font-semibold rounded-full bg-[#1A6B4A] text-white hover:bg-[#155a3e]">🌍 ציבורי</button>
+                        <button type="button" onClick={() => publish(trip.id, "PRIVATE")}
+                          className="flex-1 py-1.5 text-xs font-semibold rounded-full border border-[#185FA5] text-[#185FA5] hover:bg-[#EEF5FC]">🔒 פרטי</button>
+                        <button type="button" onClick={() => setPublishId(null)} className="px-2 text-xs text-gray-400">✕</button>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setPublishId(trip.id); }}
+                        className="w-full mt-2 py-1.5 text-xs font-semibold rounded-full border-2 border-dashed border-[#1A6B4A] text-[#1A6B4A] hover:bg-[#D6EDE3] transition-colors">
+                        העבר לפרסום ↑
+                      </button>
+                    )
                   )}
 
                   {/* Communication links */}
@@ -380,6 +444,11 @@ export default function GuideDashboard() {
                         className="flex-1 text-center text-[11px] text-[#7A5010] border border-[#E8A020]/40 rounded-lg py-1.5 hover:bg-[#FDF6E8] transition-colors">
                         ⏸ דחה
                       </button>
+                      <a href={googleCalendarUrl({ title: trip.title, dateISO: trip.date, startTime: trip.startTime, location: trip.region })}
+                        target="_blank" rel="noreferrer"
+                        className="flex-1 text-center text-[11px] text-[#185FA5] border border-[#185FA5]/30 rounded-lg py-1.5 hover:bg-[#EEF5FC] transition-colors">
+                        📅 ליומן
+                      </a>
                       {trip.visibility === "PRIVATE" && (
                         <button type="button" onClick={() => copyLink(trip.id)}
                           className="flex-1 text-center text-[11px] text-[#185FA5] border border-[#185FA5]/25 rounded-lg py-1.5 hover:bg-[#EEF5FC] transition-colors">

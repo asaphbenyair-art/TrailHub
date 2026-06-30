@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { WizardData, RegFieldData } from "../types";
 import { TRIP_TAGS } from "@/lib/tripTags";
+import UserPicker from "@/components/UserPicker";
 
 const DIFFICULTIES = [
   { value: "EASY", label: "קל", cls: "border-[#1A6B4A] bg-[#D6EDE3] text-[#0F5038]" },
@@ -19,9 +20,10 @@ const EQUIPMENT_PRESETS = [
 interface Props {
   data: WizardData;
   onChange: (field: keyof WizardData, value: string) => void;
+  selfGuided?: boolean;
 }
 
-export default function Step3({ data, onChange }: Props) {
+export default function Step3({ data, onChange, selfGuided = false }: Props) {
   const [showMoreEq, setShowMoreEq] = useState(false);
   const [customInput, setCustomInput] = useState("");
   const customRef = useRef<HTMLInputElement>(null);
@@ -85,6 +87,24 @@ export default function Step3({ data, onChange }: Props) {
         </div>
       </div>
 
+      {/* Self-guided: single fixed price + access window (no participants/team/cancellation) */}
+      {selfGuided && (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-500">מחיר לרכישה (₪)</label>
+            <input type="number" min="0" value={data.price} onChange={(e) => onChange("price", e.target.value)}
+              placeholder="0 = חינם" className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" dir="ltr" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-500">חלון גישה (ימים)</label>
+            <input type="number" min="1" value={data.accessWindowDays} onChange={(e) => onChange("accessWindowDays", e.target.value)}
+              placeholder="30" className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" dir="ltr" />
+          </div>
+          <p className="col-span-2 text-[11px] text-gray-400">מחיר אחד קבוע לכל הרכישה — תשלום מיידי וסופי, ללא מדיניות ביטולים.</p>
+        </div>
+      )}
+
+      {!selfGuided && (
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
           <label className="text-xs font-medium text-gray-500">גיל מינימום</label>
@@ -111,7 +131,9 @@ export default function Step3({ data, onChange }: Props) {
           />
         </div>
       </div>
+      )}
 
+      {!selfGuided && (
       <div className="flex flex-col gap-1">
         <label className="text-xs font-medium text-gray-500">רמה גופנית נדרשת</label>
         <textarea
@@ -122,7 +144,9 @@ export default function Step3({ data, onChange }: Props) {
           className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] resize-none"
         />
       </div>
+      )}
 
+      {!selfGuided && (
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
           <label className="text-xs font-medium text-gray-500">מקסימום משתתפים</label>
@@ -149,6 +173,7 @@ export default function Step3({ data, onChange }: Props) {
           />
         </div>
       </div>
+      )}
 
       <div className="flex flex-col gap-2">
         <label className="text-xs font-medium text-gray-500">ציוד נדרש</label>
@@ -220,6 +245,23 @@ export default function Step3({ data, onChange }: Props) {
         </div>
       </div>
 
+      {/* Multi-person registration mode (not for self-guided) */}
+      {!selfGuided && (
+      <div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
+        <label className="text-xs font-medium text-gray-500">הרשמת מספר משתתפים</label>
+        <div className="grid grid-cols-3 gap-2">
+          {([["", "אדם בודד"], ["simple", "כמות בלבד"], ["detailed", "פרטים לכל אחד"]] as const).map(([val, lbl]) => (
+            <button key={val} type="button" onClick={() => onChange("multiPersonMode" as keyof WizardData, val as unknown as string)}
+              className={`py-2 rounded-lg border text-xs transition-colors ${
+                data.multiPersonMode === val ? "border-[#1A6B4A] bg-[#D6EDE3] text-[#0F5038]" : "border-gray-200 text-gray-500"}`}>
+              {lbl}
+            </button>
+          ))}
+        </div>
+        {data.multiPersonMode === "detailed" && <p className="text-[11px] text-gray-400">הנרשם ימלא שם ושדות דינמיים לכל משתתף</p>}
+      </div>
+      )}
+
       {/* Attribute tags */}
       <div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
         <label className="text-xs font-medium text-gray-500">מאפייני הטיול (לסינון בחיפוש)</label>
@@ -242,7 +284,8 @@ export default function Step3({ data, onChange }: Props) {
         </div>
       </div>
 
-      {/* Dynamic registration fields */}
+      {/* Dynamic registration fields (not for self-guided) */}
+      {!selfGuided && (
       <div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
         <div className="flex items-center justify-between">
           <label className="text-xs font-medium text-gray-500">שדות הרשמה מותאמים</label>
@@ -295,20 +338,17 @@ export default function Step3({ data, onChange }: Props) {
           </div>
         ))}
       </div>
+      )}
 
-      {/* Shared management: second guide + co-managers */}
+      {/* Shared management: second guide + co-managers (not for self-guided) */}
+      {!selfGuided && (
       <div className="flex flex-col gap-3 border-t border-gray-100 pt-4">
         <label className="text-xs font-medium text-gray-500">צוות הטיול (ניהול משותף)</label>
         <div className="flex flex-col gap-1">
-          <label className="text-[11px] text-gray-400">מדריך שני (אופציונלי) — אימייל</label>
-          <input
-            type="email"
-            value={data.secondGuideEmail}
-            onChange={(e) => onChange("secondGuideEmail", e.target.value)}
-            placeholder="guide2@example.com"
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
-            dir="ltr"
-          />
+          <label className="text-[11px] text-gray-400">מדריך שני (אופציונלי) — חפש משתמש רשום</label>
+          <UserPicker guidesOnly max={1} placeholder="חפש מדריך לפי שם או אימייל..."
+            selected={data.secondGuideEmail ? [data.secondGuideEmail] : []}
+            onChange={(emails) => onChange("secondGuideEmail", emails[0] ?? "")} />
           {data.secondGuideEmail && (
             <div className="flex gap-2 mt-1">
               {([["SECONDARY", "משני"], ["EQUAL", "שווה (ללא הבחנה)"]] as const).map(([val, label]) => (
@@ -322,18 +362,14 @@ export default function Step3({ data, onChange }: Props) {
           )}
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-[11px] text-gray-400">מנהלי-משנה (גישה מלאה) — אימיילים מופרדים בפסיק</label>
-          <input
-            type="text"
-            value={(data.managerEmails || []).join(", ")}
-            onChange={(e) => onChange("managerEmails" as keyof WizardData, e.target.value.split(",").map((s) => s.trim()).filter(Boolean) as unknown as string)}
-            placeholder="manager@example.com, ..."
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
-            dir="ltr"
-          />
+          <label className="text-[11px] text-gray-400">מנהלי-משנה (גישה מלאה, עד 3) — חפש משתמשים רשומים</label>
+          <UserPicker max={3} placeholder="חפש מנהל-משנה..."
+            selected={data.managerEmails || []}
+            onChange={(emails) => onChange("managerEmails" as keyof WizardData, emails as unknown as string)} />
           <p className="text-[11px] text-gray-400">מנהל-משנה רואה ויכול לעשות הכל כמו המדריך, אך אינו מוצג כמדריך בטיול.</p>
         </div>
       </div>
+      )}
     </div>
   );
 }

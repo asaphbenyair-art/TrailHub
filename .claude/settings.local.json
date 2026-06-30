@@ -49,7 +49,11 @@
       "Bash(echo \"api: $\\(curl -s -m 10 -o /dev/null -w '%{http_code}' http://localhost:3000/api/guides/cmqtwmkmw000115xzhg2rfxnw\\)\")",
       "Bash(echo \"/guides/[id] page: $\\(curl -s -m 10 -o /dev/null -w '%{http_code}' http://localhost:3000/guides/cmqtwmkmw000115xzhg2rfxnw\\)\")",
       "Bash(echo \"/guide/dashboard \\(should still redirect 307\\): $\\(curl -s -m 10 -o /dev/null -w '%{http_code}' http://localhost:3000/guide/dashboard\\)\")",
-      "Bash(echo \"/trips: $\\(curl -s -m 10 -o /dev/null -w '%{http_code}' http://localhost:3000/trips\\)\")"
+      "Bash(echo \"/trips: $\\(curl -s -m 10 -o /dev/null -w '%{http_code}' http://localhost:3000/trips\\)\")",
+      "Bash(gh pr create --base main --head feat/self-guided-admin-and-audit-fixes --title 'Self-guided trips, admin panel, attribute tags, comp codes, postpone + v2 audit fixes' --body ' *)",
+      "Read(//opt/homebrew/bin/**)",
+      "Bash(command -v gh)",
+      "Bash(env)"
     ]
   }
 }

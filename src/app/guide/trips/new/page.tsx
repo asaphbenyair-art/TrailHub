@@ -1,29 +1,31 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Step1 from "./steps/Step1";
 import Step2 from "./steps/Step2";
 import Step3 from "./steps/Step3";
 import Step4 from "./steps/Step4";
 import Step5 from "./steps/Step5";
-import { WizardData, DEFAULT_WIZARD_DATA, TripDayData, PriceTier, CouponData, WaypointData } from "./types";
+import { WizardData, DEFAULT_WIZARD_DATA, TripDayData, PriceTier, CouponData, WaypointData, SourceMaterial } from "./types";
 
-const STEPS = [
-  { label: "פרטים" },
-  { label: "מסלול" },
-  { label: "פרמטרים" },
-  { label: "תשלום" },
-  { label: "פרסום" },
+// Step sets differ by trip type. Self-guided skips the payment/cancellation step
+// (single fixed price set in Parameters) — see QA items 8-11, 14-15.
+const REGULAR_STEPS = [
+  { label: "פרטים" }, { label: "מסלול" }, { label: "פרמטרים" }, { label: "תשלום" }, { label: "פרסום" },
+];
+const SELF_GUIDED_STEPS = [
+  { label: "פרטים" }, { label: "מסלול" }, { label: "פרמטרים" }, { label: "פרסום" },
 ];
 
-function validateStep(step: number, data: WizardData): string | null {
+function validateStep(step: number, data: WizardData, isSelfGuided: boolean): string | null {
   if (step === 1) {
     if (!data.title.trim()) return "נא להזין שם טיול";
-    if (data.tripType !== "SELF_GUIDED" && !data.date) return "נא לבחור תאריך";
+    if (!isSelfGuided && !data.date) return "נא לבחור תאריך";
     if (!data.region) return "נא לבחור איזור";
   }
-  if (step === 4) {
+  // Price lives in Parameters (step 3) for self-guided, in Payment (step 4) otherwise
+  if ((isSelfGuided && step === 3) || (!isSelfGuided && step === 4)) {
     if (!data.price && data.price !== "0") return "נא להזין מחיר (0 לחינם)";
   }
   return null;
@@ -31,20 +33,25 @@ function validateStep(step: number, data: WizardData): string | null {
 
 export default function NewTripWizard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isSelfGuided = searchParams.get("type") === "self_guided";
   const [step, setStep] = useState(1);
-  const [data, setData] = useState<WizardData>(DEFAULT_WIZARD_DATA);
+  const [data, setData] = useState<WizardData>(() =>
+    isSelfGuided ? { ...DEFAULT_WIZARD_DATA, tripType: "SELF_GUIDED" } : DEFAULT_WIZARD_DATA
+  );
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const STEPS = isSelfGuided ? SELF_GUIDED_STEPS : REGULAR_STEPS;
 
-  function onChange(field: keyof WizardData, value: string | string[] | TripDayData[] | PriceTier[] | CouponData[] | WaypointData[]) {
+  function onChange(field: keyof WizardData, value: string | string[] | TripDayData[] | PriceTier[] | CouponData[] | WaypointData[] | SourceMaterial[]) {
     setData((prev) => ({ ...prev, [field]: value }));
   }
 
   function goNext() {
-    const err = validateStep(step, data);
+    const err = validateStep(step, data, isSelfGuided);
     if (err) { setError(err); return; }
     setError("");
-    setStep((s) => Math.min(s + 1, 5));
+    setStep((s) => Math.min(s + 1, STEPS.length));
   }
 
   function goPrev() {
@@ -103,6 +110,9 @@ export default function NewTripWizard() {
       unlimitedCapacity: isSelfGuided,
       accessWindowDays: isSelfGuided ? (data.accessWindowDays || "30") : null,
       attributeTags: data.attributeTags || [],
+      sourceMaterials: data.sourceMaterials.length > 0 ? data.sourceMaterials : null,
+      sourceMaterialsVisibility: data.sourceMaterialsVisibility || "preview",
+      multiPersonMode: data.multiPersonMode || null,
       endDate: data.endDate ? new Date(data.endDate).toISOString() : null,
       startTime: data.startTime,
       meetingPoint: data.meetingPoint,
@@ -203,11 +213,12 @@ export default function NewTripWizard() {
           </div>
 
           {/* Step content */}
-          {step === 1 && <Step1 data={data} onChange={onChange} />}
+          {step === 1 && <Step1 data={data} onChange={onChange} selfGuided={isSelfGuided} />}
           {step === 2 && <Step2 data={data} onChange={onChange} />}
-          {step === 3 && <Step3 data={data} onChange={onChange} />}
-          {step === 4 && <Step4 data={data} onChange={onChange} />}
-          {step === 5 && <Step5 data={data} onChange={onChange} />}
+          {step === 3 && <Step3 data={data} onChange={onChange} selfGuided={isSelfGuided} />}
+          {!isSelfGuided && step === 4 && <Step4 data={data} onChange={onChange} />}
+          {!isSelfGuided && step === 5 && <Step5 data={data} onChange={onChange} />}
+          {isSelfGuided && step === 4 && <Step5 data={data} onChange={onChange} />}
 
           {/* Footer */}
           <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-gray-50">
@@ -225,10 +236,10 @@ export default function NewTripWizard() {
               {error && (
                 <span className="text-xs text-red-500">{error}</span>
               )}
-              <span className="text-xs text-gray-400">שלב {step} מתוך 5</span>
+              <span className="text-xs text-gray-400">שלב {step} מתוך {STEPS.length}</span>
             </div>
 
-            {step < 5 ? (
+            {step < STEPS.length ? (
               <button
                 type="button"
                 onClick={goNext}
