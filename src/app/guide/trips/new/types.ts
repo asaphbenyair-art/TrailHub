@@ -6,6 +6,10 @@ export interface TripDayData {
   durationHours: string;
   startPoint: string;
   endPoint: string;
+  date: string;
+  startTime: string;
+  isRestDay: boolean;
+  equipment: string;
 }
 
 export interface PriceTier {
@@ -20,6 +24,24 @@ export interface CouponData {
   expiresAt: string;
 }
 
+export interface RegFieldData {
+  id: string;
+  label: string;
+  type: "text" | "boolean" | "select";
+  required: boolean;
+  options: string[]; // for type === "select"
+}
+
+export interface WaypointData {
+  lat: number;
+  lng: number;
+  name: string;
+  description: string;
+  navInstructions?: string; // turn-by-turn (self-guided)
+  guidance?: string;        // guidance material text (self-guided, read-aloud)
+  safety?: string;          // segment safety warning (self-guided)
+}
+
 export interface WizardData {
   // Step 1
   title: string;
@@ -31,7 +53,10 @@ export interface WizardData {
   meetingPoint: string;
   mainImagePreview: string;
   extraImagePreviews: string[];
-  tripType: "DAY_HIKE" | "EXPEDITION" | "MULTI_SITE";
+  tripType: "DAY_HIKE" | "EXPEDITION" | "MULTI_SITE" | "SELF_GUIDED";
+  registrationMode: "FULL_ONLY" | "INDIVIDUAL_DAYS" | "FLEXIBLE";
+  accessWindowDays: string; // self-guided: how long buyer has access
+  attributeTags: string[];
   tripDays: TripDayData[];
 
   // Step 2
@@ -39,6 +64,8 @@ export interface WizardData {
   distanceKm: string;
   durationHours: string;
   waypoints: string;
+  routeGpx: string;
+  waypointsJson: WaypointData[];
 
   // Step 3
   difficulty: string;
@@ -49,9 +76,11 @@ export interface WizardData {
   minSpots: string;
   equipmentList: string[];
   whatToBring: string;
+  registrationFields: RegFieldData[];
 
   // Step 4
   price: string;
+  individualDayPrice: string;
   priceTiers: PriceTier[];
   coupons: CouponData[];
   cancelTier1Hours: string;
@@ -62,6 +91,12 @@ export interface WizardData {
 
   // Step 5
   status: string;
+  visibility: "PUBLIC" | "PRIVATE";
+
+  // Team (shared management)
+  secondGuideEmail: string;
+  secondGuideRole: "SECONDARY" | "EQUAL";
+  managerEmails: string[];
 }
 
 export const DEFAULT_WIZARD_DATA: WizardData = {
@@ -75,11 +110,16 @@ export const DEFAULT_WIZARD_DATA: WizardData = {
   mainImagePreview: "",
   extraImagePreviews: [],
   tripType: "DAY_HIKE",
+  registrationMode: "FULL_ONLY",
+  accessWindowDays: "30",
+  attributeTags: [],
   tripDays: [],
   routeType: "one-way",
   distanceKm: "",
   durationHours: "",
   waypoints: "",
+  routeGpx: "",
+  waypointsJson: [],
   difficulty: "MEDIUM",
   ageMin: "",
   ageMax: "",
@@ -88,7 +128,9 @@ export const DEFAULT_WIZARD_DATA: WizardData = {
   minSpots: "",
   equipmentList: [],
   whatToBring: "",
+  registrationFields: [],
   price: "",
+  individualDayPrice: "",
   priceTiers: [],
   coupons: [],
   cancelTier1Hours: "72",
@@ -97,4 +139,8 @@ export const DEFAULT_WIZARD_DATA: WizardData = {
   cancelTier2Refund: "50%",
   cancelTier3Refund: "0%",
   status: "DRAFT",
+  visibility: "PUBLIC",
+  secondGuideEmail: "",
+  secondGuideRole: "SECONDARY",
+  managerEmails: [],
 };

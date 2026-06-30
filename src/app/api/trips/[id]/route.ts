@@ -10,6 +10,8 @@ export async function GET(
     where: { id },
     include: {
       guide: { include: { user: { select: { name: true, image: true, email: true } } } },
+      guides: { include: { guide: { include: { user: { select: { name: true, image: true, email: true } } } } } },
+      managers: { include: { user: { select: { name: true, email: true } } } },
       reviews: { include: { user: { select: { name: true } } }, orderBy: { createdAt: "desc" } },
       days: { orderBy: { dayNumber: "asc" } },
     },

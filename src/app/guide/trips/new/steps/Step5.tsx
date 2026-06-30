@@ -3,10 +3,10 @@
 import { WizardData } from "../types";
 
 const PUBLISH_OPTIONS = [
-  { value: "DRAFT", icon: "📄", label: "טיוטה", desc: "שמור, לא גלוי" },
-  { value: "PREVIEW", icon: "🔗", label: "תצוגה מקדימה", desc: "גלוי דרך לינק" },
-  { value: "OPEN", icon: "🌍", label: "פרסם", desc: "גלוי בחיפוש" },
-];
+  { key: "DRAFT",   status: "DRAFT", visibility: "PUBLIC",  icon: "📄", label: "טיוטה", desc: "שמור, גלוי רק לך" },
+  { key: "PUBLIC",  status: "OPEN",  visibility: "PUBLIC",  icon: "🌍", label: "פרסום ציבורי", desc: "גלוי בחיפוש" },
+  { key: "PRIVATE", status: "OPEN",  visibility: "PRIVATE", icon: "🔗", label: "פרסום פרטי", desc: "רק דרך לינק ישיר" },
+] as const;
 
 const DIFFICULTY_LABELS: Record<string, string> = {
   EASY: "קל", MEDIUM: "בינוני", HARD: "קשה", EXTREME: "קיצוני",
@@ -66,24 +66,27 @@ export default function Step5({ data, onChange }: Props) {
       <div className="flex flex-col gap-2">
         <label className="text-xs font-medium text-gray-500">בחר מצב פרסום</label>
         <div className="flex gap-2">
-          {PUBLISH_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => onChange("status", opt.value)}
-              className={`flex-1 py-3 px-2 rounded-lg border text-center transition-colors ${
-                data.status === opt.value
-                  ? "border-[#1A6B4A] bg-[#D6EDE3]"
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
-            >
-              <span className="text-xl block mb-1">{opt.icon}</span>
-              <div className={`text-xs font-medium ${data.status === opt.value ? "text-[#0F5038]" : "text-gray-700"}`}>
-                {opt.label}
-              </div>
-              <div className="text-xs text-gray-400 mt-0.5">{opt.desc}</div>
-            </button>
-          ))}
+          {PUBLISH_OPTIONS.map((opt) => {
+            const selected = opt.key === "DRAFT"
+              ? data.status === "DRAFT"
+              : data.status !== "DRAFT" && data.visibility === opt.visibility;
+            return (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => { onChange("status", opt.status); onChange("visibility", opt.visibility); }}
+                className={`flex-1 py-3 px-2 rounded-lg border text-center transition-colors ${
+                  selected ? "border-[#1A6B4A] bg-[#D6EDE3]" : "border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <span className="text-xl block mb-1">{opt.icon}</span>
+                <div className={`text-xs font-medium ${selected ? "text-[#0F5038]" : "text-gray-700"}`}>
+                  {opt.label}
+                </div>
+                <div className="text-xs text-gray-400 mt-0.5">{opt.desc}</div>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -5,6 +5,15 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 const DIFF_LABEL: Record<string, string> = { EASY: "קל", MEDIUM: "בינוני", HARD: "קשה", EXTREME: "קיצוני" };
+const SERVICE_FEE = 9; // flat platform service fee (₪)
+
+interface RegField {
+  id: string;
+  label: string;
+  type: "text" | "boolean" | "select";
+  required: boolean;
+  options: string[];
+}
 
 interface Trip {
   id: string;
@@ -19,6 +28,7 @@ interface Trip {
   spotsBooked: number;
   images: string[];
   cancellationPolicy: string | null;
+  registrationFields: RegField[] | null;
   guide: { user: { name: string | null } };
 }
 
@@ -58,22 +68,39 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: () => void }
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [policyOpen, setPolicyOpen] = useState(false);
+  const fields = trip.registrationFields ?? [];
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [signed, setSigned] = useState(false);
+  const [alertHours, setAlertHours] = useState("24");
+  const [compCode, setCompCode] = useState("");
 
   const policy = trip.cancellationPolicy
     ? trip.cancellationPolicy.split("\n").filter(Boolean)
     : ["עד 72 שעות לפני — החזר 100%", "עד 24 שעות לפני — החזר 50%", "פחות מ-24 שעות — ללא החזר"];
 
-  const serviceFee = Math.round(trip.price * 0.075);
+  const serviceFee = SERVICE_FEE;
   const total = trip.price + serviceFee;
 
+  function setAnswer(id: string, val: string) {
+    setAnswers((a) => ({ ...a, [id]: val }));
+  }
+
   async function confirm() {
+    // Validate required dynamic fields
+    for (const f of fields) {
+      if (f.required && !(answers[f.id] ?? "").trim()) {
+        setError(`נא למלא: ${f.label}`);
+        return;
+      }
+    }
+    if (!signed) { setError("נא לאשר את מדיניות הביטולים"); return; }
     setSaving(true);
     setError("");
     try {
       const res = await fetch("/api/registrations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tripId: trip.id, type: "REGISTER" }),
+        body: JSON.stringify({ tripId: trip.id, type: "REGISTER", fieldAnswers: answers, signedPolicy: signed, alertThresholdHours: Number(alertHours) || 24, compCode: compCode.trim() || undefined }),
       });
       if (!res.ok) {
         const d = await res.json();
@@ -90,8 +117,53 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: () => void }
 
   return (
     <>
-      {/* Payment form */}
+      {/* Dynamic registration fields */}
+      {fields.length > 0 && (
+        <div className="p-4 border-b border-gray-100 flex flex-col gap-3">
+          <div className="text-sm font-medium text-gray-900">שאלות לפני הרשמה</div>
+          {fields.map((f) => (
+            <div key={f.id} className="flex flex-col gap-1">
+              <label className="text-xs text-gray-500">
+                {f.label}{f.required && <span className="text-red-500"> *</span>}
+              </label>
+              {f.type === "text" && (
+                <input type="text" value={answers[f.id] ?? ""} onChange={(e) => setAnswer(f.id, e.target.value)}
+                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+              )}
+              {f.type === "boolean" && (
+                <div className="flex gap-2">
+                  {[["yes", "כן"], ["no", "לא"]].map(([val, label]) => (
+                    <button key={val} type="button" onClick={() => setAnswer(f.id, val)}
+                      className={`flex-1 py-2 rounded-lg border text-xs transition-colors ${
+                        answers[f.id] === val ? "border-[#1A6B4A] bg-[#D6EDE3] text-[#0F5038]" : "border-gray-200 text-gray-600"}`}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {f.type === "select" && (
+                <select value={answers[f.id] ?? ""} onChange={(e) => setAnswer(f.id, e.target.value)}
+                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] bg-white">
+                  <option value="">בחר...</option>
+                  {f.options.map((o) => <option key={o} value={o}>{o}</option>)}
+                </select>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Comp code (free volunteer invite) */}
       <div className="p-4 border-b border-gray-100">
+        <label className="text-xs text-gray-500">קוד מתנדב (אופציונלי)</label>
+        <input type="text" value={compCode} onChange={(e) => setCompCode(e.target.value)}
+          placeholder="COMP-XXXXXX" dir="ltr"
+          className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+        {compCode.trim() && <p className="text-[11px] text-[#0F5038] mt-1">עם קוד מתנדב ההרשמה ללא תשלום</p>}
+      </div>
+
+      {/* Payment form */}
+      <div className={`p-4 border-b border-gray-100 ${compCode.trim() ? "hidden" : ""}`}>
         <div className="text-sm font-medium text-gray-900 mb-3">פרטי כרטיס אשראי</div>
         <CardForm note="הכרטיס יאושר עכשיו אך לא יחויב — החיוב יתבצע רק לאחר סגירת חלון הביטול." />
       </div>
@@ -136,6 +208,29 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: () => void }
         )}
       </div>
 
+      {/* Cancellation-window threshold alert */}
+      <div className="p-4 border-b border-gray-100">
+        <div className="text-sm font-medium text-gray-900 mb-1">התראת סף ביטול</div>
+        <div className="text-xs text-gray-500 mb-2">קבל התראה לפני כניסה לחלון ללא החזר</div>
+        <div className="flex items-center gap-2 text-sm text-gray-700">
+          שלח לי התראה
+          <input type="number" min="1" value={alertHours} onChange={(e) => setAlertHours(e.target.value)}
+            className="w-16 border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:border-[#1A6B4A]" dir="ltr" />
+          שעות לפני
+        </div>
+      </div>
+
+      {/* Sign cancellation policy */}
+      <div className="px-4 pt-3">
+        <button type="button" onClick={() => setSigned((v) => !v)} className="flex items-start gap-2.5 text-right">
+          <div className={`w-5 h-5 rounded flex items-center justify-center border-[1.5px] shrink-0 mt-0.5 transition-colors ${
+            signed ? "bg-[#1A6B4A] border-[#1A6B4A] text-white text-xs" : "border-gray-300"}`}>
+            {signed && "✓"}
+          </div>
+          <span className="text-xs text-gray-600 leading-relaxed">קראתי ואני מאשר/ת את מדיניות הביטולים של הטיול</span>
+        </button>
+      </div>
+
       {error && <div className="px-4 pt-3 text-xs text-red-500">{error}</div>}
 
       <div className="p-4">
@@ -151,7 +246,7 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: () => void }
 // ── Success screen ─────────────────────────────────────────────────────────────
 function SuccessScreen({ trip }: { trip: Trip }) {
   const router = useRouter();
-  const total = trip.price + Math.round(trip.price * 0.075);
+  const total = trip.price + SERVICE_FEE;
   return (
     <div className="p-6 text-center">
       <div className="w-14 h-14 rounded-full bg-[#D6EDE3] flex items-center justify-center mx-auto mb-4 text-2xl">✓</div>
@@ -163,6 +258,7 @@ function SuccessScreen({ trip }: { trip: Trip }) {
           ["תאריך", `${formatDateFull(trip.date)} · ${trip.startTime}`],
           ["מדריך", trip.guide?.user?.name || "מדריך"],
           ["סכום שאושר", `₪${total}`],
+          ["חיוב בפועל", `${new Date(new Date(trip.date).getTime() - 24 * 3600 * 1000).toLocaleDateString("he-IL", { day: "numeric", month: "short" })} · אם לא בוטל`],
         ].map(([label, val]) => (
           <div key={label} className="flex justify-between text-sm py-1">
             <span className="text-gray-500">{label}</span>
@@ -217,6 +313,7 @@ function InterestFlow({ trip }: { trip: Trip }) {
   const [conditions, setConditions] = useState<string[]>([""]);
   const [autoRegister, setAutoRegister] = useState(true);
   const [notifyChanges, setNotifyChanges] = useState(true);
+  const [spotThreshold, setSpotThreshold] = useState("");
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -225,12 +322,17 @@ function InterestFlow({ trip }: { trip: Trip }) {
     setSaving(true);
     const notes = filled.length > 0
       ? `תנאי: ${filled.join(" וגם ")} | ${autoRegister ? "רשום אוטומטית" : "שלח התראה"}`
-      : `מתעניין${autoRegister ? " · רשום אוטומטית" : ""}`;
+      : `מתעניין${spotThreshold ? ` · התראה כשנותרו ${spotThreshold} מקומות` : ""}`;
     try {
       await fetch("/api/registrations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tripId: trip.id, type: "INTEREST", notes }),
+        body: JSON.stringify({
+          tripId: trip.id, type: "INTEREST", notes,
+          conditions: filled,
+          autoRegister: filled.length > 0 ? autoRegister : false,
+          interestThreshold: spotThreshold ? Number(spotThreshold) : undefined,
+        }),
       });
       setDone(true);
     } finally { setSaving(false); }
@@ -252,8 +354,20 @@ function InterestFlow({ trip }: { trip: Trip }) {
 
   return (
     <>
+      {/* Simple interest — notify when fewer than X spots remain */}
       <div className="p-4 border-b border-gray-100">
-        <div className="text-sm font-medium text-gray-900 mb-1">הגדר תנאים להרשמה</div>
+        <div className="text-sm font-medium text-gray-900 mb-1">עניין פשוט</div>
+        <div className="flex items-center gap-2 text-sm text-gray-700">
+          🔔 שלח לי התראה כשנותרו
+          <input type="number" min="1" value={spotThreshold} onChange={(e) => setSpotThreshold(e.target.value)}
+            placeholder="5" className="w-16 border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:border-[#1A6B4A]" dir="ltr" />
+          מקומות
+        </div>
+        <div className="text-[11px] text-gray-400 mt-1">או הגדר תנאים מתקדמים למטה</div>
+      </div>
+
+      <div className="p-4 border-b border-gray-100">
+        <div className="text-sm font-medium text-gray-900 mb-1">עניין מותנה</div>
         <div className="text-xs text-gray-500 mb-3">אירשם לטיול רק כש<strong>כל</strong> התנאים הבאים מתקיימים:</div>
         <div className="flex flex-col gap-2 mb-3">
           {conditions.map((cond, i) => (
@@ -383,7 +497,7 @@ function WaitlistFlow({ trip }: { trip: Trip }) {
             <div className="text-xs text-gray-500 leading-relaxed">כשמתפנה מקום — נרשם ומחויב מיד. מובטח מקום.</div>
             {autoJoin && (
               <div className="mt-2 bg-[#FADBD8] rounded-lg px-2 py-1.5 text-xs text-[#791F1F]">
-                ⚠️ הכרטיס יחויב ב-₪{trip.price + Math.round(trip.price * 0.075)} ללא אפשרות החזר
+                ⚠️ הכרטיס יחויב ב-₪{trip.price + SERVICE_FEE} ללא אפשרות החזר
               </div>
             )}
           </button>
@@ -400,7 +514,7 @@ function WaitlistFlow({ trip }: { trip: Trip }) {
       {autoJoin && (
         <div className="p-4 border-b border-gray-100">
           <div className="text-sm font-medium text-gray-900 mb-3">פרטי כרטיס לחיוב אוטומטי</div>
-          <CardForm note={`הכרטיס יאושר עכשיו ויחויב אוטומטית ב-₪${trip.price + Math.round(trip.price * 0.075)} כשיתפנה מקום — ללא אפשרות החזר.`} />
+          <CardForm note={`הכרטיס יאושר עכשיו ויחויב אוטומטית ב-₪${trip.price + SERVICE_FEE} כשיתפנה מקום — ללא אפשרות החזר.`} />
         </div>
       )}
 

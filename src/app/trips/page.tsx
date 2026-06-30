@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import NotificationBell from "@/components/NotificationBell";
 import CalendarView from "@/components/CalendarView";
+import { TRIP_TAGS } from "@/lib/tripTags";
 
 const REGIONS = ["גליל עליון","גליל תחתון","כרמל","ירושלים","שפלה","נגב","ערבה","גולן","עמק יזרעאל"];
 const DIFFICULTIES = [
@@ -18,6 +19,7 @@ const SORT_OPTIONS = [
   { value: "date",       label: "תאריך" },
   { value: "price_asc",  label: "מחיר ↑" },
   { value: "price_desc", label: "מחיר ↓" },
+  { value: "distance",   label: "מרחק" },
 ];
 const DIFF_STYLE: Record<string, { bg: string; color: string }> = {
   EASY:    { bg: "#EAF3DE", color: "#27500A" },
@@ -49,15 +51,34 @@ interface Trip {
   id: string; title: string; region: string; difficulty: string; status: string;
   date: string; startTime: string; durationMin: number; distanceKm: number;
   price: number; maxSpots: number; spotsBooked: number; images: string[];
+  tripType?: string; endDate?: string | null; _count?: { days: number };
   guide: { rating: number; user: { name: string | null } };
+  guides?: { role: string; guide: { user: { name: string | null } } }[];
+}
+
+function tripDayCount(t: Trip): number {
+  if (t._count?.days) return t._count.days;
+  if (t.endDate) {
+    const days = Math.round((new Date(t.endDate).getTime() - new Date(t.date).getTime()) / 86400000) + 1;
+    return Math.max(days, 2);
+  }
+  return 0;
 }
 interface Filters {
-  q: string; regions: string[]; difficulties: string[]; dateFrom: string; priceMax: string; sort: string;
+  q: string; regions: string[]; difficulties: string[]; dateFrom: string;
+  priceMax: string; priceMin: string; ageMin: string; favoriteGuides: boolean; sort: string;
+  category: "guided" | "self_guided"; tags: string[];
 }
 function toggle<T>(arr: T[], val: T): T[] {
   return arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val];
 }
-const EMPTY_FILTERS: Filters = { q: "", regions: [], difficulties: [], dateFrom: "", priceMax: "", sort: "date" };
+const EMPTY_FILTERS: Filters = { q: "", regions: [], difficulties: [], dateFrom: "", priceMax: "", priceMin: "", ageMin: "", favoriteGuides: false, sort: "date", category: "guided", tags: [] };
+const AGE_OPTIONS = [
+  { value: "", label: "כל הגילאים" },
+  { value: "6", label: "מתאים לעד 6" },
+  { value: "8", label: "מתאים לעד 8" },
+  { value: "12", label: "מתאים לעד 12" },
+];
 
 // ── Sliding image hero for cards with multiple images ─────────────
 function TripCardHero({ images, title }: { images: string[]; title: string }) {
@@ -86,8 +107,9 @@ export default function TripsPage() {
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [draft, setDraft] = useState<Filters>(EMPTY_FILTERS);
   const [myRegMap, setMyRegMap] = useState<Record<string, string>>({});
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [range, setRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
   const [mobileCalOpen, setMobileCalOpen] = useState(false);
+  const [view, setView] = useState<"list" | "calendar">("list");
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchTrips = useCallback(async (f: Filters) => {
@@ -99,11 +121,17 @@ export default function TripsPage() {
       if (f.difficulties.length) p.set("difficulties", f.difficulties.join(","));
       if (f.dateFrom) p.set("dateFrom", f.dateFrom);
       if (f.priceMax) p.set("priceMax", f.priceMax);
+      if (f.priceMin) p.set("priceMin", f.priceMin);
+      if (f.ageMin) p.set("ageMin", f.ageMin);
+      if (f.favoriteGuides) p.set("favoriteGuides", "1");
+      if (f.category) p.set("category", f.category);
+      if (f.tags.length) p.set("tags", f.tags.join(","));
       const res = await fetch(`/api/trips?${p.toString()}`);
       let data: Trip[] = await res.json();
       if (!Array.isArray(data)) data = [];
       if (f.sort === "price_asc") data = [...data].sort((a, b) => a.price - b.price);
       if (f.sort === "price_desc") data = [...data].sort((a, b) => b.price - a.price);
+      if (f.sort === "distance") data = [...data].sort((a, b) => (a.distanceKm || 0) - (b.distanceKm || 0));
       setTrips(data);
     } catch { setTrips([]); }
     finally { setLoading(false); }
@@ -123,6 +151,29 @@ export default function TripsPage() {
       .catch(() => {});
   }, [session]);
 
+  // Seed search filters from the user's saved preferences (once, on first load)
+  const prefsApplied = useRef(false);
+  useEffect(() => {
+    if (!session || prefsApplied.current) return;
+    prefsApplied.current = true;
+    fetch("/api/profile")
+      .then((r) => r.json())
+      .then((p: { preferredRegions?: string[]; preferredDifficulties?: string[] }) => {
+        const regions = p.preferredRegions ?? [];
+        const difficulties = p.preferredDifficulties ?? [];
+        if (regions.length === 0 && difficulties.length === 0) return;
+        setFilters((f) => {
+          // Don't override if the user already started filtering
+          if (f.regions.length || f.difficulties.length) return f;
+          const next = { ...f, regions, difficulties };
+          setDraft(next);
+          fetchTrips(next);
+          return next;
+        });
+      })
+      .catch(() => {});
+  }, [session, fetchTrips]);
+
   function applyDraft() {
     setFilters(draft); setPanelOpen(false); fetchTrips(draft);
   }
@@ -139,18 +190,34 @@ export default function TripsPage() {
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     searchTimeout.current = setTimeout(() => fetchTrips(next), 380);
   }
-  function handleDateSelect(d: Date | null) {
-    setSelectedDate(d);
-    setMobileCalOpen(false);
+  function handleRangeChange(r: { start: Date | null; end: Date | null }) {
+    setRange(r);
+    // Close the mobile panel only once a full selection is made (or cleared)
+    if (!r.start || (r.start && r.end)) setMobileCalOpen(false);
   }
 
-  // Client-side date filter
-  const displayedTrips = selectedDate
-    ? trips.filter((t) => sameDay(new Date(t.date), selectedDate))
-    : trips;
+  // Client-side date filter — single day (start only) or inclusive range (start..end)
+  const displayedTrips = (() => {
+    if (!range.start) return trips;
+    const startMs = new Date(range.start.getFullYear(), range.start.getMonth(), range.start.getDate()).getTime();
+    const endRef = range.end ?? range.start;
+    const endMs = new Date(endRef.getFullYear(), endRef.getMonth(), endRef.getDate(), 23, 59, 59).getTime();
+    return trips.filter((t) => {
+      const ms = new Date(t.date).getTime();
+      return ms >= startMs && ms <= endMs;
+    });
+  })();
+
+  function rangeLabel(opts: Intl.DateTimeFormatOptions) {
+    if (!range.start) return "";
+    const s = range.start.toLocaleDateString("he-IL", opts);
+    if (!range.end || sameDay(range.start, range.end)) return s;
+    return `${s} – ${range.end.toLocaleDateString("he-IL", opts)}`;
+  }
 
   const activeCount = filters.regions.length + filters.difficulties.length +
-    (filters.dateFrom ? 1 : 0) + (filters.priceMax ? 1 : 0);
+    (filters.dateFrom ? 1 : 0) + (filters.priceMax ? 1 : 0) + (filters.priceMin ? 1 : 0) +
+    (filters.ageMin ? 1 : 0) + (filters.favoriteGuides ? 1 : 0);
   const userName = session?.user?.name ?? null;
 
   return (
@@ -189,24 +256,62 @@ export default function TripsPage() {
         </div>
       </div>
 
-      {/* Body */}
-      <div className="max-w-5xl mx-auto px-3 pb-8 md:flex md:gap-4">
+      {/* Category: guided vs self-guided */}
+      <div className="max-w-5xl mx-auto px-3 mb-2 flex justify-center md:justify-start">
+        <div className="inline-flex bg-white rounded-full border border-gray-200 p-0.5">
+          {([["guided", "🧭 טיולים מודרכים"], ["self_guided", "🎒 טיולים עצמאיים"]] as const).map(([v, label]) => (
+            <button key={v} type="button"
+              onClick={() => { const next = { ...filters, category: v }; setFilters(next); setDraft(next); fetchTrips(next); }}
+              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                filters.category === v ? "bg-[#1A6B4A] text-white" : "text-gray-500 hover:text-gray-700"
+              }`}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* List / Calendar view toggle */}
+      <div className={`max-w-5xl mx-auto px-3 mb-2 flex justify-center md:justify-start ${filters.category === "self_guided" ? "hidden" : ""}`}>
+        <div className="inline-flex bg-white rounded-full border border-gray-200 p-0.5">
+          {([["list", "📋 רשימה"], ["calendar", "📅 יומן"]] as const).map(([v, label]) => (
+            <button key={v} type="button" onClick={() => setView(v)}
+              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                view === v ? "bg-[#1A6B4A] text-white" : "text-gray-500 hover:text-gray-700"
+              }`}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Calendar full view */}
+      {view === "calendar" && (
+        <div className="max-w-5xl mx-auto px-3 pb-8">
+          <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
+            <CalendarView trips={trips} regStatus={myRegMap} />
+          </div>
+        </div>
+      )}
+
+      {/* Body (list view) */}
+      <div className={`max-w-5xl mx-auto px-3 pb-8 md:flex md:gap-4 ${view === "calendar" ? "hidden" : ""}`}>
 
         {/* ── Calendar side panel (desktop, RIGHT side in RTL) ── */}
         <aside className="hidden md:block w-[290px] shrink-0 self-start sticky top-4">
           <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
             <div className="px-3 pt-3 pb-1 border-b border-gray-100">
               <span className="text-sm font-semibold text-gray-800">📅 יומן טיולים</span>
-              {selectedDate && (
-                <button type="button" onClick={() => setSelectedDate(null)}
+              {range.start && (
+                <button type="button" onClick={() => setRange({ start: null, end: null })}
                   className="float-left text-[10px] text-gray-400 hover:text-[#1A6B4A] mt-0.5">נקה</button>
               )}
             </div>
             <CalendarView
               compact
               trips={trips}
-              selectedDate={selectedDate}
-              onDateSelect={handleDateSelect}
+              range={range}
+              onRangeChange={handleRangeChange}
             />
           </div>
         </aside>
@@ -220,16 +325,16 @@ export default function TripsPage() {
               type="button"
               onClick={() => setMobileCalOpen((v) => !v)}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition-colors ${
-                mobileCalOpen || selectedDate
+                mobileCalOpen || range.start
                   ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]"
                   : "bg-white border-gray-200 text-gray-600"
               }`}
             >
-              📅 {selectedDate
-                ? selectedDate.toLocaleDateString("he-IL", { day: "numeric", month: "short" })
+              📅 {range.start
+                ? rangeLabel({ day: "numeric", month: "short" })
                 : "סנן לפי תאריך"}
-              {selectedDate && (
-                <span onClick={(e) => { e.stopPropagation(); setSelectedDate(null); }} className="font-bold">✕</span>
+              {range.start && (
+                <span onClick={(e) => { e.stopPropagation(); setRange({ start: null, end: null }); }} className="font-bold">✕</span>
               )}
             </button>
           </div>
@@ -240,8 +345,8 @@ export default function TripsPage() {
               <CalendarView
                 compact
                 trips={trips}
-                selectedDate={selectedDate}
-                onDateSelect={handleDateSelect}
+                range={range}
+                onRangeChange={handleRangeChange}
               />
             </div>
           )}
@@ -324,14 +429,56 @@ export default function TripsPage() {
                 </div>
               </div>
               <div className="mb-4">
-                <div className="text-[11px] text-gray-500 mb-2">מחיר מקסימום (₪)</div>
-                <input type="number" value={draft.priceMax}
-                  onChange={(e) => setDraft((d) => ({ ...d, priceMax: e.target.value }))}
-                  placeholder="כל המחירים"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" dir="ltr" />
+                <div className="text-[11px] text-gray-500 mb-2">טווח מחירים (₪)</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <input type="number" value={draft.priceMin}
+                    onChange={(e) => setDraft((d) => ({ ...d, priceMin: e.target.value }))}
+                    placeholder="מינימום"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" dir="ltr" />
+                  <input type="number" value={draft.priceMax}
+                    onChange={(e) => setDraft((d) => ({ ...d, priceMax: e.target.value }))}
+                    placeholder="מקסימום"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" dir="ltr" />
+                </div>
+              </div>
+              <div className="mb-4">
+                <div className="text-[11px] text-gray-500 mb-2">מתאים לגיל</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {AGE_OPTIONS.map((a) => (
+                    <button key={a.value} type="button"
+                      onClick={() => setDraft((d) => ({ ...d, ageMin: a.value }))}
+                      className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                        draft.ageMin === a.value ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-gray-200 text-gray-600"}`}>
+                      {a.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="mb-4">
+                <button type="button" onClick={() => setDraft((d) => ({ ...d, favoriteGuides: !d.favoriteGuides }))}
+                  className="flex items-center gap-2 text-sm text-gray-700">
+                  <div className={`w-5 h-5 rounded flex items-center justify-center border-[1.5px] transition-colors ${
+                    draft.favoriteGuides ? "bg-[#1A6B4A] border-[#1A6B4A] text-white text-xs" : "border-gray-300"}`}>
+                    {draft.favoriteGuides && "✓"}
+                  </div>
+                  ❤ רק מדריכים שאני עוקב אחריהם
+                </button>
+              </div>
+              <div className="mb-4">
+                <div className="text-[11px] text-gray-500 mb-2">מאפיינים</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {TRIP_TAGS.filter((t) => !t.selfGuidedOnly || filters.category === "self_guided").map((t) => (
+                    <button key={t.value} type="button"
+                      onClick={() => setDraft((d) => ({ ...d, tags: toggle(d.tags, t.value) }))}
+                      className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                        draft.tags.includes(t.value) ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-gray-200 text-gray-600"}`}>
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="flex items-center justify-between">
-                <button type="button" onClick={() => setDraft((d) => ({ ...d, regions: [], difficulties: [], dateFrom: "", priceMax: "" }))}
+                <button type="button" onClick={() => setDraft((d) => ({ ...d, regions: [], difficulties: [], dateFrom: "", priceMax: "", priceMin: "", ageMin: "", favoriteGuides: false, tags: [] }))}
                   className="text-xs text-gray-400 hover:text-gray-600">נקה הכל</button>
                 <button type="button" onClick={applyDraft}
                   className="px-5 py-2 bg-[#1A6B4A] text-white rounded-full text-xs font-medium hover:bg-[#155a3e] transition-colors">
@@ -344,8 +491,8 @@ export default function TripsPage() {
           {/* Results header */}
           <div className="flex items-center justify-between mb-2 px-0.5">
             <span className="text-xs text-gray-500">
-              {loading ? "טוען..." : selectedDate
-                ? `${displayedTrips.length} טיולים ב-${selectedDate.toLocaleDateString("he-IL",{day:"numeric",month:"short"})}`
+              {loading ? "טוען..." : range.start
+                ? `${displayedTrips.length} טיולים ב-${rangeLabel({ day: "numeric", month: "short" })}`
                 : `${trips.length} טיולים נמצאו`}
             </span>
             <select value={filters.sort}
@@ -359,15 +506,17 @@ export default function TripsPage() {
           <div className="flex flex-col gap-3">
             {loading && <div className="text-center py-12 text-gray-400 text-sm">טוען טיולים...</div>}
 
-            {/* Empty state when date selected but no trips */}
-            {!loading && selectedDate && displayedTrips.length === 0 && (
+            {/* Empty state when a date/range is selected but no trips */}
+            {!loading && range.start && displayedTrips.length === 0 && (
               <div className="text-center py-14">
                 <div className="text-3xl mb-3">📅</div>
                 <div className="text-gray-600 text-sm font-medium">
-                  אין טיולים ב-{selectedDate.toLocaleDateString("he-IL",{weekday:"long",day:"numeric",month:"long"})}
+                  {range.end && !sameDay(range.start, range.end)
+                    ? `אין טיולים בין ${rangeLabel({ weekday: "short", day: "numeric", month: "long" })}`
+                    : `אין טיולים ב-${range.start.toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" })}`}
                 </div>
                 <div className="text-gray-400 text-xs mt-1">בחר תאריך אחר ביומן</div>
-                <button type="button" onClick={() => setSelectedDate(null)}
+                <button type="button" onClick={() => setRange({ start: null, end: null })}
                   className="mt-4 px-4 py-2 text-xs text-[#1A6B4A] border border-[#1A6B4A] rounded-full hover:bg-[#D6EDE3] transition-colors">
                   הצג כל הטיולים
                 </button>
@@ -375,7 +524,7 @@ export default function TripsPage() {
             )}
 
             {/* Empty state — no trips at all */}
-            {!loading && !selectedDate && displayedTrips.length === 0 && (
+            {!loading && !range.start && displayedTrips.length === 0 && (
               <div className="text-center py-12">
                 <div className="text-3xl mb-3">🔍</div>
                 <div className="text-gray-500 text-sm">לא נמצאו טיולים</div>
@@ -409,6 +558,11 @@ export default function TripsPage() {
                     <TripCardHero images={trip.images ?? []} title={trip.title} />
 
                     <div className="absolute top-2.5 right-2.5 flex gap-1.5 z-10">
+                      {trip.tripType && trip.tripType !== "DAY_HIKE" && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: "#2C5F8A", color: "#fff" }}>
+                          {trip.tripType === "MULTI_SITE" ? "מרובה אתרים" : `מסע · ${tripDayCount(trip) || ""} ימים`}
+                        </span>
+                      )}
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: "rgba(255,255,255,0.92)", color: "#27500A" }}>
                         📍 {trip.region}
                       </span>
@@ -435,13 +589,27 @@ export default function TripsPage() {
                     <div className="absolute bottom-0 left-0 right-0 px-3 py-2.5 z-10"
                       style={{ background: "linear-gradient(to top,rgba(0,0,0,0.68),transparent)" }}>
                       <div className="text-[13px] font-medium text-white leading-snug mb-1.5">{trip.title}</div>
-                      <div className="flex items-center gap-1.5 text-[11px] text-white/85">
-                        <div className="w-[17px] h-[17px] rounded-full flex items-center justify-center text-[8px] font-medium text-white flex-shrink-0"
-                          style={{ background: avatarColor(guideName) }}>
-                          {initials(guideName)}
-                        </div>
-                        {guideName || "מדריך"}{trip.guide?.rating > 0 ? ` · ★${trip.guide.rating.toFixed(1)}` : ""}
-                      </div>
+                      {(() => {
+                        const secName = trip.guides?.find((g) => g.role === "SECONDARY")?.guide?.user?.name ?? null;
+                        return (
+                          <div className="flex items-center gap-1.5 text-[11px] text-white/85">
+                            <div className="flex flex-shrink-0">
+                              <div className="w-[17px] h-[17px] rounded-full flex items-center justify-center text-[8px] font-medium text-white border border-white/40"
+                                style={{ background: avatarColor(guideName) }}>
+                                {initials(guideName)}
+                              </div>
+                              {secName && (
+                                <div className="w-[17px] h-[17px] rounded-full flex items-center justify-center text-[8px] font-medium text-white border border-white/40"
+                                  style={{ background: avatarColor(secName), marginRight: -6 }}>
+                                  {initials(secName)}
+                                </div>
+                              )}
+                            </div>
+                            {secName ? `${guideName || "מדריך"} ו${secName}` : (guideName || "מדריך")}
+                            {trip.guide?.rating > 0 ? ` · ★${trip.guide.rating.toFixed(1)}` : ""}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 
@@ -453,17 +621,28 @@ export default function TripsPage() {
                     </div>
                   )}
 
+                  {(() => {
+                    const isJourney = !!trip.tripType && trip.tripType !== "DAY_HIKE";
+                    const nDays = tripDayCount(trip);
+                    const meta = isJourney
+                      ? [
+                          { t: `📅 ${formatDate(trip.date)}${trip.endDate ? `–${formatDate(trip.endDate)}` : ""}` },
+                          ...(nDays > 1 ? [{ t: `🌙 ${nDays - 1} לילות` }] : []),
+                          ...(trip.distanceKm > 0 ? [{ t: `📍 ${trip.distanceKm} ק"מ סה"כ` }] : []),
+                        ]
+                      : [
+                          { t: `📅 ${formatDate(trip.date)}` },
+                          { t: `🕖 ${trip.startTime}` },
+                          ...(trip.distanceKm > 0 ? [{ t: `📍 ${trip.distanceKm} ק"מ` }] : []),
+                          ...(trip.durationMin > 0 ? [{ t: `⏱ ${Math.round(trip.durationMin / 60)} שע'` }] : []),
+                        ];
+                    return (
                   <div className="px-3 pt-2 pb-2.5">
                     <div className="flex flex-wrap mb-2" style={{ gap: 0 }}>
-                      {[
-                        { t: formatDate(trip.date) },
-                        { t: trip.startTime },
-                        ...(trip.distanceKm > 0 ? [{ t: `📍 ${trip.distanceKm} ק"מ` }] : []),
-                        ...(trip.durationMin > 0 ? [{ t: `⏱ ${Math.round(trip.durationMin / 60)} שע'` }] : []),
-                      ].map((m, i, arr) => (
+                      {meta.map((m, i, arr) => (
                         <span key={i} className="text-[11px] text-gray-500"
                           style={{ paddingLeft: i < arr.length-1 ? 8 : 0, marginLeft: i < arr.length-1 ? 8 : 0, borderLeft: i < arr.length-1 ? "1px solid #eee" : "none" }}>
-                          {i === 0 ? `📅 ${m.t}` : i === 1 ? `🕖 ${m.t}` : m.t}
+                          {m.t}
                         </span>
                       ))}
                     </div>
@@ -482,27 +661,24 @@ export default function TripsPage() {
                     <div className="flex items-center justify-between pt-2 border-t border-gray-50">
                       <div>
                         <span className="text-[17px] font-medium text-gray-900">₪{trip.price.toLocaleString("he-IL")}</span>
-                        <span className="text-[11px] text-gray-400 mr-1">לאדם</span>
+                        <span className="text-[11px] text-gray-400 mr-1">{trip.tripType && trip.tripType !== "DAY_HIKE" ? "למסע" : "לאדם"}</span>
                       </div>
                       <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
                         <button type="button" onClick={() => router.push(`/trips/${trip.id}/register?flow=interest`)}
                           className="px-3 py-1.5 bg-gray-50 border border-gray-200 text-gray-600 rounded-full text-[11px]">
                           מתעניין
                         </button>
-                        {!isFull ? (
+                        {!isFull && (
                           <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)}
                             className="px-3.5 py-1.5 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">
                             להרשמה
-                          </button>
-                        ) : (
-                          <button type="button" onClick={() => router.push(`/trips/${trip.id}/register?flow=waitlist`)}
-                            className="px-3.5 py-1.5 bg-[#C0392B] text-white rounded-full text-[11px] font-medium">
-                            המתנה
                           </button>
                         )}
                       </div>
                     </div>
                   </div>
+                  );
+                  })()}
                 </div>
               );
             })}

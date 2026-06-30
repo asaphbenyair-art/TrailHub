@@ -25,7 +25,31 @@
       "Bash(gh auth *)",
       "Bash(brew list *)",
       "Bash(/opt/homebrew/bin/brew list *)",
-      "Bash(/opt/homebrew/bin/gh auth *)"
+      "Bash(/opt/homebrew/bin/gh auth *)",
+      "Bash(curl -sL https://github.com/cli/cli/releases/download/v2.72.0/gh_2.72.0_macOS_arm64.tar.gz -o /tmp/gh.tar.gz)",
+      "Bash(tar xf *)",
+      "Bash(/tmp/gh_2.72.0_macOS_arm64/bin/gh --version)",
+      "Bash(curl -sL https://github.com/cli/cli/releases/download/v2.72.0/gh_2.72.0_macOS_arm64.zip -o /tmp/gh.zip)",
+      "Read(//private/tmp/**)",
+      "Bash(unzip -q gh.zip)",
+      "Read(//tmp/gh_2.72.0_macOS_arm64/**)",
+      "Bash(unzip -l /tmp/gh.zip)",
+      "Bash(grep \"gh$\")",
+      "Bash(curl *)",
+      "Bash(python3 -c \"import sys,json; [print\\(r['full_name']\\) for r in json.load\\(sys.stdin\\)]\")",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(pkill -f \"next-server\")",
+      "Bash(echo \"started, pid $!\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(len\\(d\\),'results:', [t['title'][:25] for t in d]\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(len\\(d\\),'results'\\)\")",
+      "Bash(npx eslint *)",
+      "Bash(echo \"restarted $!\")",
+      "Bash(grep -rn \"guides/\\\\${\" src/)",
+      "Bash(echo \"page: $\\(curl -s -m 10 -o /dev/null -w '%{http_code}' http://localhost:3000/guides/cmqtwmkmw000115xzhg2rfxnw\\)\")",
+      "Bash(echo \"api: $\\(curl -s -m 10 -o /dev/null -w '%{http_code}' http://localhost:3000/api/guides/cmqtwmkmw000115xzhg2rfxnw\\)\")",
+      "Bash(echo \"/guides/[id] page: $\\(curl -s -m 10 -o /dev/null -w '%{http_code}' http://localhost:3000/guides/cmqtwmkmw000115xzhg2rfxnw\\)\")",
+      "Bash(echo \"/guide/dashboard \\(should still redirect 307\\): $\\(curl -s -m 10 -o /dev/null -w '%{http_code}' http://localhost:3000/guide/dashboard\\)\")",
+      "Bash(echo \"/trips: $\\(curl -s -m 10 -o /dev/null -w '%{http_code}' http://localhost:3000/trips\\)\")"
     ]
   }
 }

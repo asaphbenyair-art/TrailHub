@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html dir="rtl" lang="he">
-<head><meta charset="UTF-8"><title>דף טיול מלא — רמה 2</title>
+<head><meta charset="UTF-8"><title>דף טיול מלא</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif}
 body{background:#f5f5f5;padding:16px;direction:rtl}
 .note{background:#fffbe6;border:1px solid #e8d44d;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#555}
-.page{background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e5e5e5;max-width:480px}
-.hero{position:relative;height:200px;overflow:hidden;background:linear-gradient(160deg,#3d6b35,#0f2a0d)}
+.page{max-width:480px;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e5e5e5}
+.hero{height:200px;position:relative;overflow:hidden;background:linear-gradient(160deg,#3d6b35,#0f2a0d)}
 .hero-back{position:absolute;top:12px;right:12px;background:rgba(0,0,0,0.45);border:none;border-radius:20px;padding:6px 12px;color:#fff;font-size:12px;cursor:pointer}
 .hero-acts{position:absolute;top:12px;left:12px;display:flex;gap:8px}
 .hero-act{background:rgba(0,0,0,0.45);border:none;border-radius:20px;padding:7px 10px;color:#fff;font-size:14px;cursor:pointer}
@@ -19,60 +19,71 @@ body{background:#f5f5f5;padding:16px;direction:rtl}
 .b-wh{background:rgba(255,255,255,0.92);color:#253850}
 .content{padding:14px}
 .guide-row{display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid #f0f0f0;margin-bottom:12px}
-.av{width:38px;height:38px;border-radius:50%;background:#854F0B;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#fff;flex-shrink:0}
-.gn{font-size:14px;font-weight:500;color:#111}
+.av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#fff;flex-shrink:0}
+.av+.av{margin-right:-8px;border:2px solid #fff}
+.gn{font-size:14px;font-weight:500;color:#111;margin-right:8px}
 .gs{font-size:11px;color:#666;margin-top:2px}
 .gstars{color:#BA7517}
-.gpbtn{font-size:12px;color:#1A6B4A;border:1px solid #1A6B4A;background:none;border-radius:20px;padding:5px 12px;cursor:pointer;margin-right:auto}
+.gpbtn{font-size:12px;color:#1A6B4A;border:1px solid #1A6B4A;background:none;border-radius:20px;padding:5px 10px;cursor:pointer;margin-right:auto}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
-.stat{background:#f8f8f8;border-radius:8px;padding:9px;text-align:center}
-.sv{font-size:15px;font-weight:500;color:#111}
+.stat{background:#f8f8f8;border-radius:8px;padding:8px;text-align:center}
+.sv{font-size:14px;font-weight:500;color:#111}
 .sl{font-size:10px;color:#999;margin-top:2px}
 .spots-bar{margin-bottom:14px}
-.st{height:5px;background:#f0f0f0;border-radius:3px;overflow:hidden}
-.sf{height:100%;border-radius:3px;background:#1A6B4A}
+.st{height:4px;background:#f0f0f0;border-radius:2px;overflow:hidden}
+.sf{height:100%;border-radius:2px;background:#1A6B4A}
 .sl2{display:flex;justify-content:space-between;font-size:11px;color:#999;margin-top:3px}
 .sl2 span:last-child{color:#1A6B4A;font-weight:500}
 .sec{margin-bottom:16px}
-.sec-title{font-size:13px;font-weight:500;color:#111;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.sec-title{font-size:13px;font-weight:500;color:#111;margin-bottom:8px}
 .desc{font-size:13px;color:#666;line-height:1.7}
-.map-ph{background:#ddeedd;border-radius:8px;height:150px;position:relative;overflow:hidden;margin-bottom:6px}
-.wdot{position:absolute;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:500;transform:translate(-50%,-50%);border:1.5px solid #fff}
-.elev{background:#f8f8f8;border-radius:8px;padding:9px 12px;margin-bottom:8px}
-.elev-hd{display:flex;justify-content:space-between;font-size:10px;color:#999;margin-bottom:5px}
+.map-ph{background:#ddeedd;border-radius:8px;height:140px;position:relative;overflow:hidden;margin-bottom:6px}
+.map-ph svg{position:absolute;top:0;left:0;width:100%;height:100%}
+.wdot{position:absolute;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:500;transform:translate(-50%,-50%);border:1.5px solid #fff}
+.elev{background:#f8f8f8;border-radius:8px;padding:8px 12px;margin-bottom:8px}
+.elev-hd{display:flex;justify-content:space-between;font-size:10px;color:#999;margin-bottom:4px}
 .wps{display:flex;flex-direction:column}
-.wpi{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #f0f0f0}
+.wpi{display:flex;gap:8px;padding:8px 0;border-bottom:1px solid #f0f0f0}
 .wpi:last-child{border-bottom:none}
 .wl{display:flex;flex-direction:column;align-items:center;flex-shrink:0}
-.wc{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#fff}
+.wc{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:500;color:#fff}
 .wcon{width:1.5px;flex:1;background:#eee;margin:3px auto}
-.wn{font-size:13px;font-weight:500;color:#111}
-.wd{font-size:12px;color:#666;margin-top:2px;line-height:1.5}
+.wn{font-size:12px;font-weight:500;color:#111}
+.wd{font-size:11px;color:#666;margin-top:1px;line-height:1.5}
 .eqtags{display:flex;flex-wrap:wrap;gap:5px}
-.eqt{display:inline-flex;align-items:center;gap:4px;padding:5px 9px;background:#f8f8f8;border:1px solid #eee;border-radius:20px;font-size:12px;color:#666}
+.eqt{display:inline-flex;align-items:center;gap:3px;padding:4px 8px;background:#f8f8f8;border:1px solid #eee;border-radius:20px;font-size:11px;color:#666}
 .pol{background:#FDF3DC;border-radius:8px;padding:10px 12px}
 .pr{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;color:#412402}
 .pr span:first-child{color:#633806}
 .revs{display:flex;flex-direction:column;gap:8px}
 .rev{padding:10px;background:#f8f8f8;border-radius:8px}
 .revh{display:flex;align-items:center;gap:7px;margin-bottom:5px}
-.rav{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:#fff}
+.rav{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#fff}
 .rn{font-size:13px;font-weight:500;color:#111}
 .rs{color:#BA7517;font-size:11px;margin-right:auto}
-.rt{font-size:12px;color:#666;line-height:1.6}
+.rt{font-size:12px;color:#666;line-height:1.5}
+.dynamic-fields{background:#f0f7ff;border-radius:8px;padding:12px;margin-bottom:14px;border:1px solid #c8dff5}
+.df-title{font-size:12px;font-weight:500;color:#185FA5;margin-bottom:8px}
+.df-field{margin-bottom:8px}
+.df-field label{display:block;font-size:12px;color:#333;margin-bottom:4px}
+.df-field input,.df-field select{width:100%;font-size:13px;padding:6px 10px;border:1px solid #ddd;border-radius:8px}
+.df-field.checkbox{display:flex;align-items:center;gap:8px}
+.df-field.checkbox input{width:auto}
+.rideshare-link{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#f8f8f8;border-radius:8px;cursor:pointer;font-size:13px;color:#1A6B4A;border:1px solid #D6EDE3}
 .foot{background:#fff;border-top:1px solid #f0f0f0;padding:11px 14px;display:flex;align-items:center;justify-content:space-between}
-.fp{font-size:20px;font-weight:500;color:#111}
+.fp{font-size:19px;font-weight:500;color:#111}
 .fs{font-size:11px;color:#999}
-.fbtns{display:flex;gap:7px}
-.bi{padding:8px 13px;background:#f5f5f5;color:#555;border:1px solid #ddd;border-radius:20px;font-size:12px;cursor:pointer}
-.br{padding:8px 20px;background:#1A6B4A;color:#fff;border:none;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer}
+.fbtns{display:flex;gap:6px}
+.bi{padding:7px 12px;background:#f5f5f5;color:#555;border:1px solid #ddd;border-radius:20px;font-size:12px;cursor:pointer}
+.br{padding:7px 18px;background:#1A6B4A;color:#fff;border:none;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer}
 </style>
 </head>
 <body>
 <div class="note">
   <strong>דף טיול מלא — רמה 2</strong><br>
-  זה מה שמטייל רואה אחרי לחיצה על כרטיס. הכולל: תמונה גדולה, פרטי מדריך, מפה+גבהים, נקודות עצירה, ציוד, ביטולים, ביקורות.<br>
-  כפתור "להרשמה" → wireframe 03. "פרופיל" → wireframe 06.
+  כולל: שני מדריכים (ראשי/משני), שדות דינמיים בהרשמה, לוח טרמפים (לינק), שאלות ציבוריות.<br>
+  תמונות מתחלפות בהדרגה (staggered fade) כל 5-6 שניות — לא בו-זמנית.<br>
+  לחיצה על "להרשמה" → wireframe 04.
 </div>
 <div class="page">
   <div class="hero">
@@ -84,7 +95,7 @@ body{background:#f5f5f5;padding:16px;direction:rtl}
     <div class="hero-ov">
       <div class="hero-title">טיול נחל קלט — ממעיין פרת לעין פרת</div>
       <div class="badges">
-        <span class="badge b-gr">📍 ירושלים והסביבה</span>
+        <span class="badge b-gr">📍 ירושלים</span>
         <span class="badge b-am">בינוני</span>
         <span class="badge b-wh">חד-כיווני</span>
       </div>
@@ -92,67 +103,70 @@ body{background:#f5f5f5;padding:16px;direction:rtl}
   </div>
   <div class="content">
     <div class="guide-row">
-      <div class="av">רל</div>
-      <div style="flex:1">
-        <div class="gn">רועי לוי</div>
-        <div class="gs"><span class="gstars">★★★★★</span> 4.9 · 127 ביקורות · 8 שנות ניסיון</div>
+      <div style="display:flex">
+        <div class="av" style="background:#854F0B;z-index:2">רל</div>
+        <div class="av" style="background:#185FA5;z-index:1">נש</div>
       </div>
-      <button class="gpbtn">פרופיל</button>
+      <div style="flex:1;margin-right:8px">
+        <div class="gn">רועי לוי (ראשי) · נועה שרון (משני)</div>
+        <div class="gs"><span class="gstars">★4.9</span> · <span class="gstars">★4.7</span> · 8 שנות ניסיון</div>
+      </div>
+      <button class="gpbtn">פרופילים</button>
     </div>
     <div class="stats">
       <div class="stat"><div class="sv">12.4</div><div class="sl">ק"מ</div></div>
       <div class="stat"><div class="sv">5-6</div><div class="sl">שעות</div></div>
       <div class="stat"><div class="sv">340</div><div class="sl">מ' עלייה</div></div>
-      <div class="stat"><div class="sv">8+</div><div class="sl">גיל מינימום</div></div>
+      <div class="stat"><div class="sv">8+</div><div class="sl">גיל</div></div>
     </div>
     <div class="spots-bar">
       <div class="st"><div class="sf" style="width:75%"></div></div>
-      <div class="sl2"><span>18 מתוך 24 רשומים</span><span>6 מקומות נותרו</span></div>
+      <div class="sl2"><span>18 מתוך 24</span><span>6 מקומות נותרו</span></div>
     </div>
     <div class="sec">
-      <div class="sec-title">📄 על הטיול</div>
-      <div class="desc">נחל קלט הוא אחד היפים והמרשימים בישראל. נצא ממעיין פרת הקסום, נעבור לאורך הנחל דרך ערוצים מרהיבים, נגיע למנזר סנט ג'ורג' התלוי בצוק, ונסיים בעין פרת — בריכת מים מתוקה שמוקפת בצמחייה שופעת.</div>
+      <div class="sec-title">על הטיול</div>
+      <div class="desc">נחל קלט הוא אחד היפים והמרשימים בישראל. נצא ממעיין פרת, נעבור לאורך הנחל דרך ערוצים מרהיבים, ונסיים בעין פרת.</div>
     </div>
     <div class="sec">
-      <div class="sec-title">🗺 מסלול ונקודות עצירה</div>
+      <div class="sec-title">מסלול ונקודות עצירה</div>
       <div class="map-ph">
-        <svg viewBox="0 0 440 150" width="100%" height="150" preserveAspectRatio="none">
-          <rect width="440" height="150" fill="#ddeedd"/>
-          <path d="M20,128 Q80,108 140,88 Q190,72 235,58 Q285,43 330,52 Q385,62 420,34" stroke="#1A6B4A" stroke-width="3" fill="none" stroke-linecap="round"/>
-        </svg>
-        <div class="wdot" style="left:4%;top:85%;background:#2C5F8A">פ</div>
-        <div class="wdot" style="left:27%;top:57%;background:#1A6B4A">1</div>
-        <div class="wdot" style="left:52%;top:36%;background:#1A6B4A">2</div>
-        <div class="wdot" style="left:75%;top:20%;background:#1A6B4A">3</div>
-        <div class="wdot" style="left:96%;top:5%;background:#C0392B">ס</div>
+        <svg viewBox="0 0 440 140" preserveAspectRatio="none"><rect width="440" height="140" fill="#ddeedd"/><path d="M20,118 Q80,98 140,80 Q190,64 235,50 Q285,36 330,44 Q385,52 420,26" stroke="#1A6B4A" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
+        <div class="wdot" style="left:4%;top:84%;background:#2C5F8A">פ</div>
+        <div class="wdot" style="left:28%;top:56%;background:#1A6B4A">1</div>
+        <div class="wdot" style="left:55%;top:35%;background:#1A6B4A">2</div>
+        <div class="wdot" style="left:96%;top:6%;background:#C0392B">ס</div>
       </div>
       <div class="elev">
-        <div class="elev-hd"><span>מפת גבהים — נגזרת אוטומטית מ-GPX</span><span>120מ' ← 460מ'</span></div>
-        <svg viewBox="0 0 400 40" width="100%" height="40">
-          <path d="M0,38 Q50,34 100,28 Q160,20 210,14 Q270,8 318,12 Q375,16 425,4 L400,0 L400,40 L0,40Z" fill="#D6EDE3"/>
-          <path d="M0,38 Q50,34 100,28 Q160,20 210,14 Q270,8 318,12 Q375,16 400,2" stroke="#1A6B4A" stroke-width="1.5" fill="none"/>
-        </svg>
+        <div class="elev-hd"><span>מפת גבהים</span><span>120מ' ← 460מ'</span></div>
+        <svg viewBox="0 0 400 36" width="100%" height="36"><path d="M0,32 Q50,28 100,22 Q160,14 210,8 Q270,2 318,6 L400,0 L400,36 L0,36Z" fill="#D6EDE3"/><path d="M0,32 Q50,28 100,22 Q160,14 210,8 Q270,2 400,1" stroke="#1A6B4A" stroke-width="1.5" fill="none"/></svg>
       </div>
       <div class="wps">
-        <div class="wpi"><div class="wl"><div class="wc" style="background:#2C5F8A">פ</div><div class="wcon"></div></div><div><div class="wn">נקודת פתיחה — מעיין פרת</div><div class="wd">חניון מעיין פרת, כביש 1 ליציאה לאלמוג</div></div></div>
-        <div class="wpi"><div class="wl"><div class="wc" style="background:#1A6B4A">1</div><div class="wcon"></div></div><div><div class="wn">מנזר סנט ג'ורג'</div><div class="wd">מנזר ביזנטי עתיק התלוי בצוק — עצירה לצילומים</div></div></div>
+        <div class="wpi"><div class="wl"><div class="wc" style="background:#2C5F8A">פ</div><div class="wcon"></div></div><div><div class="wn">נקודת פתיחה — מעיין פרת</div><div class="wd">חניון מעיין פרת, כביש 1</div></div></div>
+        <div class="wpi"><div class="wl"><div class="wc" style="background:#1A6B4A">1</div><div class="wcon"></div></div><div><div class="wn">מנזר סנט ג'ורג'</div><div class="wd">מנזר ביזנטי עתיק התלוי בצוק</div></div></div>
         <div class="wpi"><div class="wl"><div class="wc" style="background:#1A6B4A">2</div><div class="wcon"></div></div><div><div class="wn">ערוץ הצוקים הגדול</div><div class="wd">צוקים בגובה 80 מטר משני הצדדים</div></div></div>
-        <div class="wpi"><div class="wl"><div class="wc" style="background:#1A6B4A">3</div><div class="wcon"></div></div><div><div class="wn">עצירת צהריים</div><div class="wd">נקודת מנוחה עם צל לפני קטע הסיום</div></div></div>
         <div class="wpi"><div class="wl"><div class="wc" style="background:#C0392B">ס</div></div><div><div class="wn">נקודת סיום — עין פרת</div><div class="wd">בריכת מים מתוקה — מקום מושלם לטבילה</div></div></div>
       </div>
     </div>
     <div class="sec">
-      <div class="sec-title">🎒 ציוד נדרש</div>
-      <div class="eqtags">
-        <span class="eqt">✓ נעלי הליכה</span>
-        <span class="eqt">✓ 3 ליטר מים</span>
-        <span class="eqt">✓ כובע ושמשייה</span>
-        <span class="eqt">✓ אוכל לצהריים</span>
-        <span class="eqt">✓ קרם הגנה</span>
+      <div class="sec-title">ציוד נדרש</div>
+      <div class="eqtags"><span class="eqt">✓ נעלי הליכה</span><span class="eqt">✓ 3 ליטר מים</span><span class="eqt">✓ כובע</span><span class="eqt">✓ אוכל לצהריים</span></div>
+    </div>
+    <div class="sec">
+      <div class="sec-title">שדות נוספים בהרשמה</div>
+      <div class="dynamic-fields">
+        <div class="df-title">המדריך מבקש פרטים נוספים בהרשמה:</div>
+        <div class="df-field checkbox">
+          <input type="checkbox" id="health">
+          <label for="health">אני מצהיר/ה שאני בריא/ה ומסוגל/ת להשתתף בטיול זה</label>
+        </div>
+        <div class="df-field">
+          <label>ניסיון קודם בטיולים דומים</label>
+          <select><option>בחר...</option><option>אין ניסיון</option><option>ניסיון בסיסי</option><option>ניסיון רב</option></select>
+        </div>
       </div>
     </div>
     <div class="sec">
-      <div class="sec-title">🧾 מדיניות ביטולים</div>
+      <div class="sec-title">מדיניות ביטולים</div>
       <div class="pol">
         <div class="pr"><span>עד 72 שעות לפני</span><span>החזר מלא 100%</span></div>
         <div class="pr"><span>עד 24 שעות לפני</span><span>החזר חלקי 50%</span></div>
@@ -160,19 +174,20 @@ body{background:#f5f5f5;padding:16px;direction:rtl}
       </div>
     </div>
     <div class="sec">
-      <div class="sec-title">⭐ ביקורות</div>
+      <div class="sec-title">לוח טרמפים</div>
+      <div class="rideshare-link">🚗 <span>3 טרמפים זמינים לטיול זה — לחץ לצפייה</span> ›</div>
+    </div>
+    <div class="sec">
+      <div class="sec-title">ביקורות</div>
       <div class="revs">
-        <div class="rev"><div class="revh"><div class="rav" style="background:#185FA5">דכ</div><div class="rn">דן כהן</div><div class="rs">★★★★★</div></div><div class="rt">טיול מדהים! רועי מדריך ברמה אחרת — מספר סיפורים ועוצר בכל נקודה.</div></div>
-        <div class="rev"><div class="revh"><div class="rav" style="background:#993556">נש</div><div class="rn">נועה שפירא</div><div class="rs">★★★★☆</div></div><div class="rt">נחל יפהפה, הכי אהבתי את קטע הצוקים. בהחלט אחזור.</div></div>
+        <div class="rev"><div class="revh"><div class="rav" style="background:#185FA5">דכ</div><div class="rn">דן כהן</div><div class="rs">★★★★★</div></div><div class="rt">טיול מדהים! רועי מדריך ברמה אחרת.</div></div>
+        <div class="rev"><div class="revh"><div class="rav" style="background:#993556">נש</div><div class="rn">נועה שפירא</div><div class="rs">★★★★☆</div></div><div class="rt">נחל יפהפה, קטע הצוקים מרהיב. בהחלט אחזור.</div></div>
       </div>
     </div>
   </div>
   <div class="foot">
     <div><div class="fp">₪120</div><div class="fs">לאדם · שישי 14 פבר'</div></div>
-    <div class="fbtns">
-      <button class="bi">מתעניין</button>
-      <button class="br">להרשמה ←</button>
-    </div>
+    <div class="fbtns"><button class="bi">מתעניין</button><button class="br">להרשמה ←</button></div>
   </div>
 </div>
 </body>

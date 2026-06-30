@@ -164,6 +164,7 @@ export default function AdminPage() {
         <div className="flex items-center gap-3">
           <Link href="/" className="text-[#1A6B4A] text-sm font-bold">🧭 TrailHub</Link>
           <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-semibold">ADMIN</span>
+          <Link href="/admin/moderation" className="text-xs text-[#185FA5] border border-[#185FA5]/30 rounded-full px-2.5 py-0.5 hover:bg-[#EEF5FC]">ניהול ותלונות</Link>
         </div>
         <NotificationBell />
       </div>

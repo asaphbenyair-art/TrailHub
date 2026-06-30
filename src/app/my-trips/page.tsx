@@ -24,11 +24,14 @@ interface RegistrationTrip {
 interface Registration {
   id: string;
   status: "PENDING" | "CONFIRMED" | "WAITLIST" | "CANCELLED";
-  paymentStatus: "PENDING" | "PAID" | "REFUNDED";
+  paymentStatus: "PENDING" | "AUTHORIZED" | "PAID" | "REFUNDED";
   totalPrice: number;
   participantCount: number;
   waitlistPosition: number | null;
   notes: string | null;
+  conditions: string[] | null;
+  interestThreshold: number | null;
+  autoRegister: boolean;
   createdAt: string;
   trip: RegistrationTrip;
 }
@@ -111,7 +114,17 @@ function TripCard({
               👥 מקום {reg.waitlistPosition} ברשימה
             </div>
           )}
-          {isPending && reg.notes && (
+          {isPending && reg.conditions && reg.conditions.length > 0 && (
+            <div className="text-[11px] text-[#7A5010] bg-[#FDF3DC] rounded-lg px-2 py-1 mt-1.5">
+              ⚙ {reg.autoRegister ? "אירשם אוטומטית אם" : "התראה אם"}: {reg.conditions.join(" וגם ")}
+            </div>
+          )}
+          {isPending && reg.interestThreshold && (
+            <div className="text-[11px] text-[#185FA5] bg-[#EEF5FC] rounded-lg px-2 py-1 mt-1.5">
+              🔔 התראה כשנותרו {reg.interestThreshold} מקומות
+            </div>
+          )}
+          {isPending && !reg.conditions?.length && !reg.interestThreshold && reg.notes && (
             <div className="text-[11px] text-gray-400 mt-1 truncate">⚙ {reg.notes}</div>
           )}
         </div>
@@ -142,7 +155,8 @@ function TripCard({
         <div className="flex gap-1.5">
           {isPast && !isCancelled && (
             <>
-              <button type="button" className="px-2.5 py-1 border border-gray-200 rounded-full text-[11px] text-gray-600">
+              <button type="button" onClick={() => router.push(`/trips/${trip.id}`)}
+                className="px-2.5 py-1 border border-gray-200 rounded-full text-[11px] text-gray-600">
                 כתוב ביקורת
               </button>
               <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)}
@@ -171,7 +185,8 @@ function TripCard({
           )}
           {isConfirmed && !isPast && (
             <>
-              <button type="button" className="px-2.5 py-1 border border-gray-200 rounded-full text-[11px] text-gray-600">
+              <button type="button" onClick={() => router.push(`/trips/${trip.id}`)}
+                className="px-2.5 py-1 border border-gray-200 rounded-full text-[11px] text-gray-600">
                 שאלה למדריך
               </button>
               <button type="button" onClick={() => setConfirmCancel(true)}
@@ -217,15 +232,19 @@ export default function MyTripsPage() {
   const router = useRouter();
   const [regs, setRegs] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"upcoming" | "interested" | "past">("upcoming");
+  const [activeTab, setActiveTab] = useState<"upcoming" | "interested" | "past" | "selfguided">("upcoming");
+  const [purchases, setPurchases] = useState<Array<{ id: string; accessExpiresAt: string | null; trip: { id: string; title: string; region: string; images: string[] } }>>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
+      // Lazily capture any authorized payments whose no-refund window has opened
+      await fetch("/api/registrations/capture", { method: "POST" }).catch(() => {});
       const res = await fetch("/api/my-trips");
       if (res.status === 401) { router.push("/auth/login"); return; }
       const data: Registration[] = await res.json();
       setRegs(Array.isArray(data) ? data : []);
+      fetch("/api/my-purchases").then((r) => r.ok ? r.json() : []).then((p) => setPurchases(Array.isArray(p) ? p : [])).catch(() => {});
     } finally { setLoading(false); }
   }, [router]);
 
@@ -247,6 +266,7 @@ export default function MyTripsPage() {
     { key: "upcoming" as const, label: "קרובים", count: upcoming.length },
     { key: "interested" as const, label: "מתעניין", count: interested.length },
     { key: "past" as const, label: "היסטוריה", count: past.length },
+    { key: "selfguided" as const, label: "עצמאיים", count: purchases.length },
   ];
 
   const currentList = activeTab === "upcoming" ? upcoming : activeTab === "interested" ? interested : past;
@@ -288,6 +308,43 @@ export default function MyTripsPage() {
         {/* Content */}
         {loading ? (
           <div className="text-center py-12 text-gray-400 text-sm">טוען...</div>
+        ) : activeTab === "selfguided" ? (
+          purchases.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-3xl mb-3">🎒</div>
+              <div className="text-gray-500 text-sm">עוד לא רכשת טיולים עצמאיים</div>
+              <Link href="/trips" className="inline-block mt-3 text-[#1A6B4A] text-sm border border-[#1A6B4A] rounded-full px-4 py-1.5">גלה טיולים עצמאיים</Link>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {purchases.map((p) => {
+                const expired = p.accessExpiresAt ? new Date(p.accessExpiresAt) < new Date() : false;
+                return (
+                  <div key={p.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden flex">
+                    <div className="w-24 flex-shrink-0" style={{ minHeight: 90 }}>
+                      {p.trip.images?.[0] ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={p.trip.images[0]} alt="" className="w-full h-full object-cover" />
+                      ) : <div className="w-full h-full" style={{ background: "linear-gradient(160deg,#3d6b35,#1a3d16)", minHeight: 90 }} />}
+                    </div>
+                    <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900 truncate">{p.trip.title}</div>
+                        <div className="text-xs text-gray-400 mt-0.5">📍 {p.trip.region}</div>
+                        <div className={`text-[11px] mt-1 ${expired ? "text-red-500" : "text-[#0F5038]"}`}>
+                          {expired ? "פג תוקף הגישה" : p.accessExpiresAt ? `גישה עד ${new Date(p.accessExpiresAt).toLocaleDateString("he-IL")}` : "גישה פעילה"}
+                        </div>
+                      </div>
+                      {!expired && (
+                        <button type="button" onClick={() => router.push(`/trips/${p.trip.id}/start`)}
+                          className="self-start mt-2 px-3 py-1.5 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">▶ התחל / המשך</button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )
         ) : currentList.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-3xl mb-3">
