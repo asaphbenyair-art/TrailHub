@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useRef, useState, useCallback } from "react";
 import { WizardData, WaypointData } from "../types";
+import SourceMaterialsEditor from "./SourceMaterialsEditor";
 
 const TripMap = dynamic(() => import("./TripMap"), { ssr: false });
 
@@ -123,6 +124,10 @@ export default function Step2({ data, onChange }: Props) {
                     placeholder="⚠ אזהרת בטיחות לקטע זה" className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1A6B4A]" />
                 </div>
               )}
+              <div className="mt-1 pt-1.5 border-t border-gray-100">
+                <SourceMaterialsEditor label="חומרי מקור לנקודה זו" materials={wp.sources ?? []}
+                  onChange={(next) => patchWaypoint(i, { sources: next })} />
+              </div>
             </div>
           ))}
         </div>

@@ -7,7 +7,7 @@ import Step2 from "../../new/steps/Step2";
 import Step3 from "../../new/steps/Step3";
 import Step4 from "../../new/steps/Step4";
 import Step5 from "../../new/steps/Step5";
-import { WizardData, DEFAULT_WIZARD_DATA, TripDayData, PriceTier, CouponData, RegFieldData, WaypointData } from "../../new/types";
+import { WizardData, DEFAULT_WIZARD_DATA, TripDayData, PriceTier, CouponData, RegFieldData, WaypointData, SourceMaterial } from "../../new/types";
 
 const STEPS = [
   { label: "פרטים" },
@@ -46,6 +46,7 @@ function tripToWizard(trip: Record<string, unknown>): WizardData {
         startTime: String(d.startTime ?? ""),
         isRestDay: Boolean(d.isRestDay),
         equipment: String(d.equipment ?? ""),
+        sources: Array.isArray(d.sourceMaterials) ? (d.sourceMaterials as SourceMaterial[]) : undefined,
       }))
     : [];
   return {
@@ -68,6 +69,10 @@ function tripToWizard(trip: Record<string, unknown>): WizardData {
       ? (trip.waypointsJson as Record<string, unknown>[]).map((w) => ({
           lat: Number(w.lat ?? 0), lng: Number(w.lng ?? 0),
           name: String(w.name ?? ""), description: String(w.description ?? ""),
+          navInstructions: w.navInstructions ? String(w.navInstructions) : undefined,
+          guidance: w.guidance ? String(w.guidance) : undefined,
+          safety: w.safety ? String(w.safety) : undefined,
+          sources: Array.isArray(w.sources) ? (w.sources as SourceMaterial[]) : undefined,
         }))
       : [],
     individualDayPrice: trip.individualDayPrice != null ? String(trip.individualDayPrice) : "",
@@ -95,6 +100,8 @@ function tripToWizard(trip: Record<string, unknown>): WizardData {
     price: String(trip.price ?? ""),
     priceTiers: priceTiers.map((t) => ({ label: t.label, price: String(t.price) })),
     visibility: (trip.visibility as "PUBLIC" | "PRIVATE") ?? "PUBLIC",
+    sourceMaterials: Array.isArray(trip.sourceMaterials) ? (trip.sourceMaterials as SourceMaterial[]) : [],
+    sourceMaterialsVisibility: (trip.sourceMaterialsVisibility as "preview" | "during") ?? "preview",
     secondGuideEmail: (() => {
       const guides = Array.isArray(trip.guides) ? trip.guides as { role: string; guide: { user: { email: string } } }[] : [];
       const sec = guides.find((g) => g.role === "SECONDARY");
@@ -133,7 +140,7 @@ export default function EditTripPage() {
       .catch(() => router.replace("/guide/dashboard"));
   }, [id, router]);
 
-  function onChange(field: keyof WizardData, value: string | string[] | TripDayData[] | PriceTier[] | CouponData[] | WaypointData[]) {
+  function onChange(field: keyof WizardData, value: string | string[] | TripDayData[] | PriceTier[] | CouponData[] | WaypointData[] | SourceMaterial[]) {
     setData((prev) => ({ ...prev, [field]: value }));
   }
 
@@ -213,6 +220,8 @@ export default function EditTripPage() {
       unlimitedCapacity: data.tripType === "SELF_GUIDED",
       accessWindowDays: data.tripType === "SELF_GUIDED" ? (data.accessWindowDays || "30") : null,
       attributeTags: data.attributeTags || [],
+      sourceMaterials: data.sourceMaterials.length > 0 ? data.sourceMaterials : null,
+      sourceMaterialsVisibility: data.sourceMaterialsVisibility || "preview",
     };
 
     const res = await fetch(`/api/guide/trips/${id}`, {

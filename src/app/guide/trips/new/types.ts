@@ -10,6 +10,7 @@ export interface TripDayData {
   startTime: string;
   isRestDay: boolean;
   equipment: string;
+  sources?: SourceMaterial[];
 }
 
 export interface PriceTier {
@@ -32,6 +33,12 @@ export interface RegFieldData {
   options: string[]; // for type === "select"
 }
 
+export interface SourceMaterial {
+  type: "pdf" | "link";
+  url: string;
+  title: string;
+}
+
 export interface WaypointData {
   lat: number;
   lng: number;
@@ -40,6 +47,7 @@ export interface WaypointData {
   navInstructions?: string; // turn-by-turn (self-guided)
   guidance?: string;        // guidance material text (self-guided, read-aloud)
   safety?: string;          // segment safety warning (self-guided)
+  sources?: SourceMaterial[];
 }
 
 export interface WizardData {
@@ -92,6 +100,8 @@ export interface WizardData {
   // Step 5
   status: string;
   visibility: "PUBLIC" | "PRIVATE";
+  sourceMaterials: SourceMaterial[];
+  sourceMaterialsVisibility: "preview" | "during";
 
   // Team (shared management)
   secondGuideEmail: string;
@@ -140,6 +150,8 @@ export const DEFAULT_WIZARD_DATA: WizardData = {
   cancelTier3Refund: "0%",
   status: "DRAFT",
   visibility: "PUBLIC",
+  sourceMaterials: [],
+  sourceMaterialsVisibility: "preview",
   secondGuideEmail: "",
   secondGuideRole: "SECONDARY",
   managerEmails: [],

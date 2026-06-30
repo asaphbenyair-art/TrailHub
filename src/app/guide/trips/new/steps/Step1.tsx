@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { WizardData, TripDayData } from "../types";
+import { WizardData, TripDayData, SourceMaterial } from "../types";
+import SourceMaterialsEditor from "./SourceMaterialsEditor";
 
 const REGIONS = ["גליל עליון", "גליל תחתון", "כרמל", "ירושלים", "שפלה", "נגב", "ערבה", "גולן", "עמק יזרעאל"];
 
@@ -128,7 +129,7 @@ function TripDayEditor({
   days: TripDayData[];
   onChange: (days: TripDayData[]) => void;
 }) {
-  function updateDay(idx: number, field: keyof TripDayData, value: string | boolean) {
+  function updateDay(idx: number, field: keyof TripDayData, value: string | boolean | SourceMaterial[]) {
     const next = days.map((d, i) => i === idx ? { ...d, [field]: value } : d);
     onChange(next);
   }
@@ -232,6 +233,10 @@ function TripDayEditor({
                 className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
             </>
           )}
+          <div className="pt-1.5 border-t border-gray-100">
+            <SourceMaterialsEditor label="חומרי מקור ליום זה" materials={day.sources ?? []}
+              onChange={(next) => updateDay(idx, "sources", next)} />
+          </div>
         </div>
       ))}
     </div>

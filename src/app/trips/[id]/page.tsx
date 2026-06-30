@@ -55,11 +55,26 @@ interface Review {
   user: { name: string | null };
 }
 
+interface SourceMaterial { type: "pdf" | "link"; url: string; title: string }
 interface Waypoint {
   lat: number;
   lng: number;
   label: string;
   description?: string;
+  sources?: SourceMaterial[];
+}
+
+function SourceList({ items }: { items: SourceMaterial[] }) {
+  return (
+    <div className="flex flex-col gap-1">
+      {items.map((m, i) => (
+        <a key={i} href={m.url} target="_blank" rel="noreferrer"
+          className="flex items-center gap-1.5 text-xs text-[#185FA5] hover:underline">
+          <span>{m.type === "pdf" ? "📄" : "🔗"}</span>{m.title}
+        </a>
+      ))}
+    </div>
+  );
 }
 
 interface Trip {
@@ -88,6 +103,8 @@ interface Trip {
   fitnessLevel: string | null;
   attributeTags: string[] | null;
   registrationFields: { id: string; label: string; type: string; required: boolean; options: string[] }[] | null;
+  sourceMaterials: SourceMaterial[] | null;
+  sourceMaterialsVisibility: string | null;
   postponeCategory?: string | null;
   postponeReason?: string | null;
   guide: {
@@ -337,6 +354,7 @@ export default function TripDetailPage() {
     parsedWaypoints = trip.waypointsJson.map((w) => ({
       lat: Number(w.lat ?? 0), lng: Number(w.lng ?? 0),
       label: w.name ?? "", description: w.description ?? "",
+      sources: Array.isArray((w as { sources?: SourceMaterial[] }).sources) ? (w as { sources?: SourceMaterial[] }).sources : undefined,
     }));
   } else if (trip.waypoints) {
     try { parsedWaypoints = JSON.parse(trip.waypoints); } catch { /* ignore */ }
@@ -534,6 +552,18 @@ export default function TripDetailPage() {
             </div>
           )}
 
+          {/* ── Source materials (trip-level, visibility-gated) ── */}
+          {Array.isArray(trip.sourceMaterials) && trip.sourceMaterials.length > 0 && (
+            trip.sourceMaterialsVisibility === "preview" || !!myRegStatus || purchase?.purchased ? (
+              <div>
+                <div className="text-sm font-semibold text-gray-900 mb-2">📚 חומרי מקור</div>
+                <div className="bg-gray-50 rounded-xl p-3"><SourceList items={trip.sourceMaterials} /></div>
+              </div>
+            ) : (
+              <div className="text-xs text-gray-400 bg-gray-50 rounded-xl p-3">📚 חומרי מקור ייחשפו במהלך הטיול</div>
+            )
+          )}
+
           {/* ── Dynamic registration fields preview ── */}
           {Array.isArray(trip.registrationFields) && trip.registrationFields.length > 0 && (
             <div>
@@ -613,6 +643,9 @@ export default function TripDetailPage() {
                             <div className="text-xs text-gray-500 mt-0.5">{wp.description}</div>
                           ) : (
                             <div className="text-xs text-gray-400 mt-0.5">{wp.lat.toFixed(5)}, {wp.lng.toFixed(5)}</div>
+                          )}
+                          {Array.isArray(wp.sources) && wp.sources.length > 0 && (
+                            <div className="mt-1"><SourceList items={wp.sources} /></div>
                           )}
                         </div>
                       </div>

@@ -12,12 +12,12 @@ export async function POST(req: NextRequest) {
   const file = form.get("file") as File | null;
   if (!file) return NextResponse.json({ error: "לא נשלח קובץ" }, { status: 400 });
 
-  const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+  const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"];
   if (!allowed.includes(file.type)) {
     return NextResponse.json({ error: "סוג קובץ לא נתמך" }, { status: 400 });
   }
 
-  const ext = file.type.split("/")[1].replace("jpeg", "jpg");
+  const ext = file.type === "application/pdf" ? "pdf" : file.type.split("/")[1].replace("jpeg", "jpg");
   const name = `${randomBytes(12).toString("hex")}.${ext}`;
   const bytes = await file.arrayBuffer();
   await writeFile(join(process.cwd(), "public", "uploads", name), Buffer.from(bytes));

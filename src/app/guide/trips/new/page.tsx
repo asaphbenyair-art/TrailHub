@@ -7,7 +7,7 @@ import Step2 from "./steps/Step2";
 import Step3 from "./steps/Step3";
 import Step4 from "./steps/Step4";
 import Step5 from "./steps/Step5";
-import { WizardData, DEFAULT_WIZARD_DATA, TripDayData, PriceTier, CouponData, WaypointData } from "./types";
+import { WizardData, DEFAULT_WIZARD_DATA, TripDayData, PriceTier, CouponData, WaypointData, SourceMaterial } from "./types";
 
 const STEPS = [
   { label: "פרטים" },
@@ -36,7 +36,7 @@ export default function NewTripWizard() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
-  function onChange(field: keyof WizardData, value: string | string[] | TripDayData[] | PriceTier[] | CouponData[] | WaypointData[]) {
+  function onChange(field: keyof WizardData, value: string | string[] | TripDayData[] | PriceTier[] | CouponData[] | WaypointData[] | SourceMaterial[]) {
     setData((prev) => ({ ...prev, [field]: value }));
   }
 
@@ -103,6 +103,8 @@ export default function NewTripWizard() {
       unlimitedCapacity: isSelfGuided,
       accessWindowDays: isSelfGuided ? (data.accessWindowDays || "30") : null,
       attributeTags: data.attributeTags || [],
+      sourceMaterials: data.sourceMaterials.length > 0 ? data.sourceMaterials : null,
+      sourceMaterialsVisibility: data.sourceMaterialsVisibility || "preview",
       endDate: data.endDate ? new Date(data.endDate).toISOString() : null,
       startTime: data.startTime,
       meetingPoint: data.meetingPoint,

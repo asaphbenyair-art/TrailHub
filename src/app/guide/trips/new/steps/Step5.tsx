@@ -1,6 +1,7 @@
 "use client";
 
 import { WizardData } from "../types";
+import SourceMaterialsEditor from "./SourceMaterialsEditor";
 
 const PUBLISH_OPTIONS = [
   { key: "DRAFT",   status: "DRAFT", visibility: "PUBLIC",  icon: "📄", label: "טיוטה", desc: "שמור, גלוי רק לך" },
@@ -62,6 +63,27 @@ export default function Step5({ data, onChange }: Props) {
         <Row label="מקסימום" value={data.maxSpots || "—"} />
         <Row label="מחיר" value={data.price ? `₪${data.price}` : "—"} />
       </Section>
+
+      {/* Source materials (trip-level) */}
+      <div className="flex flex-col gap-2 border-t border-gray-100 pt-3">
+        <SourceMaterialsEditor
+          label="חומרי מקור לטיול (פסוקים, מאמרים, רקע היסטורי)"
+          materials={data.sourceMaterials || []}
+          onChange={(next) => onChange("sourceMaterials" as keyof WizardData, next as unknown as string)}
+        />
+        {(data.sourceMaterials || []).length > 0 && (
+          <div className="flex gap-2">
+            {([["preview", "גלוי מראש (תצוגה מקדימה)"], ["during", "רק במהלך הטיול"]] as const).map(([val, lbl]) => (
+              <button key={val} type="button"
+                onClick={() => onChange("sourceMaterialsVisibility" as keyof WizardData, val as unknown as string)}
+                className={`flex-1 py-1.5 rounded-lg border text-xs transition-colors ${
+                  data.sourceMaterialsVisibility === val ? "border-[#1A6B4A] bg-[#D6EDE3] text-[#0F5038]" : "border-gray-200 text-gray-500"}`}>
+                {lbl}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="flex flex-col gap-2">
         <label className="text-xs font-medium text-gray-500">בחר מצב פרסום</label>
