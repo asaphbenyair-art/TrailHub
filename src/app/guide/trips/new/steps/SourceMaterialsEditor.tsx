@@ -25,6 +25,9 @@ export default function SourceMaterialsEditor({
   function remove(i: number) {
     onChange(materials.filter((_, j) => j !== i));
   }
+  function setDescription(i: number, description: string) {
+    onChange(materials.map((m, j) => (j === i ? { ...m, description } : m)));
+  }
   async function uploadPdf(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -49,10 +52,15 @@ export default function SourceMaterialsEditor({
       {materials.length > 0 && (
         <div className="flex flex-col gap-1.5">
           {materials.map((m, i) => (
-            <div key={i} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-1.5 text-xs">
-              <span>{m.type === "pdf" ? "📄" : "🔗"}</span>
-              <span className="flex-1 truncate text-gray-700">{m.title}</span>
-              <button type="button" onClick={() => remove(i)} className="text-gray-300 hover:text-red-400">✕</button>
+            <div key={i} className="bg-gray-50 rounded-lg px-3 py-1.5 flex flex-col gap-1">
+              <div className="flex items-center gap-2 text-xs">
+                <span>{m.type === "pdf" ? "📄" : "🔗"}</span>
+                <span className="flex-1 truncate text-gray-700">{m.title}</span>
+                <button type="button" onClick={() => remove(i)} className="text-gray-300 hover:text-red-400">✕</button>
+              </div>
+              <input type="text" value={m.description ?? ""} onChange={(e) => setDescription(i, e.target.value)}
+                placeholder="תיאור קצר (על מה זה?) — אופציונלי"
+                className="border border-gray-200 rounded px-2 py-1 text-[11px] focus:outline-none focus:border-[#1A6B4A] bg-white" />
             </div>
           ))}
         </div>

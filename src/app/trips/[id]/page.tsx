@@ -56,7 +56,7 @@ interface Review {
   user: { name: string | null };
 }
 
-interface SourceMaterial { type: "pdf" | "link"; url: string; title: string }
+interface SourceMaterial { type: "pdf" | "link"; url: string; title: string; description?: string }
 interface Waypoint {
   lat: number;
   lng: number;
@@ -69,10 +69,13 @@ function SourceList({ items }: { items: SourceMaterial[] }) {
   return (
     <div className="flex flex-col gap-1">
       {items.map((m, i) => (
-        <a key={i} href={m.url} target="_blank" rel="noreferrer"
-          className="flex items-center gap-1.5 text-xs text-[#185FA5] hover:underline">
-          <span>{m.type === "pdf" ? "📄" : "🔗"}</span>{m.title}
-        </a>
+        <div key={i}>
+          <a href={m.url} target="_blank" rel="noreferrer"
+            className="flex items-center gap-1.5 text-xs text-[#185FA5] hover:underline">
+            <span>{m.type === "pdf" ? "📄" : "🔗"}</span>{m.title}
+          </a>
+          {m.description && <div className="text-[11px] text-gray-400 pr-5">{m.description}</div>}
+        </div>
       ))}
     </div>
   );

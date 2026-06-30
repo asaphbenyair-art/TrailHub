@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 
 const TripDetailMap = dynamic(() => import("@/components/TripDetailMap"), { ssr: false });
 
-interface SourceMaterial { type: "pdf" | "link"; url: string; title: string }
+interface SourceMaterial { type: "pdf" | "link"; url: string; title: string; description?: string }
 interface Waypoint { lat?: number; lng?: number; name?: string; description?: string; navInstructions?: string; guidance?: string; safety?: string; sources?: SourceMaterial[] }
 interface Trip {
   id: string; title: string; description: string | null; whatToBring: string | null; region: string;
@@ -168,7 +168,10 @@ export default function SelfGuidedStartPage() {
               {Array.isArray(wp.sources) && wp.sources.length > 0 && (
                 <div className="mt-1.5 flex flex-col gap-1">
                   {wp.sources.map((m, j) => (
-                    <a key={j} href={m.url} target="_blank" rel="noreferrer" className="text-xs text-[#185FA5] hover:underline">{m.type === "pdf" ? "📄" : "🔗"} {m.title}</a>
+                    <div key={j}>
+                      <a href={m.url} target="_blank" rel="noreferrer" className="text-xs text-[#185FA5] hover:underline">{m.type === "pdf" ? "📄" : "🔗"} {m.title}</a>
+                      {m.description && <div className="text-[11px] text-gray-400 pr-4">{m.description}</div>}
+                    </div>
                   ))}
                 </div>
               )}

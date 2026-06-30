@@ -37,6 +37,7 @@ export interface SourceMaterial {
   type: "pdf" | "link";
   url: string;
   title: string;
+  description?: string;
 }
 
 export interface WaypointData {

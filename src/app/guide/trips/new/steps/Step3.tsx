@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { WizardData, RegFieldData } from "../types";
 import { TRIP_TAGS } from "@/lib/tripTags";
+import UserPicker from "@/components/UserPicker";
 
 const DIFFICULTIES = [
   { value: "EASY", label: "קל", cls: "border-[#1A6B4A] bg-[#D6EDE3] text-[#0F5038]" },
@@ -344,15 +345,10 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
       <div className="flex flex-col gap-3 border-t border-gray-100 pt-4">
         <label className="text-xs font-medium text-gray-500">צוות הטיול (ניהול משותף)</label>
         <div className="flex flex-col gap-1">
-          <label className="text-[11px] text-gray-400">מדריך שני (אופציונלי) — אימייל</label>
-          <input
-            type="email"
-            value={data.secondGuideEmail}
-            onChange={(e) => onChange("secondGuideEmail", e.target.value)}
-            placeholder="guide2@example.com"
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
-            dir="ltr"
-          />
+          <label className="text-[11px] text-gray-400">מדריך שני (אופציונלי) — חפש משתמש רשום</label>
+          <UserPicker guidesOnly max={1} placeholder="חפש מדריך לפי שם או אימייל..."
+            selected={data.secondGuideEmail ? [data.secondGuideEmail] : []}
+            onChange={(emails) => onChange("secondGuideEmail", emails[0] ?? "")} />
           {data.secondGuideEmail && (
             <div className="flex gap-2 mt-1">
               {([["SECONDARY", "משני"], ["EQUAL", "שווה (ללא הבחנה)"]] as const).map(([val, label]) => (
@@ -366,15 +362,10 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
           )}
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-[11px] text-gray-400">מנהלי-משנה (גישה מלאה) — אימיילים מופרדים בפסיק</label>
-          <input
-            type="text"
-            value={(data.managerEmails || []).join(", ")}
-            onChange={(e) => onChange("managerEmails" as keyof WizardData, e.target.value.split(",").map((s) => s.trim()).filter(Boolean) as unknown as string)}
-            placeholder="manager@example.com, ..."
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
-            dir="ltr"
-          />
+          <label className="text-[11px] text-gray-400">מנהלי-משנה (גישה מלאה, עד 3) — חפש משתמשים רשומים</label>
+          <UserPicker max={3} placeholder="חפש מנהל-משנה..."
+            selected={data.managerEmails || []}
+            onChange={(emails) => onChange("managerEmails" as keyof WizardData, emails as unknown as string)} />
           <p className="text-[11px] text-gray-400">מנהל-משנה רואה ויכול לעשות הכל כמו המדריך, אך אינו מוצג כמדריך בטיול.</p>
         </div>
       </div>
