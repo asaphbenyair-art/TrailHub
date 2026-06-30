@@ -110,7 +110,30 @@ export default function TripsPage() {
   const [range, setRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
   const [mobileCalOpen, setMobileCalOpen] = useState(false);
   const [view, setView] = useState<"list" | "calendar">("list");
+  const [showIntent, setShowIntent] = useState(false);
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Search intent flow — ask once, remember choice
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!localStorage.getItem("trailhub_intent")) setShowIntent(true);
+  }, []);
+
+  function chooseIntent(opt: "when" | "kind" | "soon" | "browse") {
+    if (typeof window !== "undefined") localStorage.setItem("trailhub_intent", opt);
+    setShowIntent(false);
+    if (opt === "when") {
+      setView("calendar");
+    } else if (opt === "kind") {
+      setView("list"); setPanelOpen(true); setDraft(filters);
+    } else if (opt === "soon") {
+      setView("list");
+      const next = { ...filters, sort: "date" }; setFilters(next); fetchTrips(next);
+    } else {
+      // browse — preferences already seed filters; just show the list
+      setView("list");
+    }
+  }
 
   const fetchTrips = useCallback(async (f: Filters) => {
     setLoading(true);
@@ -224,6 +247,30 @@ export default function TripsPage() {
     <div dir="rtl" className="min-h-screen bg-[#f5f5f5]">
       <style>{`@keyframes fadeIn{from{opacity:0}to{opacity:1}}`}</style>
 
+      {/* Search intent flow */}
+      {showIntent && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-end md:items-center justify-center p-4" onClick={() => setShowIntent(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-[420px] p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="text-base font-semibold text-gray-900 mb-1">מה אתה מחפש?</div>
+            <div className="text-xs text-gray-500 mb-4">נתאים לך את החיפוש</div>
+            <div className="flex flex-col gap-2">
+              {([
+                ["when", "🗓 אני יודע מתי אני פנוי", "אבחר תאריך ואראה מה יוצא"],
+                ["kind", "🎯 מחפש סוג טיול מסוים", "אסנן לפי קושי, איזור ומאפיינים"],
+                ["soon", "⏱ מה קורה בקרוב", "הקרובים ביותר, ללא סינון"],
+                ["browse", "✨ סתם מדפדף, הפתע אותי", "מותאם להעדפות שלי"],
+              ] as const).map(([key, title, sub]) => (
+                <button key={key} type="button" onClick={() => chooseIntent(key)}
+                  className="text-right border border-gray-200 rounded-xl p-3 hover:border-[#1A6B4A] hover:bg-[#F0FAF5] transition-colors">
+                  <div className="text-sm font-medium text-gray-900">{title}</div>
+                  <div className="text-[11px] text-gray-400 mt-0.5">{sub}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top bar */}
       <div className="px-3 py-3">
         <div className="max-w-5xl mx-auto bg-white rounded-xl px-3 py-2.5 flex items-center gap-2.5">
@@ -257,7 +304,9 @@ export default function TripsPage() {
       </div>
 
       {/* Category: guided vs self-guided */}
-      <div className="max-w-5xl mx-auto px-3 mb-2 flex justify-center md:justify-start">
+      <div className="max-w-5xl mx-auto px-3 mb-2 flex items-center gap-2 justify-center md:justify-start">
+        <button type="button" onClick={() => setShowIntent(true)}
+          className="text-[11px] text-gray-400 hover:text-[#1A6B4A] underline shrink-0">שנה מה אני מחפש</button>
         <div className="inline-flex bg-white rounded-full border border-gray-200 p-0.5">
           {([["guided", "🧭 טיולים מודרכים"], ["self_guided", "🎒 טיולים עצמאיים"]] as const).map(([v, label]) => (
             <button key={v} type="button"
