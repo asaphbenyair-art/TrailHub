@@ -211,6 +211,18 @@ export default function TripDetailPage() {
   const [purchase, setPurchase] = useState<{ purchased: boolean; expired?: boolean } | null>(null);
   const [buying, setBuying] = useState(false);
   const [showLoc, setShowLoc] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewDone, setReviewDone] = useState(false);
+
+  async function submitReview() {
+    if (!reviewRating) return;
+    const res = await fetch(`/api/trips/${id}/reviews`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rating: reviewRating, comment: reviewComment }),
+    });
+    if (res.ok) setReviewDone(true);
+  }
 
   const isSelfGuided = trip?.tripType === "SELF_GUIDED";
   useEffect(() => {
@@ -765,6 +777,30 @@ export default function TripDetailPage() {
               </p>
             )}
           </div>
+          )}
+
+          {/* ── Write a review (eligible: registered or purchased) ── */}
+          {session && (!!myRegStatus || purchase?.purchased) && (
+            <div className="bg-[#F0FAF5] border border-[#1A6B4A]/15 rounded-xl p-3">
+              {reviewDone ? (
+                <div className="text-xs text-[#0F5038]">תודה! הביקורת נשמרה.</div>
+              ) : (
+                <>
+                  <div className="text-sm font-semibold text-gray-900 mb-1.5">כתוב ביקורת</div>
+                  <div className="flex gap-1 mb-2">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button key={n} type="button" onClick={() => setReviewRating(n)}
+                        className={`text-xl ${n <= reviewRating ? "text-amber-500" : "text-gray-300"}`}>★</button>
+                    ))}
+                  </div>
+                  <textarea value={reviewComment} onChange={(e) => setReviewComment(e.target.value)} rows={2}
+                    placeholder="ספר על החוויה (אופציונלי)"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-[#1A6B4A] mb-2" />
+                  <button type="button" onClick={submitReview} disabled={!reviewRating}
+                    className="px-4 py-1.5 bg-[#1A6B4A] text-white rounded-full text-xs font-medium disabled:opacity-50">שלח ביקורת</button>
+                </>
+              )}
+            </div>
           )}
 
           {/* ── Reviews ── */}
