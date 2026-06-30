@@ -28,13 +28,37 @@ export default function SelfGuidedStartPage() {
   const [trip, setTrip] = useState<Trip | null>(null);
   const [allowed, setAllowed] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
+  const [offlineSaved, setOfflineSaved] = useState(false);
+  const [offlineMode, setOfflineMode] = useState(false);
+
+  const cacheKey = `trailhub_offline_${id}`;
 
   useEffect(() => {
-    fetch(`/api/trips/${id}/purchase`).then((r) => r.json()).then((p) => {
+    const cached = typeof window !== "undefined" ? localStorage.getItem(cacheKey) : null;
+    setOfflineSaved(!!cached);
+
+    Promise.all([
+      fetch(`/api/trips/${id}/purchase`).then((r) => r.json()),
+      fetch(`/api/trips/${id}`).then((r) => r.json()),
+    ]).then(([p, t]) => {
       setAllowed(p.purchased && !p.expired);
-    }).catch(() => setAllowed(false));
-    fetch(`/api/trips/${id}`).then((r) => r.json()).then((t) => { if (!t.error) setTrip(t); }).finally(() => setLoading(false));
-  }, [id]);
+      if (!t.error) setTrip(t);
+      setLoading(false);
+    }).catch(() => {
+      // Offline / network error — fall back to cached content if available
+      if (cached) { setTrip(JSON.parse(cached)); setAllowed(true); setOfflineMode(true); }
+      else setAllowed(false);
+      setLoading(false);
+    });
+  }, [id, cacheKey]);
+
+  function downloadOffline() {
+    if (!trip) return;
+    try { localStorage.setItem(cacheKey, JSON.stringify(trip)); setOfflineSaved(true); } catch { /* quota */ }
+  }
+  function removeOffline() {
+    try { localStorage.removeItem(cacheKey); setOfflineSaved(false); } catch { /* noop */ }
+  }
 
   if (loading || allowed === null) return <div dir="rtl" className="min-h-screen flex items-center justify-center text-gray-400 text-sm">טוען...</div>;
   if (!allowed) return (
@@ -52,8 +76,18 @@ export default function SelfGuidedStartPage() {
       <div className="max-w-[480px] mx-auto pb-10">
         <div className="flex items-center gap-3 mb-3">
           <button type="button" onClick={() => router.push(`/trips/${id}`)} className="text-gray-400 hover:text-gray-600 text-sm">← חזרה</button>
-          <h1 className="text-sm font-semibold text-gray-900">טיול עצמאי — {trip.title}</h1>
+          <h1 className="text-sm font-semibold text-gray-900 flex-1 truncate">טיול עצמאי — {trip.title}</h1>
+          {offlineSaved ? (
+            <button type="button" onClick={removeOffline} className="text-[11px] text-[#0F5038] border border-[#1A6B4A]/30 rounded-full px-2.5 py-1 shrink-0">✓ זמין לא מקוון</button>
+          ) : (
+            <button type="button" onClick={downloadOffline} className="text-[11px] text-[#185FA5] border border-[#185FA5]/30 rounded-full px-2.5 py-1 shrink-0">📥 הורד לא מקוון</button>
+          )}
         </div>
+        {offlineMode && (
+          <div className="bg-[#FDF3DC] border border-[#E8A020]/40 rounded-xl px-3 py-2 mb-3 text-[11px] text-[#7A5010]">
+            ⚠ מצב לא מקוון — מוצג תוכן שמור (ייתכן שאינו מעודכן). המפה והניווט החי דורשים חיבור.
+          </div>
+        )}
 
         <div className="bg-[#EEF5FC] border border-[#185FA5]/20 rounded-2xl p-3 mb-3 text-xs text-[#185FA5]">
           📍 הנקודה הכחולה במפה מציגה את מיקומך בזמן אמת. כל תחנה כוללת הנחיות והסבר עם אפשרות הקראה.
