@@ -30,8 +30,20 @@ export default function SelfGuidedStartPage() {
   const [loading, setLoading] = useState(true);
   const [offlineSaved, setOfflineSaved] = useState(false);
   const [offlineMode, setOfflineMode] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
+  const [shareEmails, setShareEmails] = useState<string[]>(["", "", ""]);
+  const [shareMsg, setShareMsg] = useState("");
 
   const cacheKey = `trailhub_offline_${id}`;
+
+  async function saveShare() {
+    const emails = shareEmails.map((e) => e.trim()).filter(Boolean);
+    const res = await fetch(`/api/trips/${id}/purchase`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sharedWith: emails }),
+    });
+    setShareMsg(res.ok ? "השיתוף נשמר" : "שגיאה");
+  }
 
   useEffect(() => {
     const cached = typeof window !== "undefined" ? localStorage.getItem(cacheKey) : null;
@@ -42,6 +54,8 @@ export default function SelfGuidedStartPage() {
       fetch(`/api/trips/${id}`).then((r) => r.json()),
     ]).then(([p, t]) => {
       setAllowed(p.purchased && !p.expired);
+      setIsOwner(!!p.owner);
+      if (Array.isArray(p.sharedWith)) setShareEmails([p.sharedWith[0] ?? "", p.sharedWith[1] ?? "", p.sharedWith[2] ?? ""]);
       if (!t.error) setTrip(t);
       setLoading(false);
     }).catch(() => {
@@ -102,6 +116,26 @@ export default function SelfGuidedStartPage() {
             liveLocation
           />
         </div>
+
+        {/* Share access (owner only, up to 3 people) */}
+        {isOwner && !offlineMode && (
+          <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-3">
+            <div className="text-sm font-semibold text-gray-900 mb-1">שתף גישה (עד 3 אנשים)</div>
+            <div className="text-[11px] text-gray-400 mb-2">בני משפחה שתשתף יוכלו לגשת לתוכן עם המייל שלהם</div>
+            <div className="flex flex-col gap-1.5">
+              {shareEmails.map((e, i) => (
+                <input key={i} type="email" value={e} dir="ltr"
+                  onChange={(ev) => setShareEmails((prev) => prev.map((x, j) => j === i ? ev.target.value : x))}
+                  placeholder={`אימייל ${i + 1}`}
+                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+              ))}
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <button type="button" onClick={saveShare} className="px-4 py-1.5 bg-[#1A6B4A] text-white rounded-full text-xs font-medium">שמור שיתוף</button>
+              {shareMsg && <span className="text-[11px] text-[#0F5038]">{shareMsg}</span>}
+            </div>
+          </div>
+        )}
 
         {trip.description && (
           <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-3">
