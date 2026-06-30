@@ -32,6 +32,7 @@ interface Props {
   waypoints?: Array<{ lat: number; lng: number; label: string }>;
   onMapClick?: (lat: number, lng: number) => void;
   height?: number;
+  liveLocation?: boolean;
 }
 
 export default function TripDetailMap({
@@ -40,10 +41,12 @@ export default function TripDetailMap({
   waypoints = [],
   onMapClick,
   height = 160,
+  liveLocation = false,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markerRefs = useRef<L.Marker[]>([]);
+  const dotRef = useRef<L.CircleMarker | null>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -92,6 +95,32 @@ export default function TripDetailMap({
         .addTo(map)
     );
   }, [waypoints, ready]);
+
+  // Live "blue dot" of the user's own GPS position (personal only, not shared)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready || !liveLocation || typeof navigator === "undefined" || !navigator.geolocation) return;
+    let first = true;
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        if (!dotRef.current) {
+          dotRef.current = L.circleMarker([latitude, longitude], {
+            radius: 8, color: "#fff", weight: 3, fillColor: "#2C5F8A", fillOpacity: 1,
+          }).addTo(map).bindPopup('<div dir="rtl" style="font-size:12px">📍 המיקום שלך</div>');
+        } else {
+          dotRef.current.setLatLng([latitude, longitude]);
+        }
+        if (first) { map.setView([latitude, longitude], Math.max(map.getZoom(), 14)); first = false; }
+      },
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 5000 }
+    );
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+      if (dotRef.current) { dotRef.current.remove(); dotRef.current = null; }
+    };
+  }, [liveLocation, ready]);
 
   return (
     <div

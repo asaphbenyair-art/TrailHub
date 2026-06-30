@@ -2,11 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+
+const TripDetailMap = dynamic(() => import("@/components/TripDetailMap"), { ssr: false });
 
 interface SourceMaterial { type: "pdf" | "link"; url: string; title: string }
 interface Waypoint { lat?: number; lng?: number; name?: string; description?: string; navInstructions?: string; guidance?: string; safety?: string; sources?: SourceMaterial[] }
 interface Trip {
-  id: string; title: string; description: string | null; whatToBring: string | null;
+  id: string; title: string; description: string | null; whatToBring: string | null; region: string;
   waypointsJson: Waypoint[] | null;
   sourceMaterials: SourceMaterial[] | null;
 }
@@ -53,7 +56,17 @@ export default function SelfGuidedStartPage() {
         </div>
 
         <div className="bg-[#EEF5FC] border border-[#185FA5]/20 rounded-2xl p-3 mb-3 text-xs text-[#185FA5]">
-          📍 ניווט בזמן אמת (נקודה כחולה) זמין במהלך ההליכה. כל תחנה כוללת הנחיות והסבר עם אפשרות הקראה.
+          📍 הנקודה הכחולה במפה מציגה את מיקומך בזמן אמת. כל תחנה כוללת הנחיות והסבר עם אפשרות הקראה.
+        </div>
+
+        {/* Live map with blue dot */}
+        <div className="mb-3">
+          <TripDetailMap
+            region={trip.region}
+            waypoints={waypoints.filter((w) => w.lat != null && w.lng != null).map((w, i) => ({ lat: w.lat!, lng: w.lng!, label: w.name || `תחנה ${i + 1}` }))}
+            height={220}
+            liveLocation
+          />
         </div>
 
         {trip.description && (

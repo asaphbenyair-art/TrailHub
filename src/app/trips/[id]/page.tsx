@@ -210,6 +210,7 @@ export default function TripDetailPage() {
   const [fav, setFav] = useState(false);
   const [purchase, setPurchase] = useState<{ purchased: boolean; expired?: boolean } | null>(null);
   const [buying, setBuying] = useState(false);
+  const [showLoc, setShowLoc] = useState(false);
 
   const isSelfGuided = trip?.tripType === "SELF_GUIDED";
   useEffect(() => {
@@ -588,7 +589,14 @@ export default function TripDetailPage() {
               meetingPoint={trip.meetingPoint}
               waypoints={parsedWaypoints}
               height={180}
+              liveLocation={showLoc}
             />
+            <button type="button" onClick={() => setShowLoc((v) => !v)}
+              className={`mt-2 text-xs rounded-full px-3 py-1.5 transition-colors ${
+                showLoc ? "bg-[#2C5F8A] text-white" : "border border-[#2C5F8A]/40 text-[#2C5F8A] hover:bg-[#EEF5FC]"
+              }`}>
+              {showLoc ? "● המיקום שלי פעיל" : "📍 הצג את המיקום שלי"}
+            </button>
 
             {/* Route stats */}
             {(trip.distanceKm > 0 || trip.durationMin > 0) && (
