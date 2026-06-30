@@ -39,6 +39,12 @@ interface Trip {
   images: string[];
   approvalNote: string | null;
   visibility?: string;
+  tripType?: string;
+}
+
+interface SelfGuidedTrip {
+  id: string; title: string; region: string; images: string[]; price: number; status: string;
+  purchaseCount: number; revenue: number; reviewCount: number;
 }
 
 interface Guide {
@@ -63,8 +69,9 @@ export default function GuideDashboard() {
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
-  const [tab, setTab] = useState<"trips" | "stats">("trips");
+  const [tab, setTab] = useState<"trips" | "selfguided" | "stats">("trips");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [selfGuided, setSelfGuided] = useState<SelfGuidedTrip[]>([]);
 
   async function broadcast(tripId: string) {
     const message = window.prompt("הודעה לכל הנרשמים:");
@@ -101,11 +108,13 @@ export default function GuideDashboard() {
     const data = await res.json();
     if (data.trips) {
       const now = new Date();
-      const upcoming = data.trips.filter((t: Trip) => new Date(t.date) >= now);
-      const past = data.trips.filter((t: Trip) => new Date(t.date) < now);
+      const regular = data.trips.filter((t: Trip) => t.tripType !== "SELF_GUIDED");
+      const upcoming = regular.filter((t: Trip) => new Date(t.date) >= now);
+      const past = regular.filter((t: Trip) => new Date(t.date) < now);
       setTrips([...upcoming, ...past]);
       setGuide(data.guide);
     }
+    fetch("/api/guide/self-guided").then((r) => r.ok ? r.json() : []).then((d) => setSelfGuided(Array.isArray(d) ? d : [])).catch(() => {});
     setLoading(false);
   }, []);
 
@@ -150,7 +159,7 @@ export default function GuideDashboard() {
 
         {/* Tabs */}
         <div className="bg-white rounded-xl overflow-hidden flex shadow-sm">
-          {([["trips", "הטיולים שלי"], ["stats", "סטטיסטיקות"]] as const).map(([k, label]) => (
+          {([["trips", "הטיולים שלי"], ["selfguided", "עצמאיים"], ["stats", "סטטיסטיקות"]] as const).map(([k, label]) => (
             <button key={k} type="button" onClick={() => setTab(k)}
               className={`flex-1 py-2.5 text-xs font-medium border-b-2 transition-colors ${
                 tab === k ? "border-[#1A6B4A] text-[#1A6B4A]" : "border-transparent text-gray-400"}`}>
@@ -161,6 +170,43 @@ export default function GuideDashboard() {
 
         {loading && (
           <div className="bg-white rounded-xl p-10 text-center text-gray-400 text-sm shadow-sm">טוען...</div>
+        )}
+
+        {/* Self-guided tab */}
+        {!loading && tab === "selfguided" && (
+          <div className="flex flex-col gap-3">
+            <div className="flex justify-end">
+              <Link href="/guide/trips/new" className="text-xs text-[#1A6B4A] border border-[#1A6B4A] rounded-full px-3 py-1.5 hover:bg-[#D6EDE3]">+ טיול עצמאי חדש</Link>
+            </div>
+            {selfGuided.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center shadow-sm text-gray-500 text-sm">עוד אין טיולים עצמאיים</div>
+            ) : selfGuided.map((t) => (
+              <div key={t.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex">
+                <div className="w-24 flex-shrink-0" style={{ minHeight: 96 }}>
+                  {t.images?.[0] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={t.images[0]} alt="" className="w-full h-full object-cover" />
+                  ) : <div className="w-full h-full" style={{ background: "linear-gradient(160deg,#3d6b35,#1a3d16)", minHeight: 96 }} />}
+                </div>
+                <div className="flex-1 p-3 min-w-0">
+                  <div className="text-sm font-medium text-gray-900 truncate">{t.title}</div>
+                  <div className="text-[11px] text-gray-400 mb-2">📍 {t.region} · ₪{t.price}</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[[t.purchaseCount, "רכישות"], [`₪${t.revenue.toLocaleString("he-IL")}`, "הכנסה"], [t.reviewCount, "ביקורות"]].map(([v, l], i) => (
+                      <div key={i} className="bg-gray-50 rounded-lg py-1.5 text-center">
+                        <div className="text-sm font-semibold text-gray-900">{v}</div>
+                        <div className="text-[10px] text-gray-400">{l}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <Link href={`/guide/trips/${t.id}/edit`} className="flex-1 text-center text-[11px] text-gray-600 border border-gray-200 rounded-lg py-1.5 hover:bg-gray-50">עריכה</Link>
+                    <Link href={`/trips/${t.id}`} className="flex-1 text-center text-[11px] text-[#1A6B4A] border border-[#1A6B4A]/25 rounded-lg py-1.5 hover:bg-[#D6EDE3]">תצוגה</Link>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
 
         {/* Statistics tab */}
