@@ -1,10 +1,18 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import { SignOutButton } from "@/components/SignOutButton";
 
 export default async function Home() {
   const session = await auth();
   const role = (session?.user as { role?: string })?.role;
+
+  // Restore the user's last active mode on login
+  if (session?.user) {
+    const me = await prisma.user.findUnique({ where: { id: session.user.id! }, select: { activeMode: true } });
+    if (me?.activeMode === "guide" && (role === "GUIDE" || role === "ADMIN")) redirect("/guide/dashboard");
+  }
 
   return (
     <main className="flex flex-col items-center justify-center min-h-screen p-4">

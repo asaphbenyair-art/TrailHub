@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import NotificationBell from "@/components/NotificationBell";
+import ModeSwitch from "@/components/ModeSwitch";
 
 const DIFF_BADGE: Record<string, { bg: string; color: string; label: string }> = {
   EASY: { bg: "#EAF3DE", color: "#27500A", label: "קל" },
@@ -119,6 +120,7 @@ export default function GuideDashboard() {
   }, []);
 
   useEffect(() => { loadTrips(); }, [loadTrips]);
+  useEffect(() => { fetch("/api/me/mode", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode: "guide" }) }).catch(() => {}); }, []);
 
   async function handleDelete(id: string) {
     setDeletingId(id);
@@ -147,6 +149,7 @@ export default function GuideDashboard() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            <ModeSwitch current="guide" />
             <NotificationBell />
             <Link
               href="/guide/trips/new"

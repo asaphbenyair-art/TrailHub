@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import NotificationBell from "@/components/NotificationBell";
 import CalendarView from "@/components/CalendarView";
+import ModeSwitch from "@/components/ModeSwitch";
 import { TRIP_TAGS } from "@/lib/tripTags";
 
 const REGIONS = ["גליל עליון","גליל תחתון","כרמל","ירושלים","שפלה","נגב","ערבה","גולן","עמק יזרעאל"];
@@ -118,6 +119,12 @@ export default function TripsPage() {
     if (typeof window === "undefined") return;
     if (!localStorage.getItem("trailhub_intent")) setShowIntent(true);
   }, []);
+
+  // Remember that the user is in hiker mode
+  useEffect(() => {
+    if (!session) return;
+    fetch("/api/me/mode", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode: "hiker" }) }).catch(() => {});
+  }, [session]);
 
   function chooseIntent(opt: "when" | "kind" | "soon" | "browse") {
     if (typeof window !== "undefined") localStorage.setItem("trailhub_intent", opt);
@@ -289,6 +296,7 @@ export default function TripsPage() {
           </div>
           {session ? (
             <div className="flex items-center gap-1.5">
+              <ModeSwitch current="hiker" />
               <NotificationBell />
               <Link href="/profile">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-semibold text-white flex-shrink-0"
