@@ -37,6 +37,14 @@ export default function Step2({ data, onChange }: Props) {
     onChange("waypointsJson", [...mapWaypoints, { lat, lng, name: `נקודת עצירה ${mapWaypoints.length + 1}`, description: "" }]);
   }, [mapWaypoints, onChange]);
 
+  function addWaypoint() {
+    // Default near the last point (or Israel's center) — guide fine-tunes on the map / via nav text
+    const last = mapWaypoints[mapWaypoints.length - 1];
+    const lat = last ? last.lat + 0.003 : 31.5;
+    const lng = last ? last.lng + 0.003 : 34.9;
+    onChange("waypointsJson", [...mapWaypoints, { lat, lng, name: `נקודת עצירה ${mapWaypoints.length + 1}`, description: "" }]);
+  }
+
   function patchWaypoint(i: number, patch: Partial<WaypointData>) {
     onChange("waypointsJson", mapWaypoints.map((w, j) => (j === i ? { ...w, ...patch } : w)));
   }
@@ -101,9 +109,21 @@ export default function Step2({ data, onChange }: Props) {
       </div>
 
       {/* Waypoints list — name + description per point */}
-      {mapWaypoints.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <label className="text-xs font-medium text-gray-500">נקודות עצירה ({mapWaypoints.length})</label>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-medium text-gray-500">
+            {data.tripType === "SELF_GUIDED" ? "תחנות ניווט" : "נקודות עצירה"} ({mapWaypoints.length})
+          </label>
+          <button type="button" onClick={addWaypoint}
+            className="text-xs text-[#1A6B4A] font-medium border border-[#1A6B4A] rounded-full px-3 py-1 hover:bg-[#D6EDE3] transition-colors">
+            + הוסף תחנה
+          </button>
+        </div>
+        {data.tripType === "SELF_GUIDED" && mapWaypoints.length === 0 && (
+          <p className="text-[11px] text-gray-400">כל תחנה כוללת הוראות ניווט צעד-אחר-צעד, חומר הדרכה שיוקרא בקול, ואזהרת בטיחות — הם מחליפים את המדריך החי.</p>
+        )}
+        {mapWaypoints.length > 0 && (
+          <>
           {mapWaypoints.map((wp, i) => (
             <div key={i} className="border border-gray-200 rounded-xl p-2.5 flex flex-col gap-1.5">
               <div className="flex items-center gap-2">
@@ -130,8 +150,9 @@ export default function Step2({ data, onChange }: Props) {
               </div>
             </div>
           ))}
-        </div>
-      )}
+          </>
+        )}
+      </div>
 
       {/* Distance + Duration */}
       <div className="grid grid-cols-2 gap-3">

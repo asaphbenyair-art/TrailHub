@@ -33,12 +33,17 @@ export async function GET(
   const offers = await prisma.rideshareOffer.findMany({
     where: { tripId: id, isCancelled: false },
     include: {
-      poster: { select: { id: true, name: true, image: true } },
-      claims: { include: { user: { select: { id: true, name: true } } } },
+      poster: { select: { id: true, name: true, image: true, phone: true } },
+      claims: { include: { user: { select: { id: true, name: true, phone: true } } } },
     },
     orderBy: { createdAt: "desc" },
   });
-  return NextResponse.json({ offers, meId: session.user.id });
+
+  const looking = !!(await prisma.rideshareRequest.findUnique({
+    where: { tripId_userId: { tripId: id, userId: session.user.id! } },
+  }));
+
+  return NextResponse.json({ offers, meId: session.user.id, looking });
 }
 
 // POST → create a ride offer
@@ -55,20 +60,40 @@ export async function POST(
   const { departureCity, spots, direction, costSharing, note } = await req.json();
   if (!departureCity?.trim()) return NextResponse.json({ error: "נא להזין עיר יציאה" }, { status: 400 });
 
+  const posterId = session.user.id!;
+  const cleanCity = departureCity.trim();
+
   const offer = await prisma.rideshareOffer.create({
     data: {
       tripId: id,
-      posterId: session.user.id!,
-      departureCity: departureCity.trim(),
+      posterId,
+      departureCity: cleanCity,
       spots: Math.max(1, parseInt(spots) || 1),
       direction: direction === "ONE_WAY" ? "ONE_WAY" : "ROUND_TRIP",
       costSharing: !!costSharing,
       note: note?.trim() || null,
     },
     include: {
-      poster: { select: { id: true, name: true, image: true } },
-      claims: { include: { user: { select: { id: true, name: true } } } },
+      poster: { select: { id: true, name: true, image: true, phone: true } },
+      claims: { include: { user: { select: { id: true, name: true, phone: true } } } },
     },
   });
+
+  // Notify users who marked themselves as "looking for a ride" on this trip
+  const seekers = await prisma.rideshareRequest.findMany({
+    where: { tripId: id, userId: { not: posterId } },
+  });
+  if (seekers.length > 0) {
+    await prisma.notification.createMany({
+      data: seekers.map((s) => ({
+        userId: s.userId,
+        tripId: id,
+        type: "RIDESHARE_UPDATE" as const,
+        title: "טרמפ חדש פורסם",
+        body: `טרמפ חדש מ${cleanCity} פורסם לטיול שסימנת שאתה מחפש אליו טרמפ.`,
+      })),
+    });
+  }
+
   return NextResponse.json(offer, { status: 201 });
 }

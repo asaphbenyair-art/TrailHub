@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 interface Message {
@@ -23,11 +23,14 @@ function formatDay(iso: string) {
 export default function HikerChatPage() {
   const { id: tripId } = useParams<{ id: string }>();
   const router = useRouter();
+  const search = useSearchParams();
+  const withUserId = search.get("with");
   const { data: session, status } = useSession();
   const meId = (session?.user as { id?: string })?.id;
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [guideUserId, setGuideUserId] = useState<string | null>(null);
+  const [counterpartName, setCounterpartName] = useState<string | null>(null);
   const [tripTitle, setTripTitle] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
@@ -47,12 +50,20 @@ export default function HikerChatPage() {
   }, [tripId]);
 
   function loadMessages() {
-    fetch(`/api/trips/${tripId}/chat`)
+    const url = withUserId
+      ? `/api/trips/${tripId}/chat?with=${withUserId}`
+      : `/api/trips/${tripId}/chat`;
+    fetch(url)
       .then((r) => r.json())
-      .then((data: { messages: Message[]; guideUserId: string }) => {
+      .then((data: {
+        messages: Message[];
+        guideUserId: string;
+        counterpart?: { id: string; name: string | null; image: string | null } | null;
+      }) => {
         if (data.messages) {
           setMessages(data.messages);
           setGuideUserId(data.guideUserId);
+          if (data.counterpart) setCounterpartName(data.counterpart.name);
         }
       })
       .catch(() => {});
@@ -63,7 +74,8 @@ export default function HikerChatPage() {
     loadMessages();
     pollRef.current = setInterval(loadMessages, 8000);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [status, tripId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, tripId, withUserId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -76,7 +88,7 @@ export default function HikerChatPage() {
       const res = await fetch(`/api/trips/${tripId}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body }),
+        body: JSON.stringify(withUserId ? { body, toUserId: withUserId } : { body }),
       });
       if (res.ok) {
         const msg = await res.json();
@@ -101,7 +113,9 @@ export default function HikerChatPage() {
           </svg>
         </button>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-semibold text-gray-900">שיחה עם המדריך</div>
+          <div className="text-sm font-semibold text-gray-900">
+            {withUserId ? (counterpartName ?? "שיחה") : "שיחה עם המדריך"}
+          </div>
           {tripTitle && <div className="text-xs text-gray-400 truncate">{tripTitle}</div>}
         </div>
       </div>

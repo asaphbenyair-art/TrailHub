@@ -38,6 +38,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export default function Step5({ data, onChange }: Props) {
+  const isSelfGuided = data.tripType === "SELF_GUIDED";
   return (
     <div className="p-5 flex flex-col gap-4">
       <div className="text-sm font-medium text-gray-900 border-b border-gray-100 pb-3 mb-1">
@@ -46,22 +47,24 @@ export default function Step5({ data, onChange }: Props) {
 
       <Section title="פרטים בסיסיים">
         <Row label="שם" value={data.title || "—"} />
-        <Row label="תאריך" value={data.date ? `${data.date} · ${data.startTime}` : "—"} />
+        {!isSelfGuided && <Row label="תאריך" value={data.date ? `${data.date} · ${data.startTime}` : "—"} />}
         <Row label="איזור" value={data.region || "—"} />
-        <Row label="נקודת מפגש" value={data.meetingPoint} />
+        {!isSelfGuided && <Row label="נקודת מפגש" value={data.meetingPoint} />}
+        {isSelfGuided && <Row label="חלון גישה" value={`${data.accessWindowDays || "30"} ימים`} />}
       </Section>
 
       <Section title="מסלול">
         <Row label="סוג" value={data.routeType === "one-way" ? "חד-כיווני" : data.routeType === "circular-nature" ? "מעגלי — שטח" : data.routeType === "circular-urban" ? "מעגלי — עירוני" : "—"} />
         <Row label={`אורך`} value={data.distanceKm ? `${data.distanceKm} ק"מ` : "—"} />
         <Row label="משך" value={data.durationHours ? `${data.durationHours} שע'` : "—"} />
+        {isSelfGuided && <Row label="תחנות ניווט" value={String(data.waypointsJson.length)} />}
       </Section>
 
-      <Section title="פרמטרים ותשלום">
+      <Section title={isSelfGuided ? "פרמטרים ומחיר" : "פרמטרים ותשלום"}>
         <Row label="קושי" value={DIFFICULTY_LABELS[data.difficulty] || "—"} />
-        <Row label="גיל" value={data.ageMin ? `${data.ageMin}+` : undefined} />
-        <Row label="מקסימום" value={data.maxSpots || "—"} />
-        <Row label="מחיר" value={data.price ? `₪${data.price}` : "—"} />
+        {!isSelfGuided && <Row label="גיל" value={data.ageMin ? `${data.ageMin}+` : undefined} />}
+        {!isSelfGuided && <Row label="מקסימום" value={data.maxSpots || "—"} />}
+        <Row label="מחיר" value={data.price ? `₪${data.price}` : "חינם"} />
       </Section>
 
       {/* Source materials (trip-level) */}

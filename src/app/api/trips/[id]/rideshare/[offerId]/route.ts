@@ -36,6 +36,27 @@ export async function POST(
     },
   });
 
+  // Auto-open a private chat thread between the claimer and the poster
+  const existing = await prisma.chatMessage.findFirst({
+    where: {
+      tripId,
+      OR: [
+        { fromUserId: userId, toUserId: offer.posterId },
+        { fromUserId: offer.posterId, toUserId: userId },
+      ],
+    },
+  });
+  if (!existing) {
+    await prisma.chatMessage.create({
+      data: {
+        tripId,
+        fromUserId: userId,
+        toUserId: offer.posterId,
+        body: `היי! הצטרפתי לטרמפ שלך מ${offer.departureCity}. בוא נתאם 🙂`,
+      },
+    });
+  }
+
   return NextResponse.json({ ok: true }, { status: 201 });
 }
 

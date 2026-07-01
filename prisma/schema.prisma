@@ -176,6 +176,7 @@ model User {
   managedTrips         TripManager[]
   rideOffers           RideshareOffer[]
   rideClaims           RideshareClaim[]
+  rideshareRequests    RideshareRequest[]
   purchases            SelfGuidedPurchase[]
   complaints           Complaint[]
 }
@@ -330,6 +331,7 @@ model Trip {
   guides        TripGuide[]
   managers      TripManager[]
   rideOffers    RideshareOffer[]
+  rideshareRequests RideshareRequest[]
   purchases     SelfGuidedPurchase[]
   complaints    Complaint[]
 
@@ -585,6 +587,20 @@ model RideshareClaim {
 
   @@unique([offerId, userId])
   @@index([offerId])
+  @@index([userId])
+}
+
+model RideshareRequest {
+  id        String   @id @default(cuid())
+  tripId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tripId, userId])
+  @@index([tripId])
   @@index([userId])
 }
 

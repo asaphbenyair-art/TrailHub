@@ -123,7 +123,8 @@ export default function NewTripWizard() {
       distanceKm: data.distanceKm || "0",
       durationMin: String(Math.round((parseFloat(data.durationHours) || 0) * 60)),
       whatToBring: allEquipment || null,
-      cancellationPolicy,
+      // Self-guided is a content product — no cancellation policy, no dynamic reg fields, no team/capacity
+      cancellationPolicy: isSelfGuided ? null : cancellationPolicy,
       status: data.status === "PREVIEW" ? "DRAFT" : data.status,
       visibility: data.visibility || "PUBLIC",
       images,
@@ -135,15 +136,15 @@ export default function NewTripWizard() {
       priceTiers: data.priceTiers.length > 0 ? data.priceTiers : null,
       tripDays: data.tripDays,
       coupons: data.coupons,
-      registrationFields: data.registrationFields.filter((f) => f.label.trim()),
+      registrationFields: isSelfGuided ? [] : data.registrationFields.filter((f) => f.label.trim()),
       routeType: data.routeType || null,
-      minAge: data.ageMin || null,
-      maxAge: data.ageMax || null,
-      fitnessLevel: data.fitnessLevel || null,
-      minSpots: data.minSpots || null,
-      secondGuideEmail: data.secondGuideEmail || null,
+      minAge: isSelfGuided ? null : (data.ageMin || null),
+      maxAge: isSelfGuided ? null : (data.ageMax || null),
+      fitnessLevel: isSelfGuided ? null : (data.fitnessLevel || null),
+      minSpots: isSelfGuided ? null : (data.minSpots || null),
+      secondGuideEmail: isSelfGuided ? null : (data.secondGuideEmail || null),
       secondGuideRole: data.secondGuideRole || "SECONDARY",
-      managerEmails: data.managerEmails || [],
+      managerEmails: isSelfGuided ? [] : (data.managerEmails || []),
     };
 
     const res = await fetch("/api/guide/trips", {

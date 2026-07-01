@@ -33,6 +33,7 @@ interface Props {
   onMapClick?: (lat: number, lng: number) => void;
   height?: number;
   liveLocation?: boolean;
+  focusWaypoint?: number | null;
 }
 
 export default function TripDetailMap({
@@ -42,6 +43,7 @@ export default function TripDetailMap({
   onMapClick,
   height = 160,
   liveLocation = false,
+  focusWaypoint = null,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -95,6 +97,17 @@ export default function TripDetailMap({
         .addTo(map)
     );
   }, [waypoints, ready]);
+
+  // Pan/zoom to a waypoint when its card is tapped (self-guided content view)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready || focusWaypoint == null) return;
+    const wp = waypoints[focusWaypoint];
+    if (!wp) return;
+    map.setView([wp.lat, wp.lng], Math.max(map.getZoom(), 15), { animate: true });
+    const marker = markerRefs.current[focusWaypoint];
+    if (marker) marker.openPopup();
+  }, [focusWaypoint, ready, waypoints]);
 
   // Live "blue dot" of the user's own GPS position (personal only, not shared)
   useEffect(() => {

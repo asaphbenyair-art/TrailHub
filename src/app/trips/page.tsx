@@ -106,8 +106,8 @@ export default function TripsPage() {
   const [loading, setLoading] = useState(true);
   const [panelOpen, setPanelOpen] = useState(false);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
-  const [draft, setDraft] = useState<Filters>(EMPTY_FILTERS);
   const [myRegMap, setMyRegMap] = useState<Record<string, string>>({});
+  const [myTripsOnly, setMyTripsOnly] = useState(false);
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
   const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set());
   const [purchasesOnly, setPurchasesOnly] = useState(false);
@@ -149,7 +149,7 @@ export default function TripsPage() {
     if (opt === "when") {
       setView("calendar");
     } else if (opt === "kind") {
-      setView("list"); setPanelOpen(true); setDraft(filters);
+      setView("list"); setPanelOpen(true);
     } else if (opt === "soon") {
       setView("list");
       const next = { ...filters, sort: "date" }; setFilters(next); fetchTrips(next);
@@ -213,7 +213,6 @@ export default function TripsPage() {
           // Don't override if the user already started filtering
           if (f.regions.length || f.difficulties.length) return f;
           const next = { ...f, regions, difficulties };
-          setDraft(next);
           fetchTrips(next);
           return next;
         });
@@ -221,21 +220,27 @@ export default function TripsPage() {
       .catch(() => {});
   }, [session, fetchTrips]);
 
-  function applyDraft() {
-    setFilters(draft); setPanelOpen(false); fetchTrips(draft);
+  // Instant-apply: patch the live filters, refetch immediately (or debounced for text inputs)
+  function updateFilters(patch: Partial<Filters>, debounce = false) {
+    const next = { ...filters, ...patch };
+    setFilters(next);
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    if (debounce) searchTimeout.current = setTimeout(() => fetchTrips(next), 380);
+    else fetchTrips(next);
+  }
+  function clearAllFilters() {
+    updateFilters({ regions: [], difficulties: [], dateFrom: "", priceMax: "", priceMin: "", ageMin: "", favoriteGuides: false, tags: [] });
   }
   function clearFilter(key: keyof Filters, val?: string) {
-    const next = { ...filters };
-    if (key === "regions" && val) next.regions = filters.regions.filter((r) => r !== val);
-    else if (key === "difficulties" && val) next.difficulties = filters.difficulties.filter((d) => d !== val);
-    else (next[key] as string) = "";
-    setFilters(next); setDraft(next); fetchTrips(next);
+    if (key === "regions" && val) updateFilters({ regions: filters.regions.filter((r) => r !== val) });
+    else if (key === "difficulties" && val) updateFilters({ difficulties: filters.difficulties.filter((d) => d !== val) });
+    else if (key === "dateFrom") updateFilters({ dateFrom: "" });
+    else if (key === "priceMax") updateFilters({ priceMax: "" });
+    else if (key === "priceMin") updateFilters({ priceMin: "" });
+    else if (key === "ageMin") updateFilters({ ageMin: "" });
   }
   function handleSearch(value: string) {
-    const next = { ...filters, q: value };
-    setFilters(next); setDraft(next);
-    if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    searchTimeout.current = setTimeout(() => fetchTrips(next), 380);
+    updateFilters({ q: value }, true);
   }
   function handleRangeChange(r: { start: Date | null; end: Date | null }) {
     setRange(r);
@@ -247,6 +252,7 @@ export default function TripsPage() {
   const displayedTrips = (() => {
     let list = trips;
     if (purchasesOnly && filters.category === "self_guided") list = list.filter((t) => purchasedIds.has(t.id));
+    if (myTripsOnly && filters.category === "guided") list = list.filter((t) => myRegMap[t.id]);
     if (!range.start) return list;
     const startMs = new Date(range.start.getFullYear(), range.start.getMonth(), range.start.getDate()).getTime();
     const endRef = range.end ?? range.start;
@@ -337,7 +343,7 @@ export default function TripsPage() {
         <div className="inline-flex bg-white rounded-full border border-gray-200 p-0.5">
           {([["guided", "🧭 טיולים מודרכים"], ["self_guided", "🎒 טיולים עצמאיים"]] as const).map(([v, label]) => (
             <button key={v} type="button"
-              onClick={() => { const next = { ...filters, category: v }; setFilters(next); setDraft(next); setTrips([]); setPurchasesOnly(false); fetchTrips(next); }}
+              onClick={() => { const next = { ...filters, category: v }; setFilters(next); setTrips([]); setPurchasesOnly(false); setMyTripsOnly(false); fetchTrips(next); }}
               className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
                 filters.category === v ? "bg-[#1A6B4A] text-white" : "text-gray-500 hover:text-gray-700"
               }`}>
@@ -438,7 +444,7 @@ export default function TripsPage() {
           <div className="flex gap-2 overflow-x-auto pb-1 mb-1.5" style={{ scrollbarWidth: "none" }}>
             <button
               type="button"
-              onClick={() => { if (!panelOpen) setDraft(filters); setPanelOpen((v) => !v); }}
+              onClick={() => setPanelOpen((v) => !v)}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs whitespace-nowrap border flex-shrink-0 transition-colors ${
                 panelOpen || activeCount > 0
                   ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]"
@@ -450,6 +456,13 @@ export default function TripsPage() {
                 <span className="bg-[#1A6B4A] text-white rounded-full min-w-[16px] h-4 px-1 text-[10px] leading-4 inline-flex items-center justify-center">{activeCount}</span>
               )}
             </button>
+            {session && filters.category === "guided" && (
+              <button type="button" onClick={() => setMyTripsOnly((v) => !v)}
+                className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap border flex-shrink-0 transition-colors ${
+                  myTripsOnly ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "bg-white border-gray-200 text-gray-600"}`}>
+                ❤ הטיולים שלי
+              </button>
+            )}
             {filters.regions.map((r) => (
               <button key={r} type="button" onClick={() => clearFilter("regions", r)}
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap bg-[#D6EDE3] border border-[#1A6B4A] text-[#0F5038] flex-shrink-0">
@@ -474,6 +487,12 @@ export default function TripsPage() {
                 💰 עד ₪{filters.priceMax} <span className="font-bold">✕</span>
               </button>
             )}
+            {activeCount > 0 && (
+              <button type="button" onClick={clearAllFilters}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap bg-white border border-gray-200 text-gray-500 flex-shrink-0">
+                נקה הכל <span className="font-bold">✕</span>
+              </button>
+            )}
           </div>
 
           {/* Filter panel */}
@@ -481,8 +500,8 @@ export default function TripsPage() {
             <div className="bg-white rounded-xl p-4 mb-2">
               <div className="mb-4">
                 <div className="text-[11px] text-gray-500 mb-2">תאריך מ-</div>
-                <input type="date" value={draft.dateFrom}
-                  onChange={(e) => setDraft((d) => ({ ...d, dateFrom: e.target.value }))}
+                <input type="date" value={filters.dateFrom}
+                  onChange={(e) => updateFilters({ dateFrom: e.target.value }, true)}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
               </div>
               <div className="mb-4">
@@ -490,9 +509,9 @@ export default function TripsPage() {
                 <div className="flex flex-wrap gap-1.5">
                   {REGIONS.map((r) => (
                     <button key={r} type="button"
-                      onClick={() => setDraft((d) => ({ ...d, regions: toggle(d.regions, r) }))}
+                      onClick={() => updateFilters({ regions: toggle(filters.regions, r) })}
                       className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
-                        draft.regions.includes(r) ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-gray-200 text-gray-600"}`}>
+                        filters.regions.includes(r) ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-gray-200 text-gray-600"}`}>
                       {r}
                     </button>
                   ))}
@@ -503,9 +522,9 @@ export default function TripsPage() {
                 <div className="flex gap-2">
                   {DIFFICULTIES.map((d) => (
                     <button key={d.value} type="button"
-                      onClick={() => setDraft((p) => ({ ...p, difficulties: toggle(p.difficulties, d.value) }))}
+                      onClick={() => updateFilters({ difficulties: toggle(filters.difficulties, d.value) })}
                       className={`flex-1 py-1.5 rounded-full text-xs border transition-colors ${
-                        draft.difficulties.includes(d.value) ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-gray-200 text-gray-600"}`}>
+                        filters.difficulties.includes(d.value) ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-gray-200 text-gray-600"}`}>
                       {d.label}
                     </button>
                   ))}
@@ -514,12 +533,12 @@ export default function TripsPage() {
               <div className="mb-4">
                 <div className="text-[11px] text-gray-500 mb-2">טווח מחירים (₪)</div>
                 <div className="grid grid-cols-2 gap-2">
-                  <input type="number" value={draft.priceMin}
-                    onChange={(e) => setDraft((d) => ({ ...d, priceMin: e.target.value }))}
+                  <input type="number" value={filters.priceMin}
+                    onChange={(e) => updateFilters({ priceMin: e.target.value }, true)}
                     placeholder="מינימום"
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" dir="ltr" />
-                  <input type="number" value={draft.priceMax}
-                    onChange={(e) => setDraft((d) => ({ ...d, priceMax: e.target.value }))}
+                  <input type="number" value={filters.priceMax}
+                    onChange={(e) => updateFilters({ priceMax: e.target.value }, true)}
                     placeholder="מקסימום"
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" dir="ltr" />
                 </div>
@@ -529,20 +548,20 @@ export default function TripsPage() {
                 <div className="flex flex-wrap gap-1.5">
                   {AGE_OPTIONS.map((a) => (
                     <button key={a.value} type="button"
-                      onClick={() => setDraft((d) => ({ ...d, ageMin: a.value }))}
+                      onClick={() => updateFilters({ ageMin: a.value })}
                       className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
-                        draft.ageMin === a.value ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-gray-200 text-gray-600"}`}>
+                        filters.ageMin === a.value ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-gray-200 text-gray-600"}`}>
                       {a.label}
                     </button>
                   ))}
                 </div>
               </div>
               <div className="mb-4">
-                <button type="button" onClick={() => setDraft((d) => ({ ...d, favoriteGuides: !d.favoriteGuides }))}
+                <button type="button" onClick={() => updateFilters({ favoriteGuides: !filters.favoriteGuides })}
                   className="flex items-center gap-2 text-sm text-gray-700">
                   <div className={`w-5 h-5 rounded flex items-center justify-center border-[1.5px] transition-colors ${
-                    draft.favoriteGuides ? "bg-[#1A6B4A] border-[#1A6B4A] text-white text-xs" : "border-gray-300"}`}>
-                    {draft.favoriteGuides && "✓"}
+                    filters.favoriteGuides ? "bg-[#1A6B4A] border-[#1A6B4A] text-white text-xs" : "border-gray-300"}`}>
+                    {filters.favoriteGuides && "✓"}
                   </div>
                   ❤ רק מדריכים שאני עוקב אחריהם
                 </button>
@@ -552,20 +571,20 @@ export default function TripsPage() {
                 <div className="flex flex-wrap gap-1.5">
                   {TRIP_TAGS.filter((t) => !t.selfGuidedOnly || filters.category === "self_guided").map((t) => (
                     <button key={t.value} type="button"
-                      onClick={() => setDraft((d) => ({ ...d, tags: toggle(d.tags, t.value) }))}
+                      onClick={() => updateFilters({ tags: toggle(filters.tags, t.value) })}
                       className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
-                        draft.tags.includes(t.value) ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-gray-200 text-gray-600"}`}>
+                        filters.tags.includes(t.value) ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-gray-200 text-gray-600"}`}>
                       {t.label}
                     </button>
                   ))}
                 </div>
               </div>
               <div className="flex items-center justify-between">
-                <button type="button" onClick={() => setDraft((d) => ({ ...d, regions: [], difficulties: [], dateFrom: "", priceMax: "", priceMin: "", ageMin: "", favoriteGuides: false, tags: [] }))}
+                <button type="button" onClick={clearAllFilters}
                   className="text-xs text-gray-400 hover:text-gray-600">נקה הכל</button>
-                <button type="button" onClick={applyDraft}
+                <button type="button" onClick={() => setPanelOpen(false)}
                   className="px-5 py-2 bg-[#1A6B4A] text-white rounded-full text-xs font-medium hover:bg-[#155a3e] transition-colors">
-                  הצג תוצאות
+                  סגור
                 </button>
               </div>
             </div>

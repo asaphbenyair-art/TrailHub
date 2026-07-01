@@ -81,6 +81,78 @@ function SourceList({ items }: { items: SourceMaterial[] }) {
   );
 }
 
+// ── Staggered cross-fade hero (individual image fade, not a hard swap) ──
+function HeroSlideshow({ images, title }: { images: string[]; title: string }) {
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    if (images.length <= 1) return;
+    const t = setInterval(() => setIdx((i) => (i + 1) % images.length), 5500);
+    return () => clearInterval(t);
+  }, [images.length]);
+  if (images.length === 0) {
+    return <div className="w-full h-full" style={{ background: "linear-gradient(160deg, #3d6b35, #0f2a0d)" }} />;
+  }
+  return (
+    <>
+      {images.map((src, i) => (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img key={i} src={src} alt={title}
+          className="absolute inset-0 w-full h-full object-cover transition-opacity ease-in-out"
+          style={{ opacity: i === idx ? 1 : 0, transitionDuration: "1100ms" }} />
+      ))}
+      {images.length > 1 && (
+        <div className="absolute bottom-14 left-0 right-0 flex justify-center gap-1 z-10">
+          {images.map((_, i) => (
+            <div key={i} className="w-1.5 h-1.5 rounded-full transition-colors"
+              style={{ background: i === idx ? "#fff" : "rgba(255,255,255,0.45)" }} />
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+// ── Elevation profile from GPX <ele> points ──
+function parseElevations(gpx: string | null | undefined): number[] {
+  if (!gpx) return [];
+  const eles: number[] = [];
+  const re = /<ele>\s*(-?[\d.]+)\s*<\/ele>/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(gpx)) !== null) {
+    const v = parseFloat(m[1]);
+    if (!Number.isNaN(v)) eles.push(v);
+  }
+  return eles;
+}
+
+function ElevationChart({ points }: { points: number[] }) {
+  if (points.length < 2) return null;
+  const W = 320, H = 90, pad = 4;
+  const N = Math.min(points.length, 90);
+  const stride = points.length / N;
+  const sampled = Array.from({ length: N }, (_, i) => points[Math.floor(i * stride)]);
+  const min = Math.min(...sampled), max = Math.max(...sampled);
+  const range = max - min || 1;
+  const xs = (i: number) => pad + (i / (N - 1)) * (W - 2 * pad);
+  const ys = (v: number) => pad + (1 - (v - min) / range) * (H - 2 * pad);
+  const line = sampled.map((v, i) => `${xs(i).toFixed(1)},${ys(v).toFixed(1)}`).join(" ");
+  const area = `${pad},${H - pad} ${line} ${W - pad},${H - pad}`;
+  let gain = 0;
+  for (let i = 1; i < points.length; i++) { const d = points[i] - points[i - 1]; if (d > 0) gain += d; }
+  return (
+    <div className="mt-2.5 bg-gray-50 rounded-xl p-3">
+      <div className="flex justify-between text-[11px] text-gray-400 mb-1">
+        <span>📈 פרופיל גובה</span>
+        <span>{Math.round(min)}–{Math.round(max)} מ' · טיפוס מצטבר {Math.round(gain)} מ'</span>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 80 }} preserveAspectRatio="none">
+        <polygon points={area} fill="#D6EDE3" />
+        <polyline points={line} fill="none" stroke="#1A6B4A" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
+      </svg>
+    </div>
+  );
+}
+
 interface Trip {
   id: string;
   title: string;
@@ -99,6 +171,7 @@ interface Trip {
   meetingPoint: string | null;
   waypoints: string | null;
   waypointsJson: { lat?: number; lng?: number; name?: string; description?: string }[] | null;
+  routeGpx: string | null;
   whatToBring: string | null;
   cancellationPolicy: string | null;
   routeType: string | null;
@@ -374,18 +447,15 @@ export default function TripDetailPage() {
     ? trip.cancellationPolicy.split("\n").filter(Boolean)
     : [];
 
+  const elevations = parseElevations(trip.routeGpx);
+
   return (
     <div dir="rtl" className="min-h-screen bg-white flex justify-center pb-24">
       <div className="w-full max-w-[480px]">
 
         {/* ── Hero ── */}
-        <div className="relative" style={{ height: 220 }}>
-          {trip.images?.[0] ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={trip.images[0]} alt={trip.title} className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full" style={{ background: "linear-gradient(160deg, #3d6b35, #0f2a0d)" }} />
-          )}
+        <div className="relative overflow-hidden" style={{ height: 220 }}>
+          <HeroSlideshow images={trip.images ?? []} title={trip.title} />
 
           <button
             type="button"
@@ -501,16 +571,17 @@ export default function TripDetailPage() {
               <div className="text-[10px] text-gray-400 mt-0.5">שעות</div>
             </div>
             <div className="bg-gray-50 rounded-xl p-3 text-center">
-              <div className="text-sm font-semibold text-gray-900">{trip.startTime || "—"}</div>
-              <div className="text-[10px] text-gray-400 mt-0.5">יציאה</div>
+              <div className="text-sm font-semibold text-gray-900">{isSelfGuided ? parsedWaypoints.length : (trip.startTime || "—")}</div>
+              <div className="text-[10px] text-gray-400 mt-0.5">{isSelfGuided ? "תחנות" : "יציאה"}</div>
             </div>
             <div className="bg-gray-50 rounded-xl p-3 text-center">
-              <div className="text-sm font-semibold text-gray-900">{spotsLeft > 0 ? spotsLeft : "מלא"}</div>
-              <div className="text-[10px] text-gray-400 mt-0.5">מקומות</div>
+              <div className="text-sm font-semibold text-gray-900">{isSelfGuided ? (trip.accessWindowDays ?? 30) : (spotsLeft > 0 ? spotsLeft : "מלא")}</div>
+              <div className="text-[10px] text-gray-400 mt-0.5">{isSelfGuided ? "ימי גישה" : "מקומות"}</div>
             </div>
           </div>
 
-          {/* ── Occupancy bar ── */}
+          {/* ── Occupancy bar (guided only) ── */}
+          {!isSelfGuided && (
           <div className="-mt-2">
             <div className="h-[5px] bg-gray-100 rounded-full overflow-hidden">
               <div
@@ -524,7 +595,13 @@ export default function TripDetailPage() {
                 {isFull ? "אין מקום" : `${spotsLeft} מקומות נותרו`}
               </span>
             </div>
+            {isFull && (
+              <div className="mt-2 bg-[#FDF3DC] border border-[#E8A020]/40 rounded-xl px-3 py-2 text-xs font-medium text-[#7A5010] flex items-center gap-1.5">
+                ⏰ הטיול מלא — רשימת המתנה פתוחה
+              </div>
+            )}
           </div>
+          )}
 
           {/* ── Attribute tags ── */}
           {Array.isArray(trip.attributeTags) && trip.attributeTags.length > 0 && (
@@ -598,7 +675,7 @@ export default function TripDetailPage() {
 
           {/* ── Route / map section ── */}
           <div>
-            <div className="text-sm font-semibold text-gray-900 mb-2">🗺 מסלול ונקודת מפגש</div>
+            <div className="text-sm font-semibold text-gray-900 mb-2">{isSelfGuided ? "🗺 מסלול" : "🗺 מסלול ונקודת מפגש"}</div>
 
             <TripDetailMap
               region={trip.region}
@@ -613,6 +690,9 @@ export default function TripDetailPage() {
               }`}>
               {showLoc ? "● המיקום שלי פעיל" : "📍 הצג את המיקום שלי"}
             </button>
+
+            {/* Elevation profile (auto-generated from GPX) */}
+            {elevations.length >= 2 && <ElevationChart points={elevations} />}
 
             {/* Route stats */}
             {(trip.distanceKm > 0 || trip.durationMin > 0) && (
@@ -632,13 +712,25 @@ export default function TripDetailPage() {
               </div>
             )}
 
-            {/* Meeting point detail */}
-            {trip.meetingPoint && (
+            {/* Meeting point detail (guided trips only) */}
+            {!isSelfGuided && trip.meetingPoint && (
               <div className="mt-2.5 bg-gray-50 rounded-xl p-3">
                 <div className="text-[11px] text-gray-400 mb-1">נקודת מפגש</div>
                 <div className="text-sm text-gray-800 font-medium">{trip.meetingPoint}</div>
                 <div className="text-xs text-gray-400 mt-0.5">
                   📅 {formatDateLong(trip.date)} · {trip.startTime}
+                </div>
+                <div className="flex gap-2 mt-2.5">
+                  <a href={`https://waze.com/ul?q=${encodeURIComponent(trip.meetingPoint)}&navigate=yes`}
+                    target="_blank" rel="noreferrer"
+                    className="flex-1 text-center text-xs text-[#0A7AA3] bg-[#E6F7FD] border border-[#33CCFF]/40 rounded-full py-1.5 hover:bg-[#D4F0FA] transition-colors">
+                    🚗 נווט ב-Waze
+                  </a>
+                  <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(trip.meetingPoint)}`}
+                    target="_blank" rel="noreferrer"
+                    className="flex-1 text-center text-xs text-[#185FA5] bg-[#EEF5FC] border border-[#185FA5]/30 rounded-full py-1.5 hover:bg-[#DCEBF7] transition-colors">
+                    📍 Google Maps
+                  </a>
                 </div>
               </div>
             )}

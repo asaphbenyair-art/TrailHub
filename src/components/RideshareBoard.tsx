@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-interface Claim { id: string; userId: string; user: { id: string; name: string | null } }
+interface Claim { id: string; userId: string; user: { id: string; name: string | null; phone: string | null } }
 interface Offer {
   id: string;
   departureCity: string;
@@ -11,16 +12,18 @@ interface Offer {
   costSharing: boolean;
   note: string | null;
   posterId: string;
-  poster: { id: string; name: string | null; image: string | null };
+  poster: { id: string; name: string | null; image: string | null; phone: string | null };
   claims: Claim[];
 }
 
 export default function RideshareBoard({ tripId }: { tripId: string }) {
+  const router = useRouter();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [meId, setMeId] = useState<string | null>(null);
   const [allowed, setAllowed] = useState(true);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [looking, setLooking] = useState(false);
 
   // form
   const [city, setCity] = useState("");
@@ -36,9 +39,15 @@ export default function RideshareBoard({ tripId }: { tripId: string }) {
     const d = await res.json();
     setOffers(d.offers ?? []);
     setMeId(d.meId ?? null);
+    setLooking(!!d.looking);
     setLoading(false);
   }
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [tripId]);
+
+  async function toggleLooking() {
+    await fetch(`/api/trips/${tripId}/rideshare/request`, { method: looking ? "DELETE" : "POST" });
+    load();
+  }
 
   async function createOffer() {
     if (!city.trim()) return;
@@ -73,12 +82,25 @@ export default function RideshareBoard({ tripId }: { tripId: string }) {
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 p-4">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-1">
         <div className="text-sm font-semibold text-gray-900">🚗 לוח טרמפים</div>
-        <button type="button" onClick={() => setShowForm((v) => !v)}
-          className="text-xs text-[#1A6B4A] border border-[#1A6B4A] rounded-full px-3 py-1 hover:bg-[#D6EDE3] transition-colors">
-          {showForm ? "ביטול" : "+ פרסם טרמפ"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={toggleLooking}
+            className={`text-xs rounded-full px-3 py-1 border transition-colors ${
+              looking
+                ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]"
+                : "text-gray-500 border-gray-200 hover:bg-gray-50"
+            }`}>
+            {looking ? "✓ מחפש טרמפ" : "🖐 מחפש טרמפ"}
+          </button>
+          <button type="button" onClick={() => setShowForm((v) => !v)}
+            className="text-xs text-[#1A6B4A] border border-[#1A6B4A] rounded-full px-3 py-1 hover:bg-[#D6EDE3] transition-colors">
+            {showForm ? "ביטול" : "+ פרסם טרמפ"}
+          </button>
+        </div>
+      </div>
+      <div className="text-[11px] text-gray-400 mb-3">
+        סמן &quot;מחפש טרמפ&quot; ותקבל התראה כשמישהו יפרסם טרמפ חדש לטיול זה.
       </div>
 
       {showForm && (
@@ -129,11 +151,24 @@ export default function RideshareBoard({ tripId }: { tripId: string }) {
                 </span>
               </div>
               <div className="text-[11px] text-gray-500 mt-1">
-                {o.poster.name ?? "משתתף"}{o.costSharing ? " · השתתפות בדלק" : ""}{o.note ? ` · ${o.note}` : ""}
+                {o.poster.name ?? "משתתף"}
+                {o.poster.phone ? (
+                  <> · 📞 <a href={`tel:${o.poster.phone}`} className="text-[#185FA5]">{o.poster.phone}</a></>
+                ) : ""}
+                {o.costSharing ? " · השתתפות בדלק" : ""}{o.note ? ` · ${o.note}` : ""}
               </div>
               {isPoster && taken > 0 && (
-                <div className="text-[11px] text-[#0F5038] mt-1">
-                  הצטרפו: {o.claims.map((c) => c.user.name ?? "משתתף").join(", ")}
+                <div className="text-[11px] text-[#0F5038] mt-1 flex flex-col gap-1">
+                  {o.claims.map((c) => (
+                    <div key={c.id} className="flex items-center gap-2 flex-wrap">
+                      <span>{c.user.name ?? "משתתף"}</span>
+                      {c.user.phone && (
+                        <a href={`tel:${c.user.phone}`} className="text-[#185FA5]">📞 {c.user.phone}</a>
+                      )}
+                      <button type="button" onClick={() => router.push(`/trips/${tripId}/chat?with=${c.userId}`)}
+                        className="text-[#1A6B4A] hover:underline">💬 צ&apos;אט</button>
+                    </div>
+                  ))}
                 </div>
               )}
               <div className="flex items-center gap-2 mt-2">
@@ -143,6 +178,8 @@ export default function RideshareBoard({ tripId }: { tripId: string }) {
                 ) : iClaimed ? (
                   <>
                     <span className="text-[11px] text-[#0F5038]">✓ הצטרפת — תאם מול {o.poster.name ?? "המפרסם"}</span>
+                    <button type="button" onClick={() => router.push(`/trips/${tripId}/chat?with=${o.posterId}`)}
+                      className="text-[11px] text-white bg-[#1A6B4A] rounded-full px-3 py-1 hover:bg-[#155a3e]">💬 צ&apos;אט</button>
                     <button type="button" onClick={() => leave(o.id)}
                       className="text-[11px] text-gray-500 border border-gray-200 rounded-full px-3 py-1 hover:bg-gray-100">עזוב</button>
                   </>
