@@ -3,35 +3,18 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { googleCalendarUrl } from "@/lib/calendar";
+import {
+  ArrowRight, Check, ChevronDown, Lock, CalendarPlus, Search, CreditCard, Backpack, Bell,
+} from "lucide-react";
 
-const DIFF_LABEL: Record<string, string> = { EASY: "קל", MEDIUM: "בינוני", HARD: "קשה", EXTREME: "קיצוני" };
-const SERVICE_FEE = 9; // flat platform service fee (₪)
-
-interface RegField {
-  id: string;
-  label: string;
-  type: "text" | "boolean" | "select";
-  required: boolean;
-  options: string[];
-}
+interface RegField { id: string; label: string; type: "text" | "boolean" | "select"; required: boolean; options: string[] }
 
 interface Trip {
-  id: string;
-  title: string;
-  region: string;
-  difficulty: string;
-  status: string;
-  date: string;
-  startTime: string;
-  price: number;
-  maxSpots: number;
-  spotsBooked: number;
-  images: string[];
-  cancellationPolicy: string | null;
-  registrationFields: RegField[] | null;
-  multiPersonMode: string | null;
-  tripType: string | null;
-  accessWindowDays: number | null;
+  id: string; title: string; region: string; difficulty: string; status: string;
+  date: string; startTime: string; price: number; maxSpots: number; spotsBooked: number;
+  images: string[]; cancellationPolicy: string | null; registrationFields: RegField[] | null;
+  multiPersonMode: string | null; tripType: string | null; accessWindowDays: number | null;
   guide: { user: { name: string | null } };
 }
 
@@ -39,38 +22,89 @@ function formatDateFull(d: string) {
   return new Date(d).toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" });
 }
 
-function TripSummary({ trip }: { trip: Trip }) {
-  const spotsLeft = Math.max(trip.maxSpots - trip.spotsBooked, 0);
-  const isSG = trip.tripType === "SELF_GUIDED";
+// ── Card form (saved card option + save new card) ──
+function CardForm({ note }: { note: string }) {
+  const [mode, setMode] = useState<"saved" | "new">("saved");
+  const [saveNew, setSaveNew] = useState(false);
+  const input = "w-full rounded-lg px-3 py-2 text-sm bg-surface-2 border border-border text-fg placeholder:text-fg-faint focus:outline-none focus:border-accent";
   return (
-    <div className="flex items-center gap-3 p-4 border-b border-gray-100">
-      <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0">
-        {trip.images?.[0] ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={trip.images[0]} alt="" className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full" style={{ background: "linear-gradient(160deg,#3d6b35,#1a3d16)" }} />
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium text-gray-900 leading-snug mb-0.5 truncate">{trip.title}</div>
-        <div className="text-xs text-gray-500">
-          {isSG
-            ? `🎒 טיול עצמאי · ${trip.guide?.user?.name || "מדריך"}`
-            : `${formatDateFull(trip.date)} · ${trip.startTime} · ${trip.guide?.user?.name || "מדריך"} · ${spotsLeft} מקומות נותרו`}
+    <div className="flex flex-col gap-2.5">
+      {/* Saved card option */}
+      <button type="button" onClick={() => setMode("saved")}
+        className="flex items-center gap-3 rounded-xl p-3 border text-right"
+        style={{ borderColor: mode === "saved" ? "var(--accent)" : "var(--border)", background: mode === "saved" ? "rgba(61,143,95,0.08)" : "transparent" }}>
+        <CreditCard size={18} style={{ color: "var(--fg-muted)" }} />
+        <div className="flex-1">
+          <div className="text-sm text-fg">כרטיס שמור</div>
+          <div className="text-[11px] text-fg-faint" dir="ltr">Visa •••• 4242</div>
         </div>
-      </div>
-      <div className="text-right flex-shrink-0">
-        <div className="text-lg font-semibold text-gray-900">₪{trip.price}</div>
-        <div className="text-[11px] text-gray-400">{isSG ? "לחבילה" : "לאדם"}</div>
+        <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center" style={{ borderColor: mode === "saved" ? "var(--accent)" : "var(--border)" }}>
+          {mode === "saved" && <div className="w-2 h-2 rounded-full" style={{ background: "var(--accent)" }} />}
+        </div>
+      </button>
+
+      <button type="button" onClick={() => setMode("new")}
+        className="flex items-center gap-3 rounded-xl p-3 border text-right"
+        style={{ borderColor: mode === "new" ? "var(--accent)" : "var(--border)", background: mode === "new" ? "rgba(61,143,95,0.08)" : "transparent" }}>
+        <CreditCard size={18} style={{ color: "var(--fg-muted)" }} />
+        <div className="flex-1 text-sm text-fg">כרטיס חדש</div>
+        <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center" style={{ borderColor: mode === "new" ? "var(--accent)" : "var(--border)" }}>
+          {mode === "new" && <div className="w-2 h-2 rounded-full" style={{ background: "var(--accent)" }} />}
+        </div>
+      </button>
+
+      {mode === "new" && (
+        <div className="flex flex-col gap-2.5 pt-1">
+          <input type="text" placeholder="0000 0000 0000 0000" maxLength={19} dir="ltr" className={input} />
+          <div className="grid grid-cols-2 gap-2.5">
+            <input type="text" placeholder="MM/YY" maxLength={5} dir="ltr" className={input} />
+            <input type="text" placeholder="CVV" maxLength={4} dir="ltr" className={input} />
+          </div>
+          <input type="text" placeholder="שם בעל הכרטיס" className={input} />
+          <button type="button" onClick={() => setSaveNew((v) => !v)} className="flex items-center gap-2 text-xs text-fg-muted">
+            <span className="w-4 h-4 rounded flex items-center justify-center border" style={{ borderColor: saveNew ? "var(--accent)" : "var(--border)", background: saveNew ? "var(--accent)" : "transparent" }}>
+              {saveNew && <Check size={11} color="#fff" />}
+            </span>
+            שמור כרטיס זה להרשמות עתידיות
+          </button>
+        </div>
+      )}
+
+      <div className="flex items-start gap-1.5 text-[11px] text-fg-faint rounded-lg px-3 py-2" style={{ background: "var(--surface-2)" }}>
+        <Lock size={12} className="mt-0.5 shrink-0" /> {note}
       </div>
     </div>
   );
 }
 
+function TripSummary({ trip }: { trip: Trip }) {
+  const spotsLeft = Math.max(trip.maxSpots - trip.spotsBooked, 0);
+  const isSG = trip.tripType === "SELF_GUIDED";
+  return (
+    <div className="flex items-center gap-3 p-4 border-b border-border">
+      <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0">
+        {trip.images?.[0] ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={trip.images[0]} alt="" className="w-full h-full object-cover" />
+        ) : <div className="w-full h-full" style={{ background: "linear-gradient(160deg,#2f5330,#0f2210)" }} />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-medium text-fg leading-snug mb-0.5 truncate">{trip.title}</div>
+        <div className="text-xs text-fg-muted">
+          {isSG ? `טיול עצמאי · ${trip.guide?.user?.name || "מדריך"}`
+            : `${formatDateFull(trip.date)} · ${trip.startTime} · ${spotsLeft} מקומות נותרו`}
+        </div>
+      </div>
+      <div className="text-left shrink-0">
+        <div className="text-lg font-semibold text-fg">₪{trip.price}</div>
+        <div className="text-[11px] text-fg-faint">{isSG ? "לחבילה" : "לאדם"}</div>
+      </div>
+    </div>
+  );
+}
 
-// ── Normal registration flow ──────────────────────────────────────────────────
-function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: () => void }) {
+// ── Full registration flow ──
+function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: (alertHours: number) => void }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [policyOpen, setPolicyOpen] = useState(false);
@@ -86,16 +120,14 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: () => void }
   const [count, setCount] = useState(1);
   const [names, setNames] = useState<string[]>([""]);
 
-  const policy = trip.cancellationPolicy
-    ? trip.cancellationPolicy.split("\n").filter(Boolean)
+  const policy = trip.cancellationPolicy ? trip.cancellationPolicy.split("\n").filter(Boolean)
     : ["עד 72 שעות לפני — החזר 100%", "עד 24 שעות לפני — החזר 50%", "פחות מ-24 שעות — ללא החזר"];
 
-  const serviceFee = SERVICE_FEE;
-  const total = trip.price * count + serviceFee;
+  // Platform fee is NOT added to the hiker price — they pay exactly the guide's price.
+  const total = trip.price * count;
+  const input = "rounded-lg px-3 py-2 text-sm bg-surface-2 border border-border text-fg placeholder:text-fg-faint focus:outline-none focus:border-accent";
 
-  function setAnswer(id: string, val: string) {
-    setAnswers((a) => ({ ...a, [id]: val }));
-  }
+  function setAnswer(id: string, val: string) { setAnswers((a) => ({ ...a, [id]: val })); }
   function changeCount(n: number) {
     const c = Math.max(1, Math.min(n, spotsLeft));
     setCount(c);
@@ -103,25 +135,17 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: () => void }
   }
 
   async function confirm() {
-    // Validate required dynamic fields
     for (const f of fields) {
-      if (f.required && !(answers[f.id] ?? "").trim()) {
-        setError(`נא למלא: ${f.label}`);
-        return;
-      }
+      if (f.required && !(answers[f.id] ?? "").trim()) { setError(`נא למלא: ${f.label}`); return; }
     }
     if (isDetailed) {
-      for (let i = 0; i < count; i++) {
-        if (!(names[i] ?? "").trim()) { setError(`נא להזין שם משתתף ${i + 1}`); return; }
-      }
+      for (let i = 0; i < count; i++) if (!(names[i] ?? "").trim()) { setError(`נא להזין שם משתתף ${i + 1}`); return; }
     }
     if (!signed) { setError("נא לאשר את מדיניות הביטולים"); return; }
-    setSaving(true);
-    setError("");
+    setSaving(true); setError("");
     try {
       const res = await fetch("/api/registrations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           tripId: trip.id, type: "REGISTER", fieldAnswers: answers, signedPolicy: signed,
           alertThresholdHours: Number(alertHours) || 24, compCode: compCode.trim() || undefined,
@@ -129,72 +153,80 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: () => void }
           participantsDetail: isDetailed ? names.slice(0, count).map((n) => ({ name: n.trim() })) : undefined,
         }),
       });
-      if (!res.ok) {
-        const d = await res.json();
-        setError(d.error ?? "שגיאה בהרשמה");
-        setSaving(false);
-        return;
-      }
-      onSuccess();
-    } catch {
-      setError("שגיאת רשת");
-      setSaving(false);
-    }
+      if (!res.ok) { const d = await res.json(); setError(d.error ?? "שגיאה בהרשמה"); setSaving(false); return; }
+      onSuccess(Number(alertHours) || 24);
+    } catch { setError("שגיאת רשת"); setSaving(false); }
   }
 
   return (
     <>
-      {/* Multi-person quantity */}
+      {/* Step 1: cancellation policy + confirmation checkbox */}
+      <div className="p-4 border-b border-border">
+        <div className="flex items-center gap-2 mb-2"><StepDot n={1} /><span className="text-sm font-medium text-fg">מדיניות ביטולים</span></div>
+        <div className="rounded-xl p-3 border border-border" style={{ background: "var(--surface-2)" }}>
+          {policy.map((line, i) => {
+            const dash = line.indexOf("—");
+            const left = dash >= 0 ? line.slice(0, dash).trim() : line;
+            const right = dash >= 0 ? line.slice(dash + 1).trim() : "";
+            return (
+              <div key={i} className="flex justify-between text-xs py-1">
+                <span className="text-fg-muted">{left}</span>
+                {right && <span className="text-fg font-medium">{right}</span>}
+              </div>
+            );
+          })}
+        </div>
+        <button type="button" onClick={() => setSigned((v) => !v)} className="flex items-start gap-2.5 text-right mt-3">
+          <span className="w-5 h-5 rounded flex items-center justify-center shrink-0 mt-0.5 border" style={{ borderColor: signed ? "var(--accent)" : "var(--border)", background: signed ? "var(--accent)" : "transparent" }}>
+            {signed && <Check size={13} color="#fff" />}
+          </span>
+          <span className="text-xs text-fg-muted leading-relaxed">קראתי ואני מאשר/ת את מדיניות הביטולים של הטיול</span>
+        </button>
+      </div>
+
+      {/* Multi-person */}
       {isMulti && (
-        <div className="p-4 border-b border-gray-100">
-          <div className="text-sm font-medium text-gray-900 mb-2">כמה משתתפים?</div>
+        <div className="p-4 border-b border-border">
+          <div className="text-sm font-medium text-fg mb-2">כמה משתתפים?</div>
           <div className="flex items-center gap-3">
-            <button type="button" onClick={() => changeCount(count - 1)} className="w-8 h-8 rounded-full border border-gray-200 text-lg">−</button>
-            <span className="text-lg font-semibold w-8 text-center">{count}</span>
-            <button type="button" onClick={() => changeCount(count + 1)} className="w-8 h-8 rounded-full border border-gray-200 text-lg">+</button>
-            <span className="text-[11px] text-gray-400 mr-2">עד {spotsLeft} מקומות פנויים</span>
+            <button type="button" onClick={() => changeCount(count - 1)} className="w-8 h-8 rounded-full border border-border text-lg text-fg">−</button>
+            <span className="text-lg font-semibold w-8 text-center text-fg">{count}</span>
+            <button type="button" onClick={() => changeCount(count + 1)} className="w-8 h-8 rounded-full border border-border text-lg text-fg">+</button>
+            <span className="text-[11px] text-fg-faint mr-2">עד {spotsLeft} מקומות פנויים</span>
           </div>
           {isDetailed && (
             <div className="flex flex-col gap-1.5 mt-3">
               {Array.from({ length: count }).map((_, i) => (
-                <input key={i} type="text" value={names[i] ?? ""}
-                  onChange={(e) => setNames((prev) => prev.map((x, j) => j === i ? e.target.value : x))}
-                  placeholder={`שם משתתף ${i + 1}`}
-                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+                <input key={i} type="text" value={names[i] ?? ""} onChange={(e) => setNames((prev) => prev.map((x, j) => j === i ? e.target.value : x))}
+                  placeholder={`שם משתתף ${i + 1}`} className={input} />
               ))}
             </div>
           )}
         </div>
       )}
 
-      {/* Dynamic registration fields */}
+      {/* Step 2: dynamic fields (only if defined) */}
       {fields.length > 0 && (
-        <div className="p-4 border-b border-gray-100 flex flex-col gap-3">
-          <div className="text-sm font-medium text-gray-900">שאלות לפני הרשמה</div>
+        <div className="p-4 border-b border-border flex flex-col gap-3">
+          <div className="flex items-center gap-2"><StepDot n={2} /><span className="text-sm font-medium text-fg">שאלות לפני הרשמה</span></div>
           {fields.map((f) => (
             <div key={f.id} className="flex flex-col gap-1">
-              <label className="text-xs text-gray-500">
-                {f.label}{f.required && <span className="text-red-500"> *</span>}
-              </label>
-              {f.type === "text" && (
-                <input type="text" value={answers[f.id] ?? ""} onChange={(e) => setAnswer(f.id, e.target.value)}
-                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
-              )}
+              <label className="text-xs text-fg-muted">{f.label}{f.required && <span className="text-danger"> *</span>}</label>
+              {f.type === "text" && <input type="text" value={answers[f.id] ?? ""} onChange={(e) => setAnswer(f.id, e.target.value)} className={input} />}
               {f.type === "boolean" && (
                 <div className="flex gap-2">
                   {[["yes", "כן"], ["no", "לא"]].map(([val, label]) => (
                     <button key={val} type="button" onClick={() => setAnswer(f.id, val)}
-                      className={`flex-1 py-2 rounded-lg border text-xs transition-colors ${
-                        answers[f.id] === val ? "border-[#1A6B4A] bg-[#D6EDE3] text-[#0F5038]" : "border-gray-200 text-gray-600"}`}>
+                      className="flex-1 py-2 rounded-lg border text-xs"
+                      style={answers[f.id] === val ? { borderColor: "var(--accent)", background: "rgba(61,143,95,0.1)", color: "var(--fg)" } : { borderColor: "var(--border)", color: "var(--fg-muted)" }}>
                       {label}
                     </button>
                   ))}
                 </div>
               )}
               {f.type === "select" && (
-                <select value={answers[f.id] ?? ""} onChange={(e) => setAnswer(f.id, e.target.value)}
-                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] bg-white">
-                  <option value="">בחר...</option>
+                <select value={answers[f.id] ?? ""} onChange={(e) => setAnswer(f.id, e.target.value)} className={`${input} bg-surface-2`}>
+                  <option value="">בחר…</option>
                   {f.options.map((o) => <option key={o} value={o}>{o}</option>)}
                 </select>
               )}
@@ -203,161 +235,112 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: () => void }
         </div>
       )}
 
-      {/* Comp code (free volunteer invite) */}
-      <div className="p-4 border-b border-gray-100">
-        <label className="text-xs text-gray-500">קוד מתנדב (אופציונלי)</label>
-        <input type="text" value={compCode} onChange={(e) => setCompCode(e.target.value)}
-          placeholder="COMP-XXXXXX" dir="ltr"
-          className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
-        {compCode.trim() && <p className="text-[11px] text-[#0F5038] mt-1">עם קוד מתנדב ההרשמה ללא תשלום</p>}
+      {/* Comp code */}
+      <div className="p-4 border-b border-border">
+        <label className="text-xs text-fg-muted">קוד מתנדב (אופציונלי)</label>
+        <input type="text" value={compCode} onChange={(e) => setCompCode(e.target.value)} placeholder="COMP-XXXXXX" dir="ltr" className={`w-full mt-1 ${input}`} />
+        {compCode.trim() && <p className="text-[11px] text-accent mt-1">עם קוד מתנדב ההרשמה ללא תשלום</p>}
       </div>
 
-      {/* Payment form */}
-      <div className={`p-4 border-b border-gray-100 ${compCode.trim() ? "hidden" : ""}`}>
-        <div className="text-sm font-medium text-gray-900 mb-3">פרטי כרטיס אשראי</div>
+      {/* Step 3: payment */}
+      <div className={`p-4 border-b border-border ${compCode.trim() ? "hidden" : ""}`}>
+        <div className="flex items-center gap-2 mb-3"><StepDot n={3} /><span className="text-sm font-medium text-fg">תשלום</span></div>
         <CardForm note="הכרטיס יאושר עכשיו אך לא יחויב — החיוב יתבצע רק לאחר סגירת חלון הביטול." />
       </div>
 
-      {/* Price summary */}
-      <div className="p-4 border-b border-gray-100">
-        <div className="bg-gray-50 rounded-xl p-3">
+      {/* Price summary — no service fee (hiker pays exactly the guide's price) */}
+      <div className="p-4 border-b border-border">
+        <div className="rounded-xl p-3 border border-border" style={{ background: "var(--surface-2)" }}>
           <div className="flex justify-between text-sm py-1">
-            <span className="text-gray-500">מחיר לאדם{count > 1 ? ` × ${count}` : ""}</span><span>₪{trip.price * count}</span>
+            <span className="text-fg-muted">מחיר לאדם{count > 1 ? ` × ${count}` : ""}</span><span className="text-fg">₪{trip.price * count}</span>
           </div>
-          <div className="flex justify-between text-sm py-1">
-            <span className="text-gray-500">עמלת שירות</span><span>₪{serviceFee}</span>
-          </div>
-          <div className="flex justify-between text-sm font-semibold pt-2 mt-1 border-t border-gray-200">
-            <span>סה"כ לאישור</span><span>₪{total}</span>
+          <div className="flex justify-between text-sm font-semibold pt-2 mt-1 border-t border-border">
+            <span className="text-fg">סה״כ לאישור</span><span className="text-fg">₪{total}</span>
           </div>
         </div>
-
-        {/* Cancellation policy — collapsible */}
-        <button
-          type="button"
-          onClick={() => setPolicyOpen((v) => !v)}
-          className="flex items-center justify-between w-full mt-3 text-xs text-gray-500 hover:text-gray-700 transition-colors"
-        >
-          <span>🧾 מדיניות ביטולים</span>
-          <span>{policyOpen ? "▲" : "▼"}</span>
+        <button type="button" onClick={() => setPolicyOpen((v) => !v)} className="flex items-center justify-between w-full mt-3 text-xs text-fg-muted">
+          <span>מדיניות ביטולים מלאה</span>
+          <ChevronDown size={14} className={`transition-transform ${policyOpen ? "rotate-180" : ""}`} />
         </button>
         {policyOpen && (
-          <div className="mt-2 bg-[#FDF3DC] rounded-xl p-3">
-            {policy.map((line, i) => {
-              const dash = line.indexOf("—");
-              const left = dash >= 0 ? line.slice(0, dash).trim() : line;
-              const right = dash >= 0 ? line.slice(dash + 1).trim() : "";
-              return (
-                <div key={i} className="flex justify-between text-xs py-1">
-                  <span className="text-amber-700">{left}</span>
-                  {right && <span className="text-amber-900 font-medium">{right}</span>}
-                </div>
-              );
-            })}
+          <div className="mt-2 rounded-xl p-3 border border-border" style={{ background: "var(--surface-2)" }}>
+            {policy.map((line, i) => <div key={i} className="text-xs text-fg-muted py-0.5">{line}</div>)}
           </div>
         )}
       </div>
 
-      {/* Cancellation-window threshold alert */}
-      <div className="p-4 border-b border-gray-100">
-        <div className="text-sm font-medium text-gray-900 mb-1">התראת סף ביטול</div>
-        <div className="text-xs text-gray-500 mb-2">קבל התראה לפני כניסה לחלון ללא החזר</div>
-        <div className="flex items-center gap-2 text-sm text-gray-700">
+      {/* Step 4: cancellation threshold alert (per-trip) */}
+      <div className="p-4 border-b border-border">
+        <div className="flex items-center gap-2 mb-1"><StepDot n={4} /><span className="text-sm font-medium text-fg">התראת סף ביטול</span></div>
+        <div className="text-xs text-fg-muted mb-2">קבל התראה לפני כניסה לחלון ללא החזר (הגדרה לטיול זה)</div>
+        <div className="flex items-center gap-2 text-sm text-fg">
           שלח לי התראה
           <input type="number" min="1" value={alertHours} onChange={(e) => setAlertHours(e.target.value)}
-            className="w-16 border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:border-[#1A6B4A]" dir="ltr" />
+            className={`w-16 text-center ${input}`} dir="ltr" />
           שעות לפני
         </div>
       </div>
 
-      {/* Sign cancellation policy */}
-      <div className="px-4 pt-3">
-        <button type="button" onClick={() => setSigned((v) => !v)} className="flex items-start gap-2.5 text-right">
-          <div className={`w-5 h-5 rounded flex items-center justify-center border-[1.5px] shrink-0 mt-0.5 transition-colors ${
-            signed ? "bg-[#1A6B4A] border-[#1A6B4A] text-white text-xs" : "border-gray-300"}`}>
-            {signed && "✓"}
-          </div>
-          <span className="text-xs text-gray-600 leading-relaxed">קראתי ואני מאשר/ת את מדיניות הביטולים של הטיול</span>
-        </button>
-      </div>
-
-      {error && <div className="px-4 pt-3 text-xs text-red-500">{error}</div>}
+      {error && <div className="px-4 pt-3 text-xs text-danger">{error}</div>}
 
       <div className="p-4">
         <button type="button" onClick={confirm} disabled={saving}
-          className="w-full py-3 bg-[#1A6B4A] text-white rounded-full text-sm font-medium hover:bg-[#155a3e] transition-colors disabled:opacity-60">
-          {saving ? "מאשר..." : "אשר הרשמה ←"}
+          className="w-full py-3 rounded-full text-sm font-semibold disabled:opacity-60" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
+          {saving ? "מאשר…" : "אשר הרשמה ←"}
         </button>
       </div>
     </>
   );
 }
 
-// ── Success screen ─────────────────────────────────────────────────────────────
-function SuccessScreen({ trip }: { trip: Trip }) {
+function StepDot({ n }: { n: number }) {
+  return <span className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0" style={{ background: "var(--surface-2)", color: "var(--accent)" }}>{n}</span>;
+}
+
+// ── Step 5: confirmation screen ──
+function SuccessScreen({ trip, alertHours }: { trip: Trip; alertHours: number }) {
   const router = useRouter();
-  const total = trip.price + SERVICE_FEE;
+  const total = trip.price;
+  const chargeDate = new Date(new Date(trip.date).getTime() - 24 * 3600 * 1000)
+    .toLocaleDateString("he-IL", { day: "numeric", month: "short" });
   return (
     <div className="p-6 text-center">
-      <div className="w-14 h-14 rounded-full bg-[#D6EDE3] flex items-center justify-center mx-auto mb-4 text-2xl">✓</div>
-      <div className="text-lg font-semibold text-gray-900 mb-1">נרשמת בהצלחה!</div>
-      <div className="text-sm text-gray-500 mb-4 leading-relaxed">אישור נשלח למייל. הכרטיס יחויב לאחר סגירת חלון ביטול מלא.</div>
-      <div className="bg-gray-50 rounded-xl p-3 text-right mb-4">
+      <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: "rgba(61,143,95,0.15)" }}>
+        <Check size={26} style={{ color: "var(--accent)" }} />
+      </div>
+      <div className="text-lg font-semibold text-fg mb-1">נרשמת בהצלחה!</div>
+      <div className="text-sm text-fg-muted mb-4 leading-relaxed">אישור נשלח למייל. הכרטיס יחויב לאחר סגירת חלון ביטול מלא.</div>
+      <div className="rounded-xl p-3 text-right mb-4 border border-border" style={{ background: "var(--surface-2)" }}>
         {[
           ["טיול", trip.title],
-          ["תאריך", `${formatDateFull(trip.date)} · ${trip.startTime}`],
+          ["תאריך ושעה", `${formatDateFull(trip.date)} · ${trip.startTime}`],
           ["מדריך", trip.guide?.user?.name || "מדריך"],
-          ["סכום שאושר", `₪${total}`],
-          ["חיוב בפועל", `${new Date(new Date(trip.date).getTime() - 24 * 3600 * 1000).toLocaleDateString("he-IL", { day: "numeric", month: "short" })} · אם לא בוטל`],
+          ["סכום", `₪${total}`],
+          ["מועד חיוב", `${chargeDate} · אם לא בוטל`],
+          ["התראת ביטול", `${alertHours} שעות לפני חלון החיוב`],
         ].map(([label, val]) => (
           <div key={label} className="flex justify-between text-sm py-1">
-            <span className="text-gray-500">{label}</span>
-            <span className="text-gray-900 font-medium">{val}</span>
+            <span className="text-fg-muted">{label}</span>
+            <span className="text-fg font-medium">{val}</span>
           </div>
         ))}
       </div>
-      <button type="button" onClick={() => router.push("/trips")}
-        className="w-full py-3 bg-[#1A6B4A] text-white rounded-full text-sm font-medium hover:bg-[#155a3e] transition-colors">
-        חזרה לחיפוש טיולים
-      </button>
-    </div>
-  );
-}
-
-// ── Reusable card form ────────────────────────────────────────────────────────
-function CardForm({ note }: { note: string }) {
-  return (
-    <div className="flex flex-col gap-2.5">
-      <div>
-        <label className="block text-xs text-gray-500 mb-1">מספר כרטיס</label>
-        <input type="text" placeholder="0000 0000 0000 0000" maxLength={19} dir="ltr"
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
-      </div>
-      <div className="grid grid-cols-2 gap-2.5">
-        <div>
-          <label className="block text-xs text-gray-500 mb-1">תוקף</label>
-          <input type="text" placeholder="MM/YY" maxLength={5} dir="ltr"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
-        </div>
-        <div>
-          <label className="block text-xs text-gray-500 mb-1">CVV</label>
-          <input type="text" placeholder="•••" maxLength={4} dir="ltr"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
-        </div>
-      </div>
-      <div>
-        <label className="block text-xs text-gray-500 mb-1">שם בעל הכרטיס</label>
-        <input type="text" placeholder="כפי שמופיע על הכרטיס"
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
-      </div>
-      <div className="flex items-start gap-1.5 text-[11px] text-gray-400 bg-gray-50 rounded-lg px-3 py-2">
-        🔒 {note}
+      <div className="flex flex-col gap-2">
+        <a href={googleCalendarUrl({ title: trip.title, dateISO: trip.date, startTime: trip.startTime, location: trip.region })}
+          target="_blank" rel="noreferrer"
+          className="w-full py-3 rounded-full text-sm font-medium flex items-center justify-center gap-1.5" style={{ border: "1px solid var(--border)", color: "var(--fg)" }}>
+          <CalendarPlus size={15} /> הוסף ליומן Google
+        </a>
+        <button type="button" onClick={() => router.push("/trips")}
+          className="w-full py-3 rounded-full text-sm font-semibold flex items-center justify-center gap-1.5" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
+          <Search size={15} /> חזרה לחיפוש
+        </button>
       </div>
     </div>
   );
 }
 
-// ── Conditional interest flow ─────────────────────────────────────────────────
+// ── Conditional interest flow ──
 function InterestFlow({ trip }: { trip: Trip }) {
   const router = useRouter();
   const [conditions, setConditions] = useState<string[]>([""]);
@@ -366,6 +349,7 @@ function InterestFlow({ trip }: { trip: Trip }) {
   const [spotThreshold, setSpotThreshold] = useState("");
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
+  const input = "rounded-lg px-3 py-2 text-sm bg-surface-2 border border-border text-fg placeholder:text-fg-faint focus:outline-none focus:border-accent";
 
   async function save() {
     const filled = conditions.filter((c) => c.trim());
@@ -375,11 +359,9 @@ function InterestFlow({ trip }: { trip: Trip }) {
       : `מתעניין${spotThreshold ? ` · התראה כשנותרו ${spotThreshold} מקומות` : ""}`;
     try {
       await fetch("/api/registrations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          tripId: trip.id, type: "INTEREST", notes,
-          conditions: filled,
+          tripId: trip.id, type: "INTEREST", notes, conditions: filled,
           autoRegister: filled.length > 0 ? autoRegister : false,
           interestThreshold: spotThreshold ? Number(spotThreshold) : undefined,
         }),
@@ -388,120 +370,80 @@ function InterestFlow({ trip }: { trip: Trip }) {
     } finally { setSaving(false); }
   }
 
-  if (done) {
-    return (
-      <div className="p-6 text-center">
-        <div className="w-14 h-14 rounded-full bg-[#D6EDE3] flex items-center justify-center mx-auto mb-4 text-2xl">✓</div>
-        <div className="text-lg font-semibold text-gray-900 mb-1">העניין שלך נשמר!</div>
-        <div className="text-sm text-gray-500 mb-4">תקבל עדכון כשהתנאים מתקיימים.</div>
-        <button type="button" onClick={() => router.push("/my-trips")}
-          className="w-full py-3 bg-[#1A6B4A] text-white rounded-full text-sm font-medium">
-          הטיולים שלי
-        </button>
-      </div>
-    );
-  }
+  if (done) return <DoneScreen title="העניין שלך נשמר!" body="תקבל עדכון כשהתנאים מתקיימים." />;
 
   return (
     <>
-      {/* Simple interest — notify when fewer than X spots remain */}
-      <div className="p-4 border-b border-gray-100">
-        <div className="text-sm font-medium text-gray-900 mb-1">עניין פשוט</div>
-        <div className="flex items-center gap-2 text-sm text-gray-700">
-          🔔 שלח לי התראה כשנותרו
-          <input type="number" min="1" value={spotThreshold} onChange={(e) => setSpotThreshold(e.target.value)}
-            placeholder="5" className="w-16 border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:border-[#1A6B4A]" dir="ltr" />
+      <div className="p-4 border-b border-border">
+        <div className="text-sm font-medium text-fg mb-1">עניין פשוט</div>
+        <div className="flex items-center gap-2 text-sm text-fg">
+          <Bell size={14} style={{ color: "var(--accent)" }} /> שלח לי התראה כשנותרו
+          <input type="number" min="1" value={spotThreshold} onChange={(e) => setSpotThreshold(e.target.value)} placeholder="5" className={`w-16 text-center ${input}`} dir="ltr" />
           מקומות
         </div>
-        <div className="text-[11px] text-gray-400 mt-1">או הגדר תנאים מתקדמים למטה</div>
+        <div className="text-[11px] text-fg-faint mt-1">או הגדר תנאים מתקדמים למטה</div>
       </div>
 
-      <div className="p-4 border-b border-gray-100">
-        <div className="text-sm font-medium text-gray-900 mb-1">עניין מותנה</div>
-        <div className="text-xs text-gray-500 mb-3">אירשם לטיול רק כש<strong>כל</strong> התנאים הבאים מתקיימים:</div>
+      <div className="p-4 border-b border-border">
+        <div className="text-sm font-medium text-fg mb-1">עניין מותנה</div>
+        <div className="text-xs text-fg-muted mb-3">אירשם לטיול רק כש<strong>כל</strong> התנאים הבאים מתקיימים:</div>
         <div className="flex flex-col gap-2 mb-3">
           {conditions.map((cond, i) => (
-            <div key={i} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
-              <span className={`text-[10px] font-medium rounded px-1.5 py-0.5 ${i === 0 ? "bg-gray-200 text-gray-500" : "bg-[#1A6B4A] text-white"}`}>
+            <div key={i} className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ background: "var(--surface-2)" }}>
+              <span className="text-[10px] font-medium rounded px-1.5 py-0.5" style={i === 0 ? { background: "var(--border)", color: "var(--fg-muted)" } : { background: "var(--accent)", color: "#fff" }}>
                 {i === 0 ? "אם" : "וגם"}
               </span>
-              <input
-                type="text"
-                value={cond}
-                onChange={(e) => {
-                  const next = [...conditions];
-                  next[i] = e.target.value;
-                  setConditions(next);
-                }}
-                placeholder="הוסף תנאי..."
-                className="flex-1 bg-transparent border-none outline-none text-sm text-gray-800"
-              />
-              {conditions.length > 1 && (
-                <button type="button" onClick={() => setConditions(conditions.filter((_, j) => j !== i))}
-                  className="text-gray-300 hover:text-red-400 text-base">✕</button>
-              )}
+              <input type="text" value={cond} onChange={(e) => { const next = [...conditions]; next[i] = e.target.value; setConditions(next); }}
+                placeholder="הוסף תנאי…" className="flex-1 bg-transparent border-none outline-none text-sm text-fg" />
+              {conditions.length > 1 && <button type="button" onClick={() => setConditions(conditions.filter((_, j) => j !== i))} className="text-fg-faint">✕</button>}
             </div>
           ))}
         </div>
-        <button type="button" onClick={() => setConditions([...conditions, ""])}
-          className="text-[#1A6B4A] text-sm flex items-center gap-1">
-          ＋ הוסף תנאי נוסף
-        </button>
-        <div className="text-[11px] text-gray-400 bg-gray-50 rounded-lg p-2 mt-3 leading-relaxed">
-          כל התנאים חייבים להתקיים יחד. המדריך יראה את הבקשות המצטברות.
-        </div>
+        <button type="button" onClick={() => setConditions([...conditions, ""])} className="text-accent text-sm">＋ הוסף תנאי נוסף</button>
       </div>
 
-      <div className="p-4 border-b border-gray-100">
-        <div className="text-sm font-medium text-gray-900 mb-3">כשהתנאים מתקיימים</div>
+      <div className="p-4 border-b border-border">
+        <div className="text-sm font-medium text-fg mb-3">כשהתנאים מתקיימים</div>
         <div className="grid grid-cols-2 gap-2">
-          <button type="button" onClick={() => setAutoRegister(true)}
-            className={`py-2.5 px-2 border rounded-xl text-xs text-center transition-colors ${
-              autoRegister ? "border-[#1A6B4A] bg-[#D6EDE3] text-[#0F5038]" : "border-gray-200 text-gray-600"}`}>
-            <div className="font-medium mb-0.5">רשום אותי אוטומטית</div>
-            <div className="text-[10px] text-gray-400">יחויב מיד ללא החזר</div>
-          </button>
-          <button type="button" onClick={() => setAutoRegister(false)}
-            className={`py-2.5 px-2 border rounded-xl text-xs text-center transition-colors ${
-              !autoRegister ? "border-[#1A6B4A] bg-[#D6EDE3] text-[#0F5038]" : "border-gray-200 text-gray-600"}`}>
-            <div className="font-medium mb-0.5">שלח לי התראה</div>
-            <div className="text-[10px] text-gray-400">תחרות עם ממתינים אחרים</div>
-          </button>
+          {[[true, "רשום אותי אוטומטית", "יחויב מיד ללא החזר"], [false, "שלח לי התראה", "תחרות עם ממתינים אחרים"]].map(([val, t, s]) => (
+            <button key={String(val)} type="button" onClick={() => setAutoRegister(val as boolean)}
+              className="py-2.5 px-2 border rounded-xl text-xs text-center"
+              style={autoRegister === val ? { borderColor: "var(--accent)", background: "rgba(61,143,95,0.1)", color: "var(--fg)" } : { borderColor: "var(--border)", color: "var(--fg-muted)" }}>
+              <div className="font-medium mb-0.5">{t as string}</div>
+              <div className="text-[10px] text-fg-faint">{s as string}</div>
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Card form when auto-register is chosen */}
       {autoRegister && (
-        <div className="p-4 border-b border-gray-100">
-          <div className="text-sm font-medium text-gray-900 mb-3">פרטי כרטיס לחיוב אוטומטי</div>
+        <div className="p-4 border-b border-border">
+          <div className="text-sm font-medium text-fg mb-3">פרטי כרטיס לחיוב אוטומטי</div>
           <CardForm note="הכרטיס יאושר עכשיו ויחויב אוטומטית כשהתנאים מתקיימים — ללא אפשרות החזר." />
         </div>
       )}
 
-      <div className="p-4 border-b border-gray-100">
-        <button type="button" onClick={() => setNotifyChanges((v) => !v)}
-          className="flex items-center gap-3">
-          <div className={`w-5 h-5 rounded flex items-center justify-center border-[1.5px] transition-colors ${
-            notifyChanges ? "bg-[#1A6B4A] border-[#1A6B4A] text-white text-xs" : "border-gray-300"}`}>
-            {notifyChanges && "✓"}
-          </div>
-          <span className="text-sm text-gray-700">עדכן אותי על כל שינוי בטיול</span>
+      <div className="p-4 border-b border-border">
+        <button type="button" onClick={() => setNotifyChanges((v) => !v)} className="flex items-center gap-3">
+          <span className="w-5 h-5 rounded flex items-center justify-center border" style={{ borderColor: notifyChanges ? "var(--accent)" : "var(--border)", background: notifyChanges ? "var(--accent)" : "transparent" }}>
+            {notifyChanges && <Check size={13} color="#fff" />}
+          </span>
+          <span className="text-sm text-fg">עדכן אותי על כל שינוי בטיול</span>
         </button>
       </div>
 
       <div className="p-4">
         <button type="button" onClick={save} disabled={saving}
-          className="w-full py-3 bg-[#1A6B4A] text-white rounded-full text-sm font-medium hover:bg-[#155a3e] transition-colors disabled:opacity-60">
-          {saving ? "שומר..." : autoRegister ? "שמור עניין על תנאי + אשר כרטיס ←" : "שמור עניין על תנאי ←"}
+          className="w-full py-3 rounded-full text-sm font-semibold disabled:opacity-60" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
+          {saving ? "שומר…" : autoRegister ? "שמור עניין על תנאי + אשר כרטיס ←" : "שמור עניין על תנאי ←"}
         </button>
       </div>
     </>
   );
 }
 
-// ── Waitlist flow ──────────────────────────────────────────────────────────────
+// ── Waitlist flow ──
 function WaitlistFlow({ trip }: { trip: Trip }) {
-  const router = useRouter();
   const [autoJoin, setAutoJoin] = useState(true);
   const [notifyChanges, setNotifyChanges] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -511,84 +453,60 @@ function WaitlistFlow({ trip }: { trip: Trip }) {
     setSaving(true);
     const notes = autoJoin ? "רשום אוטומטית כשמתפנה מקום" : "שלח התראה כשמתפנה מקום";
     try {
-      await fetch("/api/registrations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tripId: trip.id, type: "WAITLIST", notes }),
-      });
+      await fetch("/api/registrations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tripId: trip.id, type: "WAITLIST", notes }) });
       setDone(true);
     } finally { setSaving(false); }
   }
 
-  if (done) {
-    return (
-      <div className="p-6 text-center">
-        <div className="w-14 h-14 rounded-full bg-[#D6EDE3] flex items-center justify-center mx-auto mb-4 text-2xl">✓</div>
-        <div className="text-lg font-semibold text-gray-900 mb-1">הצטרפת לרשימת ההמתנה!</div>
-        <div className="text-sm text-gray-500 mb-4">נודיע לך ברגע שיתפנה מקום.</div>
-        <button type="button" onClick={() => router.push("/my-trips")}
-          className="w-full py-3 bg-[#1A6B4A] text-white rounded-full text-sm font-medium">
-          הטיולים שלי
-        </button>
-      </div>
-    );
-  }
+  if (done) return <DoneScreen title="הצטרפת לרשימת ההמתנה!" body="נודיע לך ברגע שיתפנה מקום." />;
 
   return (
     <>
-      <div className="p-4 border-b border-gray-100">
-        <div className="text-sm font-medium text-gray-900 mb-2">הצטרף לרשימת ההמתנה</div>
-        <div className="text-xs text-gray-500 mb-3">הטיול מלא. כשיתפנה מקום:</div>
+      <div className="p-4 border-b border-border">
+        <div className="text-sm font-medium text-fg mb-2">הצטרף לרשימת ההמתנה</div>
+        <div className="text-xs text-fg-muted mb-3">הטיול מלא. כשיתפנה מקום:</div>
         <div className="flex flex-col gap-2">
-          <button type="button" onClick={() => setAutoJoin(true)}
-            className={`p-3 border rounded-xl text-right transition-colors ${
-              autoJoin ? "border-[#1A6B4A] bg-[#D6EDE3]" : "border-gray-200"}`}>
-            <div className={`text-sm font-medium mb-0.5 ${autoJoin ? "text-[#0F5038]" : "text-gray-900"}`}>⚡ רשום אותי אוטומטית</div>
-            <div className="text-xs text-gray-500 leading-relaxed">כשמתפנה מקום — נרשם ומחויב מיד. מובטח מקום.</div>
-            {autoJoin && (
-              <div className="mt-2 bg-[#FADBD8] rounded-lg px-2 py-1.5 text-xs text-[#791F1F]">
-                ⚠️ הכרטיס יחויב ב-₪{trip.price + SERVICE_FEE} ללא אפשרות החזר
-              </div>
-            )}
+          <button type="button" onClick={() => setAutoJoin(true)} className="p-3 border rounded-xl text-right"
+            style={autoJoin ? { borderColor: "var(--accent)", background: "rgba(61,143,95,0.1)" } : { borderColor: "var(--border)" }}>
+            <div className="text-sm font-medium mb-0.5 text-fg">⚡ רשום אותי אוטומטית</div>
+            <div className="text-xs text-fg-muted leading-relaxed">כשמתפנה מקום — נרשם ומחויב מיד. מובטח מקום.</div>
+            {autoJoin && <div className="mt-2 rounded-lg px-2 py-1.5 text-xs" style={{ background: "rgba(217,83,79,0.15)", color: "#e88" }}>⚠️ הכרטיס יחויב ב-₪{trip.price} ללא אפשרות החזר</div>}
           </button>
-          <button type="button" onClick={() => setAutoJoin(false)}
-            className={`p-3 border rounded-xl text-right transition-colors ${
-              !autoJoin ? "border-[#1A6B4A] bg-[#D6EDE3]" : "border-gray-200"}`}>
-            <div className={`text-sm font-medium mb-0.5 ${!autoJoin ? "text-[#0F5038]" : "text-gray-900"}`}>🔔 שלח לי התראה</div>
-            <div className="text-xs text-gray-500 leading-relaxed">כשמתפנה מקום — התראה לכל הממתינים בו-זמנית. מי שרושם ראשון זוכה.</div>
+          <button type="button" onClick={() => setAutoJoin(false)} className="p-3 border rounded-xl text-right"
+            style={!autoJoin ? { borderColor: "var(--accent)", background: "rgba(61,143,95,0.1)" } : { borderColor: "var(--border)" }}>
+            <div className="text-sm font-medium mb-0.5 text-fg">🔔 שלח לי התראה</div>
+            <div className="text-xs text-fg-muted leading-relaxed">כשמתפנה מקום — התראה לכל הממתינים בו-זמנית. מי שרושם ראשון זוכה.</div>
           </button>
         </div>
       </div>
 
-      {/* Card form when auto-join is chosen */}
       {autoJoin && (
-        <div className="p-4 border-b border-gray-100">
-          <div className="text-sm font-medium text-gray-900 mb-3">פרטי כרטיס לחיוב אוטומטי</div>
-          <CardForm note={`הכרטיס יאושר עכשיו ויחויב אוטומטית ב-₪${trip.price + SERVICE_FEE} כשיתפנה מקום — ללא אפשרות החזר.`} />
+        <div className="p-4 border-b border-border">
+          <div className="text-sm font-medium text-fg mb-3">פרטי כרטיס לחיוב אוטומטי</div>
+          <CardForm note={`הכרטיס יאושר עכשיו ויחויב אוטומטית ב-₪${trip.price} כשיתפנה מקום — ללא אפשרות החזר.`} />
         </div>
       )}
 
-      <div className="p-4 border-b border-gray-100">
+      <div className="p-4 border-b border-border">
         <button type="button" onClick={() => setNotifyChanges((v) => !v)} className="flex items-center gap-3">
-          <div className={`w-5 h-5 rounded flex items-center justify-center border-[1.5px] transition-colors ${
-            notifyChanges ? "bg-[#1A6B4A] border-[#1A6B4A] text-white text-xs" : "border-gray-300"}`}>
-            {notifyChanges && "✓"}
-          </div>
-          <span className="text-sm text-gray-700">עדכן אותי על כל שינוי בטיול</span>
+          <span className="w-5 h-5 rounded flex items-center justify-center border" style={{ borderColor: notifyChanges ? "var(--accent)" : "var(--border)", background: notifyChanges ? "var(--accent)" : "transparent" }}>
+            {notifyChanges && <Check size={13} color="#fff" />}
+          </span>
+          <span className="text-sm text-fg">עדכן אותי על כל שינוי בטיול</span>
         </button>
       </div>
 
       <div className="p-4">
         <button type="button" onClick={join} disabled={saving}
-          className="w-full py-3 bg-[#1A6B4A] text-white rounded-full text-sm font-medium hover:bg-[#155a3e] transition-colors disabled:opacity-60">
-          {saving ? "מצטרף..." : autoJoin ? "הצטרף + אשר כרטיס ←" : "הצטרף לרשימת ההמתנה ←"}
+          className="w-full py-3 rounded-full text-sm font-semibold disabled:opacity-60" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
+          {saving ? "מצטרף…" : autoJoin ? "הצטרף + אשר כרטיס ←" : "הצטרף לרשימת ההמתנה ←"}
         </button>
       </div>
     </>
   );
 }
 
-// ── Self-guided purchase flow (single fixed price, immediate final payment) ──────
+// ── Self-guided purchase flow ──
 function SelfGuidedPurchaseFlow({ trip }: { trip: Trip }) {
   const router = useRouter();
   const [buying, setBuying] = useState(false);
@@ -599,11 +517,7 @@ function SelfGuidedPurchaseFlow({ trip }: { trip: Trip }) {
     setBuying(true);
     const res = await fetch(`/api/trips/${trip.id}/purchase`, { method: "POST" });
     setBuying(false);
-    if (res.ok) {
-      const d = await res.json().catch(() => ({}));
-      setExpiresAt(d.purchase?.accessExpiresAt ?? null);
-      setDone(true);
-    }
+    if (res.ok) { const d = await res.json().catch(() => ({})); setExpiresAt(d.purchase?.accessExpiresAt ?? null); setDone(true); }
   }
 
   const fmt = (iso: string | null) => iso ? new Date(iso).toLocaleDateString("he-IL", { day: "numeric", month: "long", year: "numeric" }) : "";
@@ -611,16 +525,12 @@ function SelfGuidedPurchaseFlow({ trip }: { trip: Trip }) {
   if (done) {
     return (
       <div className="p-6 text-center">
-        <div className="w-14 h-14 rounded-full bg-[#D6EDE3] flex items-center justify-center mx-auto mb-4 text-2xl">✓</div>
-        <div className="text-lg font-semibold text-gray-900 mb-1">הטיול נרכש 🎒</div>
-        <div className="text-sm text-gray-500 mb-4 leading-relaxed">
-          {expiresAt ? `התוכן זמין לך מהיום ועד ${fmt(expiresAt)}.` : `התוכן זמין לך למשך ${trip.accessWindowDays ?? 30} ימים.`}
-        </div>
+        <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: "rgba(61,143,95,0.15)" }}><Backpack size={24} style={{ color: "var(--accent)" }} /></div>
+        <div className="text-lg font-semibold text-fg mb-1">הטיול נרכש</div>
+        <div className="text-sm text-fg-muted mb-4 leading-relaxed">{expiresAt ? `התוכן זמין לך מהיום ועד ${fmt(expiresAt)}.` : `התוכן זמין לך למשך ${trip.accessWindowDays ?? 30} ימים.`}</div>
         <div className="flex flex-col gap-2">
-          <button type="button" onClick={() => router.push(`/trips/${trip.id}/start`)}
-            className="w-full py-3 bg-[#1A6B4A] text-white rounded-full text-sm font-medium hover:bg-[#155a3e]">▶ התחל טיול</button>
-          <button type="button" onClick={() => router.push("/my-trips")}
-            className="w-full py-2.5 text-sm text-gray-500 border border-gray-200 rounded-full">הטיולים שלי</button>
+          <button type="button" onClick={() => router.push(`/trips/${trip.id}/start`)} className="w-full py-3 rounded-full text-sm font-semibold" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>▶ התחל טיול</button>
+          <button type="button" onClick={() => router.push("/my-trips")} className="w-full py-2.5 text-sm rounded-full" style={{ border: "1px solid var(--border)", color: "var(--fg-muted)" }}>הטיולים שלי</button>
         </div>
       </div>
     );
@@ -628,75 +538,66 @@ function SelfGuidedPurchaseFlow({ trip }: { trip: Trip }) {
 
   return (
     <>
-      <div className="p-4 border-b border-gray-100">
-        <div className="bg-[#EEF5FC] rounded-xl p-3 text-xs text-[#185FA5] mb-3">
-          🎒 טיול עצמאי — תוכן הדרכה מלא לרכישה. תשלום מיידי וסופי, ללא תאריך וללא הגבלת משתתפים.
+      <div className="p-4 border-b border-border">
+        <div className="rounded-xl p-3 text-xs text-fg-muted mb-3" style={{ background: "var(--surface-2)" }}>
+          טיול עצמאי — תוכן הדרכה מלא לרכישה. תשלום מיידי וסופי, ללא תאריך וללא הגבלת משתתפים.
         </div>
-        <div className="bg-gray-50 rounded-xl p-3">
-          <div className="flex justify-between text-sm py-1">
-            <span className="text-gray-500">מחיר לחבילה</span><span className="font-medium">₪{trip.price}</span>
-          </div>
-          <div className="flex justify-between text-xs py-1 text-gray-400">
-            <span>חלון גישה</span><span>{trip.accessWindowDays ?? 30} ימים מרגע הרכישה</span>
-          </div>
-          <div className="flex justify-between text-sm font-semibold pt-2 mt-1 border-t border-gray-200">
-            <span>סה"כ לתשלום</span><span>₪{trip.price}</span>
-          </div>
+        <div className="rounded-xl p-3 border border-border" style={{ background: "var(--surface-2)" }}>
+          <div className="flex justify-between text-sm py-1"><span className="text-fg-muted">מחיר לחבילה</span><span className="font-medium text-fg">₪{trip.price}</span></div>
+          <div className="flex justify-between text-xs py-1 text-fg-faint"><span>חלון גישה</span><span>{trip.accessWindowDays ?? 30} ימים מרגע הרכישה</span></div>
+          <div className="flex justify-between text-sm font-semibold pt-2 mt-1 border-t border-border"><span className="text-fg">סה״כ לתשלום</span><span className="text-fg">₪{trip.price}</span></div>
         </div>
       </div>
-      <div className="p-4 border-b border-gray-100">
-        <div className="text-sm font-medium text-gray-900 mb-3">פרטי תשלום</div>
+      <div className="p-4 border-b border-border">
+        <div className="text-sm font-medium text-fg mb-3">פרטי תשלום</div>
         <CardForm note="תשלום מיידי וסופי — לאחר הרכישה התוכן המלא ייפתח לך מיד." />
       </div>
       <div className="p-4">
-        <button type="button" onClick={buy} disabled={buying}
-          className="w-full py-3 bg-[#1A6B4A] text-white rounded-full text-sm font-medium hover:bg-[#155a3e] disabled:opacity-60">
-          {buying ? "רוכש..." : `רכוש עכשיו · ₪${trip.price}`}
+        <button type="button" onClick={buy} disabled={buying} className="w-full py-3 rounded-full text-sm font-semibold disabled:opacity-60" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
+          {buying ? "רוכש…" : `רכוש עכשיו · ₪${trip.price}`}
         </button>
       </div>
     </>
   );
 }
 
-// ── Main page ─────────────────────────────────────────────────────────────────
+function DoneScreen({ title, body }: { title: string; body: string }) {
+  const router = useRouter();
+  return (
+    <div className="p-6 text-center">
+      <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: "rgba(61,143,95,0.15)" }}><Check size={26} style={{ color: "var(--accent)" }} /></div>
+      <div className="text-lg font-semibold text-fg mb-1">{title}</div>
+      <div className="text-sm text-fg-muted mb-4">{body}</div>
+      <button type="button" onClick={() => router.push("/my-trips")} className="w-full py-3 rounded-full text-sm font-semibold" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>הטיולים שלי</button>
+    </div>
+  );
+}
+
+// ── Main page ──
 export default function RegisterPage() {
   const { id } = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const router = useRouter();
   const { data: session, status } = useSession();
-
   const flow = searchParams.get("flow") ?? "register";
 
   const [trip, setTrip] = useState<Trip | null>(null);
   const [loading, setLoading] = useState(true);
-  const [success, setSuccess] = useState(false);
+  const [successAlert, setSuccessAlert] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch(`/api/trips/${id}`)
-      .then((r) => r.json())
-      .then((d) => { if (!d.error) setTrip(d); })
-      .finally(() => setLoading(false));
+    fetch(`/api/trips/${id}`).then((r) => r.json()).then((d) => { if (!d.error) setTrip(d); }).finally(() => setLoading(false));
   }, [id]);
 
   if (status === "loading" || loading) {
-    return (
-      <div dir="rtl" className="min-h-screen bg-[#f5f5f5] flex items-center justify-center">
-        <div className="text-gray-400 text-sm">טוען...</div>
-      </div>
-    );
+    return <div dir="rtl" className="min-h-screen bg-bg flex items-center justify-center"><div className="text-fg-faint text-sm">טוען…</div></div>;
   }
-
   if (!session) {
     router.replace(`/auth/login?callbackUrl=/trips/${id}/register${flow !== "register" ? `?flow=${flow}` : ""}`);
     return null;
   }
-
   if (!trip) {
-    return (
-      <div dir="rtl" className="min-h-screen bg-[#f5f5f5] flex items-center justify-center">
-        <div className="text-gray-500 text-sm">הטיול לא נמצא</div>
-      </div>
-    );
+    return <div dir="rtl" className="min-h-screen bg-bg flex items-center justify-center"><div className="text-fg-muted text-sm">הטיול לא נמצא</div></div>;
   }
 
   const isFull = trip.status === "FULL" || trip.spotsBooked >= trip.maxSpots;
@@ -710,29 +611,20 @@ export default function RegisterPage() {
   }
 
   return (
-    <div dir="rtl" className="min-h-screen bg-[#f5f5f5] py-4 px-3">
+    <div dir="rtl" className="min-h-screen bg-bg py-4 px-3">
       <div className="max-w-[480px] mx-auto">
-        {/* Header */}
         <div className="flex items-center gap-3 mb-3">
-          <button type="button" onClick={() => router.back()}
-            className="text-gray-400 hover:text-gray-600 text-sm">← חזרה</button>
-          <h1 className="text-sm font-semibold text-gray-900">{flowTitle()}</h1>
+          <button type="button" onClick={() => router.back()} className="text-fg-muted flex items-center gap-1 text-sm"><ArrowRight size={16} /> חזרה</button>
+          <h1 className="text-sm font-semibold text-fg">{flowTitle()}</h1>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+        <div className="bg-surface rounded-2xl border border-border overflow-hidden">
           <TripSummary trip={trip} />
-
-          {isSelfGuided ? (
-            <SelfGuidedPurchaseFlow trip={trip} />
-          ) : success ? (
-            <SuccessScreen trip={trip} />
-          ) : flow === "interest" ? (
-            <InterestFlow trip={trip} />
-          ) : flow === "waitlist" || isFull ? (
-            <WaitlistFlow trip={trip} />
-          ) : (
-            <RegisterFlow trip={trip} onSuccess={() => setSuccess(true)} />
-          )}
+          {isSelfGuided ? <SelfGuidedPurchaseFlow trip={trip} />
+            : successAlert != null ? <SuccessScreen trip={trip} alertHours={successAlert} />
+            : flow === "interest" ? <InterestFlow trip={trip} />
+            : flow === "waitlist" || isFull ? <WaitlistFlow trip={trip} />
+            : <RegisterFlow trip={trip} onSuccess={(h) => setSuccessAlert(h)} />}
         </div>
       </div>
     </div>

@@ -989,3 +989,184 @@ The initial intent question offers these options, each leading to a distinct ful
 
 ### Comp Codes — Applicable to Journey Individual-Day Registration
 - Comp codes work for individual-day registration within a journey, same discount mechanism as regular trips.
+
+---
+
+## Trip Detail Page — Hiker View (Finalized)
+
+### Page Order (top to bottom)
+1. Photos (rotating with staggered fade, 5-6 sec intervals)
+2. Trip name
+3. Guide name(s) + rating — both guides shown equally, no visual distinction between primary/secondary
+4. Tags (difficulty, region, attribute tags)
+5. Quick stats (km, hours, min age)
+6. Capacity bar — shown prominently in the upper section, not just near the registration button
+7. Date and departure time
+8. Meeting point + navigation button (opens Waze/Google Maps)
+9. Description
+10. Map with route + waypoints (tapping a waypoint opens a full drawer with name, description, source materials if available)
+11. Elevation chart
+12. Equipment list + "Copy list" button (copies all items to clipboard — if technically simple)
+13. Source materials (closed by default — guide actively opens them; close again after trip at guide's discretion)
+14. Q&A (official-answer questions first, then chronological)
+15. Reviews (all shown, no pagination)
+16. Rideshare board link
+17. Cancellation policy
+
+### Registration Button
+- Floating fixed at bottom of screen, always visible while scrolling (if technically simple; otherwise at bottom of page only).
+
+### Platform Fee
+- NO service fee added to hiker price. Hiker pays exactly the guide's stated price. Platform fee is deducted from guide payout only, never shown to hiker.
+
+### Registration Flow Steps
+1. Cancellation policy display (all tiers shown explicitly) + confirmation checkbox
+2. Dynamic fields (if guide defined any — otherwise step disappears entirely)
+3. Payment (saved card option + option to save new card)
+4. Cancellation threshold alert (per-trip setting, not global profile setting)
+5. Confirmation screen: trip name + date + time + guide name + charge date + alert timing + Add to Google Calendar button + Back to Search button
+
+### Cancellation Flow
+- Not a single tap. Intermediate screen shows exact refund amount calculated based on current time vs. no-refund window.
+- Includes estimated refund timing: "usually 3-5 business days depending on your bank" if exact timing unknown.
+
+### Source Materials Visibility
+- Closed by default — guide must actively open them.
+- Close again after trip at guide's discretion (not automatic).
+
+---
+
+## Homepage (Logged-in Hiker) — Finalized
+
+### Structure (top to bottom)
+1. **Hero** — rotating by visit count (visit 1→2→3→4→1→2...)
+2. **Intent question** — 4 large prominent buttons ("מה תרצה לעשות היום?")
+3. No personalized recommendations in Phase 1
+
+### Hero Rotation Categories
+Rotates by visit number, not by time:
+- Visit 1: **Featured Trip** — highest-rated upcoming trip
+- Visit 2: **Featured Guide** — most active guide recently
+- Visit 3: **New in App** — feature or improvement (written manually by admin)
+- Visit 4: **Trip Near You** — based on user's preferred region
+- Visit 5: back to Visit 1, etc.
+
+### Hero — Two Actions
+Each Hero has two buttons regardless of category:
+1. **Context-sensitive deeplink** — "צפה בטיול" / "ראה פרופיל מדריך" / "קרא עוד" depending on category
+2. **"אהבתי — הראה לי עוד כאלה"** — saves preference signal. Phase 1: data collection only, no action taken on it yet. Foundation for future personalization engine.
+
+### Intent Question
+4 large/prominent buttons displayed below the Hero:
+1. "אני יודע מתי אני פנוי" → opens calendar date picker, filters trips by that date
+2. "מחפש סוג טיול מסוים" → opens search with filters prominent
+3. "מה יש בקרוב?" → list sorted by nearest upcoming date
+4. "הפתיעו אותי" → list based on personal preferences
+
+---
+
+## Homepage — Finalized Spec
+
+### Structure (top to bottom, nothing else)
+1. Top bar: logo "TRAILHUB" + notification bell + profile avatar
+2. Hero — full-width ~70vh
+3. Intent question section: "מה תרצה לעשות היום?" + 4 cards in 2x2 grid
+4. Nothing below the intent cards
+
+### Hero Rotation — by Visit Count
+Rotates by visit number (1→2→3→4→1→2...):
+- Visit 1: Featured Trip — highest-rated upcoming trip (auto)
+- Visit 2: Featured Guide — most active guide recently (auto)
+- Visit 3: New in App — written manually by admin in Admin Panel
+- Visit 4: Trip Near You — based on user's preferred region (auto)
+
+### Hero — Two Action Buttons
+1. Context-sensitive deeplink: "צפה בטיול" / "ראה פרופיל מדריך" / "קרא עוד"
+2. "♥ אהבתי — הראה לי עוד כאלה" — saves preference signal only. Phase 1: data collection, no personalization action yet.
+
+### Intent Cards (exact labels, 2x2 grid)
+1. "אני יודע מתי אני פנוי" → opens calendar date picker
+2. "מחפש סוג טיול מסוים" → opens search with filters prominent
+3. "מה יש בקרוב?" → list sorted by nearest date
+4. "הפתיעו אותי" → list based on personal preferences
+
+---
+
+## Trip Detail Page — Hiker View (Finalized Order)
+1. Photos (full-width, staggered fade, 5-6 sec, NOT simultaneous)
+2. Trip name
+3. Guide name(s) + rating — both shown equally, no primary/secondary distinction
+4. Tags (difficulty, region, attribute tags)
+5. Quick stats: km / hours / min age
+6. Capacity bar — prominent in upper section
+7. Date and departure time
+8. Meeting point + Waze/Google Maps button
+9. Description
+10. Map with route + waypoints (tap waypoint → full drawer: name, description, source materials)
+11. Elevation chart
+12. Equipment list + "העתק רשימה" button (copies to clipboard)
+13. Source materials (closed by default — guide actively opens; close after trip at guide's discretion)
+14. Q&A (official-answer questions first, then chronological)
+15. Reviews (all shown, no pagination)
+16. Rideshare board link
+17. Cancellation policy
+
+### Registration Button
+- Floating fixed at bottom, always visible while scrolling.
+
+---
+
+## Registration Flow — Exact 5 Steps
+1. Cancellation policy (all tiers explicit) + confirmation checkbox
+2. Dynamic fields — step DISAPPEARS ENTIRELY if guide defined none
+3. Payment — saved card option + save new card option
+4. Cancellation threshold alert — per-trip (not global profile setting)
+5. Confirmation screen: trip name + date + time + guide + charge date + alert timing + "הוסף ליומן Google" + "חזרה לחיפוש"
+
+### Platform Fee
+- NO fee shown to hiker ever. Hiker pays guide's stated price exactly.
+- Platform fee deducted from guide payout only, behind the scenes.
+
+---
+
+## Cancellation Flow
+- Intermediate screen before cancellation completes:
+  - Shows exact refund amount per current cancellation policy
+  - Shows estimated timing: "בדרך כלל 3-5 ימי עסקים" if Stripe timing unknown
+
+---
+
+## Design System
+
+### Aesthetic Direction
+- Inspired by NOMAD hiking app (Behance: behance.net/gallery/191501569)
+- Editorial, magazine-like — NOT a generic utility app
+- Generous whitespace, full-width photography, strong typographic hierarchy
+
+### Color
+- Default: Dark mode — deep blacks (#0a0a0a), dark greens, earthy browns
+- Accent: warm green (#3d8f5f) or amber (#c8893a) — used sparingly for CTAs only
+- Max 2-3 colors in palette
+- User can toggle Light mode in Settings — both modes must look premium
+
+### Typography
+- Headings / trip names: Playfair Display (Google Fonts)
+- Body / metadata: Inter (Google Fonts)
+- Strong size contrast between display and body text
+
+### Icons
+- Lucide icons throughout — not emoji
+
+### Trip Cards
+- Large image ~60% of card height, full-width
+- Dark gradient overlay on image
+- Trip name in Playfair Display over gradient
+- Guide avatar + name + rating minimal at bottom of image
+- Stats row below card (km, hours, date, price) in small Inter
+- Capacity bar below stats
+
+### Bottom Navigation
+- 4 tabs: Search / My Trips / Notifications / Profile
+- Lucide icons, active tab shows accent color label
+- No labels on inactive tabs
+

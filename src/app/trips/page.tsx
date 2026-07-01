@@ -384,7 +384,7 @@ export default function TripsPage() {
       )}
 
       {/* Body (list view) */}
-      <div className={`max-w-5xl mx-auto px-3 pb-8 md:flex md:gap-4 ${view === "calendar" ? "hidden" : ""}`}>
+      <div className={`max-w-5xl mx-auto px-3 pb-24 md:flex md:gap-4 ${view === "calendar" ? "hidden" : ""}`}>
 
         {/* ── Calendar side panel (desktop, RIGHT side in RTL) ── */}
         <aside className="hidden md:block w-[290px] shrink-0 self-start sticky top-4">

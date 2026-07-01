@@ -19,7 +19,32 @@ interface RegistrationTrip {
   spotsBooked: number;
   images: string[];
   meetingPoint: string | null;
+  cancellationPolicy: string | null;
   guide: { user: { name: string | null } };
+}
+
+// Compute the refund the hiker would get if they cancel right now, based on the
+// trip's cancellation-policy tiers vs. the current time (spec: intermediate
+// screen shows the exact refund amount before cancellation completes).
+function computeRefund(policy: string | null, tripDate: string, totalPrice: number) {
+  const hoursUntil = (new Date(tripDate).getTime() - Date.now()) / 3_600_000;
+  const lines = (policy ?? "").split("\n").filter(Boolean);
+  const tiers: { hours: number; pct: number }[] = [];
+  for (const line of lines) {
+    const hMatch = line.match(/(\d+)\s*שעות/);
+    const noRefund = /ללא\s*החזר/.test(line);
+    const pMatch = line.match(/(\d+)\s*%/);
+    if (!hMatch) continue;
+    const hours = parseInt(hMatch[1], 10);
+    const pct = noRefund ? 0 : pMatch ? parseInt(pMatch[1], 10) : 0;
+    // "פחות מ-X שעות" describes the window BELOW the threshold.
+    if (/פחות/.test(line)) continue;
+    tiers.push({ hours, pct });
+  }
+  // Most generous tier the hiker still qualifies for.
+  let pct = 0;
+  for (const t of tiers) if (hoursUntil >= t.hours) pct = Math.max(pct, t.pct);
+  return { pct, amount: Math.round((totalPrice * pct) / 100) };
 }
 
 interface Registration {
@@ -156,7 +181,7 @@ function TripCard({
           {isCancelled
             ? `₪${reg.totalPrice.toLocaleString()} · הוחזר`
             : isConfirmed
-            ? `₪${(reg.totalPrice + Math.round(reg.totalPrice * 0.075)).toLocaleString()} · ${reg.paymentStatus === "PAID" ? "שולם" : "אושר, טרם חויב"}`
+            ? `₪${reg.totalPrice.toLocaleString()} · ${reg.paymentStatus === "PAID" ? "שולם" : "אושר, טרם חויב"}`
             : `₪${reg.totalPrice.toLocaleString()}`}
         </span>
         <div className="flex gap-1.5">
@@ -220,26 +245,42 @@ function TripCard({
         </div>
       </div>
 
-      {/* Cancel confirmation */}
-      {confirmCancel && (
-        <div className="px-3 py-2.5 bg-[#FADBD8] border-t border-[#C0392B]/20">
-          <div className="text-xs text-[#791F1F] mb-2">
-            {isConfirmed
-              ? "לבטל את ההרשמה? יתכן שהחזר חלקי בלבד."
-              : "להסיר מהרשימה?"}
+      {/* Cancel confirmation — intermediate screen with exact refund + timing */}
+      {confirmCancel && (() => {
+        const refund = isConfirmed ? computeRefund(trip.cancellationPolicy, trip.date, reg.totalPrice) : null;
+        return (
+          <div className="px-3 py-3 bg-[#FDF6F5] border-t border-[#C0392B]/20">
+            {isConfirmed ? (
+              <>
+                <div className="text-xs text-[#791F1F] mb-1.5">ביטול ההרשמה — לפי מדיניות הביטולים, בעת ביטול כעת:</div>
+                <div className="bg-white rounded-lg border border-[#C0392B]/15 p-2.5 mb-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">החזר כספי</span>
+                    <span className="font-semibold text-[#0F5038]">
+                      ₪{refund!.amount.toLocaleString()} <span className="text-gray-400 font-normal">({refund!.pct}%)</span>
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-gray-400 mt-1.5 leading-relaxed">
+                    ההחזר יבוצע מיידית דרך Stripe. הזיכוי בחשבון — בדרך כלל 3-5 ימי עסקים, תלוי בבנק.
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-xs text-[#791F1F] mb-2">להסיר מהרשימה?</div>
+            )}
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setConfirmCancel(false)}
+                className="px-3 py-1.5 border border-gray-200 rounded-full text-xs text-gray-500 bg-white">
+                חזרה
+              </button>
+              <button type="button" onClick={doCancel} disabled={cancelling}
+                className="px-3 py-1.5 bg-[#C0392B] text-white rounded-full text-xs disabled:opacity-60">
+                {cancelling ? "מבטל..." : isConfirmed ? "אשר ביטול" : "כן, הסר"}
+              </button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <button type="button" onClick={() => setConfirmCancel(false)}
-              className="px-3 py-1.5 border border-gray-200 rounded-full text-xs text-gray-500 bg-white">
-              לא
-            </button>
-            <button type="button" onClick={doCancel} disabled={cancelling}
-              className="px-3 py-1.5 bg-[#C0392B] text-white rounded-full text-xs disabled:opacity-60">
-              {cancelling ? "מבטל..." : "כן, בטל"}
-            </button>
-          </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
@@ -289,7 +330,7 @@ export default function MyTripsPage() {
 
   return (
     <div dir="rtl" className="min-h-screen bg-[#f5f5f5]">
-      <div className="max-w-[480px] mx-auto px-3 py-3 pb-8">
+      <div className="max-w-[480px] mx-auto px-3 py-3 pb-24">
 
         {/* Top bar */}
         <div className="bg-white rounded-xl px-3 py-2.5 mb-2 flex items-center gap-2">

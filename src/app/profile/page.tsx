@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const REGIONS = ["גליל עליון", "גליל תחתון", "כרמל", "ירושלים", "שפלה", "נגב", "ערבה", "גולן", "עמק יזרעאל"];
 const DIFFICULTIES = ["EASY", "MEDIUM", "HARD", "EXTREME"];
@@ -208,9 +209,15 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] py-8 px-4" dir="rtl">
+    <div className="min-h-screen bg-[#f5f5f5] py-8 px-4 pb-24" dir="rtl">
       <div className="max-w-lg mx-auto">
-        <h1 className="text-xl font-bold text-gray-900 mb-6">הפרופיל שלי</h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-xl font-bold text-gray-900">הפרופיל שלי</h1>
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            מצב תצוגה
+            <ThemeToggle />
+          </div>
+        </div>
 
         {/* Avatar */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 mb-4 flex items-center gap-4">

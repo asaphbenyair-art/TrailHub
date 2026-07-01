@@ -4,26 +4,26 @@ import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import NotificationBell from "@/components/NotificationBell";
 import RideshareBoard from "@/components/RideshareBoard";
 import { TAG_LABEL } from "@/lib/tripTags";
 import { googleCalendarUrl } from "@/lib/calendar";
+import {
+  ArrowRight, Heart, Share2, Bell, Star, UserPlus, Check, MapPin, Navigation,
+  Clock, Mountain, Users, Calendar, Backpack, Copy, BookOpen, MessageCircle,
+  FileText, Link2, ChevronDown, X, Play, PauseCircle, ExternalLink, TrendingUp,
+} from "lucide-react";
 
 const TripDetailMap = dynamic(() => import("@/components/TripDetailMap"), { ssr: false });
 
-const DIFF_LABEL: Record<string, string> = {
-  EASY: "קל", MEDIUM: "בינוני", HARD: "קשה", EXTREME: "קיצוני",
+const DIFF_LABEL: Record<string, string> = { EASY: "קל", MEDIUM: "בינוני", HARD: "קשה", EXTREME: "קיצוני" };
+const ROUTE_TYPE_LABEL: Record<string, string> = {
+  "one-way": "חד-כיווני", "circular-nature": "מעגלי — שטח", "circular-urban": "מעגלי — עירוני",
 };
-const DIFF_COLOR: Record<string, { bg: string; color: string }> = {
-  EASY: { bg: "#EAF3DE", color: "#27500A" },
-  MEDIUM: { bg: "#FAEEDA", color: "#633806" },
-  HARD: { bg: "#FADBD8", color: "#791F1F" },
-  EXTREME: { bg: "#E8D0D0", color: "#4A0F0F" },
-};
+const FITNESS_LABEL: Record<string, string> = { low: "נמוך", medium: "בינוני", high: "גבוה", excellent: "מצוין" };
 
 const AVATAR_COLORS = ["#854F0B", "#3B6D11", "#185FA5", "#6B3B87", "#1A6B4A"];
 function avatarColor(name: string | null) {
-  if (!name) return "#999";
+  if (!name) return "#777";
   let h = 0;
   for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff;
   return AVATAR_COLORS[h % AVATAR_COLORS.length];
@@ -33,14 +33,10 @@ function initials(name: string | null) {
   return name.split(" ").map((n) => n[0]).join("").slice(0, 2);
 }
 function formatDateLong(d: string) {
-  return new Date(d).toLocaleDateString("he-IL", {
-    weekday: "long", day: "numeric", month: "long",
-  });
+  return new Date(d).toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" });
 }
 function formatDateShort(d: string) {
-  return new Date(d).toLocaleDateString("he-IL", {
-    weekday: "short", day: "numeric", month: "short",
-  });
+  return new Date(d).toLocaleDateString("he-IL", { weekday: "short", day: "numeric", month: "short" });
 }
 function formatDuration(min: number) {
   if (!min) return "—";
@@ -49,39 +45,38 @@ function formatDuration(min: number) {
   return m ? `${h}:${String(m).padStart(2, "0")}` : `${h}`;
 }
 
-interface Review {
-  id: string;
-  rating: number;
-  comment: string | null;
-  user: { name: string | null };
-}
-
+interface Review { id: string; rating: number; comment: string | null; user: { name: string | null } }
 interface SourceMaterial { type: "pdf" | "link"; url: string; title: string; description?: string }
-interface Waypoint {
-  lat: number;
-  lng: number;
-  label: string;
-  description?: string;
-  sources?: SourceMaterial[];
+interface Waypoint { lat: number; lng: number; label: string; description?: string; sources?: SourceMaterial[] }
+
+// ── Section heading (Playfair) ──
+function Heading({ icon: Icon, children }: { icon: React.ElementType; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2 mb-3">
+      <Icon size={16} style={{ color: "var(--accent)" }} strokeWidth={2} />
+      <h2 className="font-display text-lg text-fg">{children}</h2>
+    </div>
+  );
 }
 
 function SourceList({ items }: { items: SourceMaterial[] }) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-2">
       {items.map((m, i) => (
         <div key={i}>
           <a href={m.url} target="_blank" rel="noreferrer"
-            className="flex items-center gap-1.5 text-xs text-[#185FA5] hover:underline">
-            <span>{m.type === "pdf" ? "📄" : "🔗"}</span>{m.title}
+            className="flex items-center gap-1.5 text-sm text-accent">
+            {m.type === "pdf" ? <FileText size={14} /> : <Link2 size={14} />}{m.title}
+            <ExternalLink size={11} className="opacity-60" />
           </a>
-          {m.description && <div className="text-[11px] text-gray-400 pr-5">{m.description}</div>}
+          {m.description && <div className="text-xs text-fg-faint pr-5 mt-0.5">{m.description}</div>}
         </div>
       ))}
     </div>
   );
 }
 
-// ── Staggered cross-fade hero (individual image fade, not a hard swap) ──
+// ── Staggered cross-fade hero ──
 function HeroSlideshow({ images, title }: { images: string[]; title: string }) {
   const [idx, setIdx] = useState(0);
   useEffect(() => {
@@ -90,7 +85,7 @@ function HeroSlideshow({ images, title }: { images: string[]; title: string }) {
     return () => clearInterval(t);
   }, [images.length]);
   if (images.length === 0) {
-    return <div className="w-full h-full" style={{ background: "linear-gradient(160deg, #3d6b35, #0f2a0d)" }} />;
+    return <div className="w-full h-full" style={{ background: "linear-gradient(160deg,#2f5330,#0f2210)" }} />;
   }
   return (
     <>
@@ -101,7 +96,7 @@ function HeroSlideshow({ images, title }: { images: string[]; title: string }) {
           style={{ opacity: i === idx ? 1 : 0, transitionDuration: "1100ms" }} />
       ))}
       {images.length > 1 && (
-        <div className="absolute bottom-14 left-0 right-0 flex justify-center gap-1 z-10">
+        <div className="absolute bottom-24 left-0 right-0 flex justify-center gap-1 z-10">
           {images.map((_, i) => (
             <div key={i} className="w-1.5 h-1.5 rounded-full transition-colors"
               style={{ background: i === idx ? "#fff" : "rgba(255,255,255,0.45)" }} />
@@ -112,7 +107,7 @@ function HeroSlideshow({ images, title }: { images: string[]; title: string }) {
   );
 }
 
-// ── Elevation profile from GPX <ele> points ──
+// ── Elevation profile from GPX ──
 function parseElevations(gpx: string | null | undefined): number[] {
   if (!gpx) return [];
   const eles: number[] = [];
@@ -140,124 +135,63 @@ function ElevationChart({ points }: { points: number[] }) {
   let gain = 0;
   for (let i = 1; i < points.length; i++) { const d = points[i] - points[i - 1]; if (d > 0) gain += d; }
   return (
-    <div className="mt-2.5 bg-gray-50 rounded-xl p-3">
-      <div className="flex justify-between text-[11px] text-gray-400 mb-1">
-        <span>📈 פרופיל גובה</span>
-        <span>{Math.round(min)}–{Math.round(max)} מ' · טיפוס מצטבר {Math.round(gain)} מ'</span>
+    <div className="rounded-2xl p-3.5 border border-border bg-surface">
+      <div className="flex justify-between text-[11px] text-fg-faint mb-1">
+        <span className="flex items-center gap-1"><TrendingUp size={12} /> פרופיל גובה</span>
+        <span>{Math.round(min)}–{Math.round(max)} מ׳ · טיפוס {Math.round(gain)} מ׳</span>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 80 }} preserveAspectRatio="none">
-        <polygon points={area} fill="#D6EDE3" />
-        <polyline points={line} fill="none" stroke="#1A6B4A" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
+        <polygon points={area} fill="var(--accent)" opacity={0.18} />
+        <polyline points={line} fill="none" stroke="var(--accent)" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
       </svg>
     </div>
   );
 }
 
-interface Trip {
-  id: string;
-  title: string;
-  description: string | null;
-  region: string;
-  difficulty: string;
-  status: string;
-  date: string;
-  startTime: string;
-  durationMin: number;
-  distanceKm: number;
-  price: number;
-  maxSpots: number;
-  spotsBooked: number;
-  images: string[];
-  meetingPoint: string | null;
-  waypoints: string | null;
-  waypointsJson: { lat?: number; lng?: number; name?: string; description?: string }[] | null;
-  routeGpx: string | null;
-  whatToBring: string | null;
-  cancellationPolicy: string | null;
-  routeType: string | null;
-  minAge: number | null;
-  maxAge: number | null;
-  fitnessLevel: string | null;
-  attributeTags: string[] | null;
-  registrationFields: { id: string; label: string; type: string; required: boolean; options: string[] }[] | null;
-  sourceMaterials: SourceMaterial[] | null;
-  sourceMaterialsVisibility: string | null;
-  postponeCategory?: string | null;
-  postponeReason?: string | null;
-  guide: {
-    id: string;
-    rating: number;
-    reviewCount: number;
-    yearsActive: number | null;
-    user: { name: string | null; image: string | null };
-  };
-  guides?: { role: string; guide: { id?: string; rating?: number; user: { name: string | null; image?: string | null } } }[];
-  tripType?: string;
-  endDate?: string | null;
-  registrationMode?: string;
-  accessWindowDays?: number | null;
-  days?: TripDay[];
-  reviews: Review[];
-}
-
-const ROUTE_TYPE_LABEL: Record<string, string> = {
-  "one-way": "חד-כיווני",
-  "circular-nature": "מעגלי — שטח",
-  "circular-urban": "מעגלי — עירוני",
-};
-const FITNESS_LABEL: Record<string, string> = { low: "נמוך", medium: "בינוני", high: "גבוה", excellent: "מצוין" };
-
 interface TripDay {
-  id: string;
-  dayNumber: number;
-  title: string | null;
-  description: string | null;
-  distanceKm: number | null;
-  durationMin: number | null;
-  startPoint: string | null;
-  endPoint: string | null;
-  date: string | null;
-  startTime: string | null;
-  isRestDay: boolean;
-  equipment: string | null;
+  id: string; dayNumber: number; title: string | null; description: string | null;
+  distanceKm: number | null; durationMin: number | null; startPoint: string | null;
+  endPoint: string | null; date: string | null; startTime: string | null;
+  isRestDay: boolean; equipment: string | null;
 }
 
 function JourneyTimeline({ days }: { days: TripDay[] }) {
   const [open, setOpen] = useState<number | null>(days[0]?.dayNumber ?? null);
   return (
     <div>
-      <div className="text-sm font-semibold text-gray-900 mb-3">🗺 מסלול המסע — {days.length} ימים</div>
+      <Heading icon={MapPin}>מסלול המסע — {days.length} ימים</Heading>
       <div className="flex flex-col gap-2">
         {days.map((d) => {
           const isOpen = open === d.dayNumber;
           return (
-            <div key={d.id} className="border border-gray-100 rounded-xl overflow-hidden">
+            <div key={d.id} className="border border-border rounded-2xl overflow-hidden bg-surface">
               <button type="button" onClick={() => setOpen(isOpen ? null : d.dayNumber)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 text-right hover:bg-gray-50 transition-colors">
-                <div className="w-7 h-7 rounded-full bg-[#D6EDE3] text-[#1A6B4A] flex items-center justify-center text-xs font-semibold shrink-0">
+                className="w-full flex items-center gap-3 px-3 py-3 text-right">
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
+                  style={{ background: "var(--surface-2)", color: "var(--accent)" }}>
                   {d.dayNumber}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-gray-900 truncate">
+                  <div className="text-sm font-medium text-fg truncate">
                     {d.isRestDay ? "🛖 " : ""}{d.title || `יום ${d.dayNumber}`}
                   </div>
-                  <div className="text-[11px] text-gray-400">
+                  <div className="text-[11px] text-fg-faint">
                     {d.date ? new Date(d.date).toLocaleDateString("he-IL", { weekday: "short", day: "numeric", month: "short" }) : ""}
                     {d.startTime ? ` · ${d.startTime}` : ""}
-                    {!d.isRestDay && d.distanceKm ? ` · ${d.distanceKm} ק"מ` : ""}
+                    {!d.isRestDay && d.distanceKm ? ` · ${d.distanceKm} ק״מ` : ""}
                   </div>
                 </div>
-                <span className="text-gray-300 text-sm">{isOpen ? "▲" : "▼"}</span>
+                <ChevronDown size={16} className={`text-fg-faint transition-transform ${isOpen ? "rotate-180" : ""}`} />
               </button>
               {isOpen && (
-                <div className="px-3 pb-3 pt-1 text-xs text-gray-600 flex flex-col gap-1.5 border-t border-gray-50">
-                  {d.isRestDay && <div className="text-[#7A5010]">יום מנוחה — ללא מסלול</div>}
+                <div className="px-3 pb-3 pt-1 text-xs text-fg-muted flex flex-col gap-1.5 border-t border-border">
+                  {d.isRestDay && <div className="text-amber">יום מנוחה — ללא מסלול</div>}
                   {d.description && <p className="leading-relaxed">{d.description}</p>}
                   {!d.isRestDay && (d.startPoint || d.endPoint) && (
-                    <div className="text-gray-500">📍 {d.startPoint || "—"} ← {d.endPoint || "—"}</div>
+                    <div>📍 {d.startPoint || "—"} ← {d.endPoint || "—"}</div>
                   )}
-                  {!d.isRestDay && d.durationMin ? <div className="text-gray-500">⏱ {Math.round(d.durationMin / 60)} שעות</div> : null}
-                  {d.equipment && <div className="text-gray-500">🎒 {d.equipment}</div>}
+                  {!d.isRestDay && d.durationMin ? <div>⏱ {Math.round(d.durationMin / 60)} שעות</div> : null}
+                  {d.equipment && <div>🎒 {d.equipment}</div>}
                 </div>
               )}
             </div>
@@ -268,11 +202,28 @@ function JourneyTimeline({ days }: { days: TripDay[] }) {
   );
 }
 
-const REG_STATUS_UI: Record<string, { bg: string; color: string; icon: string; text: string }> = {
-  CONFIRMED: { bg: "#D6EDE3", color: "#0F5038", icon: "✓", text: "רשום לטיול" },
-  WAITLIST:  { bg: "#D4E4F0", color: "#185FA5", icon: "⏰", text: "ברשימת המתנה" },
-  PENDING:   { bg: "#f5f5f5", color: "#555",    icon: "👀", text: "מתעניין" },
-  CANCELLED: { bg: "#f5f5f5", color: "#999",    icon: "✕", text: "הרשמה בוטלה" },
+interface Trip {
+  id: string; title: string; description: string | null; region: string; difficulty: string;
+  status: string; date: string; startTime: string; durationMin: number; distanceKm: number;
+  price: number; maxSpots: number; spotsBooked: number; images: string[]; meetingPoint: string | null;
+  waypoints: string | null;
+  waypointsJson: { lat?: number; lng?: number; name?: string; description?: string }[] | null;
+  routeGpx: string | null; whatToBring: string | null; cancellationPolicy: string | null;
+  routeType: string | null; minAge: number | null; maxAge: number | null; fitnessLevel: string | null;
+  attributeTags: string[] | null;
+  registrationFields: { id: string; label: string; type: string; required: boolean; options: string[] }[] | null;
+  sourceMaterials: SourceMaterial[] | null; sourceMaterialsVisibility: string | null;
+  postponeCategory?: string | null; postponeReason?: string | null;
+  guide: { id: string; rating: number; reviewCount: number; yearsActive: number | null; user: { name: string | null; image: string | null } };
+  guides?: { role: string; guide: { id?: string; rating?: number; reviewCount?: number; user: { name: string | null; image?: string | null } } }[];
+  tripType?: string; endDate?: string | null; registrationMode?: string; accessWindowDays?: number | null;
+  days?: TripDay[]; reviews: Review[];
+}
+
+const REG_STATUS_UI: Record<string, { bg: string; color: string; text: string }> = {
+  CONFIRMED: { bg: "rgba(61,143,95,0.18)", color: "#7fd4a3", text: "✓ רשום לטיול" },
+  WAITLIST:  { bg: "rgba(44,95,138,0.22)", color: "#8fc0e8", text: "⏰ ברשימת המתנה" },
+  PENDING:   { bg: "var(--surface-2)", color: "var(--fg-muted)", text: "👀 מתעניין" },
 };
 
 export default function TripDetailPage() {
@@ -287,6 +238,9 @@ export default function TripDetailPage() {
   const [fav, setFav] = useState(false);
   const [purchase, setPurchase] = useState<{ purchased: boolean; expired?: boolean } | null>(null);
   const [showLoc, setShowLoc] = useState(false);
+  const [sourcesOpen, setSourcesOpen] = useState(false); // closed by default (spec)
+  const [copied, setCopied] = useState(false);
+  const [drawer, setDrawer] = useState<Waypoint | null>(null);
 
   async function requestRefund() {
     const reason = window.prompt("סיבת בקשת ההחזר (פגם בתוכן / רכישה בטעות / אחר):");
@@ -297,6 +251,7 @@ export default function TripDetailPage() {
     });
     window.alert(res.ok ? "הבקשה נשלחה למנהלי הפלטפורמה ולמדריך. תיבדק בהקדם." : "שגיאה");
   }
+
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewComment, setReviewComment] = useState("");
   const [reviewDone, setReviewDone] = useState(false);
@@ -328,10 +283,8 @@ export default function TripDetailPage() {
   const guideId = trip?.guide?.id;
   useEffect(() => {
     if (!session || !guideId) return;
-    fetch(`/api/guides/${guideId}/follow`)
-      .then((r) => r.json())
-      .then((d) => setFollowing(!!d.following))
-      .catch(() => {});
+    fetch(`/api/guides/${guideId}/follow`).then((r) => r.json())
+      .then((d) => setFollowing(!!d.following)).catch(() => {});
   }, [session, guideId]);
 
   async function toggleFollow() {
@@ -343,44 +296,32 @@ export default function TripDetailPage() {
   }
 
   interface Question {
-    id: string;
-    body: string;
-    answer: string | null;
-    answeredAt: string | null;
-    createdAt: string;
-    user: { name: string | null; image: string | null };
+    id: string; body: string; answer: string | null; answeredAt: string | null;
+    createdAt: string; official?: boolean; user: { name: string | null; image: string | null };
   }
   const [questions, setQuestions] = useState<Question[]>([]);
   const [qaBody, setQaBody] = useState("");
   const [qaLoading, setQaLoading] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/trips/${id}`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.error) { setNotFound(true); } else { setTrip(d); }
-        setLoading(false);
-      })
+    fetch(`/api/trips/${id}`).then((r) => r.json())
+      .then((d) => { if (d.error) setNotFound(true); else setTrip(d); setLoading(false); })
       .catch(() => { setNotFound(true); setLoading(false); });
   }, [id]);
 
   useEffect(() => {
     if (!session) return;
-    fetch("/api/my-trips")
-      .then((r) => r.json())
+    fetch("/api/my-trips").then((r) => r.json())
       .then((regs: Array<{ status: string; trip: { id: string } }>) => {
         if (!Array.isArray(regs)) return;
         const found = regs.find((r) => r.trip.id === id);
         if (found) setMyRegStatus(found.status);
-      })
-      .catch(() => {});
+      }).catch(() => {});
   }, [session, id]);
 
   useEffect(() => {
-    fetch(`/api/trips/${id}/questions`)
-      .then((r) => r.json())
-      .then((data) => { if (Array.isArray(data)) setQuestions(data); })
-      .catch(() => {});
+    fetch(`/api/trips/${id}/questions`).then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setQuestions(data); }).catch(() => {});
   }, [id]);
 
   async function submitQuestion() {
@@ -388,35 +329,21 @@ export default function TripDetailPage() {
     setQaLoading(true);
     try {
       const res = await fetch(`/api/trips/${id}/questions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ body: qaBody }),
       });
-      if (res.ok) {
-        const q = await res.json();
-        setQuestions((prev) => [...prev, q]);
-        setQaBody("");
-      }
-    } finally {
-      setQaLoading(false);
-    }
+      if (res.ok) { const q = await res.json(); setQuestions((prev) => [...prev, q]); setQaBody(""); }
+    } finally { setQaLoading(false); }
   }
 
   if (loading) {
-    return (
-      <div dir="rtl" className="min-h-screen bg-[#f5f5f5] flex items-center justify-center">
-        <div className="text-gray-400 text-sm">טוען...</div>
-      </div>
-    );
+    return <div dir="rtl" className="min-h-screen bg-bg flex items-center justify-center"><div className="text-fg-faint text-sm">טוען…</div></div>;
   }
-
   if (notFound || !trip) {
     return (
-      <div dir="rtl" className="min-h-screen bg-[#f5f5f5] flex flex-col items-center justify-center gap-4">
-        <div className="text-gray-500">הטיול לא נמצא</div>
-        <button type="button" onClick={() => router.push("/trips")} className="text-[#1A6B4A] text-sm">
-          ← חזרה לגלה טיולים
-        </button>
+      <div dir="rtl" className="min-h-screen bg-bg flex flex-col items-center justify-center gap-4">
+        <div className="text-fg-muted">הטיול לא נמצא</div>
+        <button type="button" onClick={() => router.push("/trips")} className="text-accent text-sm">← חזרה לגלה טיולים</button>
       </div>
     );
   }
@@ -425,643 +352,507 @@ export default function TripDetailPage() {
   const occupancy = trip.maxSpots > 0 ? trip.spotsBooked / trip.maxSpots : 0;
   const isFull = trip.status === "FULL" || occupancy >= 1;
   const guideName = trip.guide?.user?.name ?? "מדריך";
-  const diffBadge = DIFF_COLOR[trip.difficulty];
   const guideStars = Math.round(trip.guide?.rating || 0);
 
-  const equipment = trip.whatToBring
-    ? trip.whatToBring.split(",").map((s) => s.trim()).filter(Boolean)
-    : [];
+  const equipment = trip.whatToBring ? trip.whatToBring.split(",").map((s) => s.trim()).filter(Boolean) : [];
 
   let parsedWaypoints: Waypoint[] = [];
   if (Array.isArray(trip.waypointsJson) && trip.waypointsJson.length > 0) {
     parsedWaypoints = trip.waypointsJson.map((w) => ({
-      lat: Number(w.lat ?? 0), lng: Number(w.lng ?? 0),
-      label: w.name ?? "", description: w.description ?? "",
+      lat: Number(w.lat ?? 0), lng: Number(w.lng ?? 0), label: w.name ?? "", description: w.description ?? "",
       sources: Array.isArray((w as { sources?: SourceMaterial[] }).sources) ? (w as { sources?: SourceMaterial[] }).sources : undefined,
     }));
   } else if (trip.waypoints) {
     try { parsedWaypoints = JSON.parse(trip.waypoints); } catch { /* ignore */ }
   }
 
-  const cancellationLines = trip.cancellationPolicy
-    ? trip.cancellationPolicy.split("\n").filter(Boolean)
-    : [];
-
+  const cancellationLines = trip.cancellationPolicy ? trip.cancellationPolicy.split("\n").filter(Boolean) : [];
   const elevations = parseElevations(trip.routeGpx);
 
+  // All guides, shown equally (no primary/secondary distinction — finalized spec)
+  const allGuides: { id?: string; name: string | null; image?: string | null; rating?: number; reviewCount?: number }[] = [
+    { id: trip.guide.id, name: guideName, image: trip.guide.user.image, rating: trip.guide.rating, reviewCount: trip.guide.reviewCount },
+    ...((trip.guides ?? [])
+      .filter((g) => g.guide?.id && g.guide.id !== trip.guide.id)
+      .map((g) => ({ id: g.guide.id, name: g.guide.user.name, image: g.guide.user.image, rating: g.guide.rating, reviewCount: g.guide.reviewCount }))),
+  ];
+
+  const sourcesVisible = trip.sourceMaterialsVisibility === "preview" || !!myRegStatus || purchase?.purchased;
+
+  async function copyEquipment() {
+    try { await navigator.clipboard.writeText(equipment.join("\n")); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* noop */ }
+  }
+
+  // Q&A: official-answer questions first, then chronological
+  const sortedQuestions = [...questions].sort((a, b) => {
+    const ao = a.official ? 1 : 0, bo = b.official ? 1 : 0;
+    if (ao !== bo) return bo - ao;
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  });
+
   return (
-    <div dir="rtl" className="min-h-screen bg-white flex justify-center pb-24">
+    <div dir="rtl" className="min-h-screen bg-bg flex justify-center pb-28">
       <div className="w-full max-w-[480px]">
 
-        {/* ── Hero ── */}
-        <div className="relative overflow-hidden" style={{ height: 220 }}>
+        {/* ── 1. Photos + 2. Name ── */}
+        <div className="relative overflow-hidden" style={{ height: 340 }}>
           <HeroSlideshow images={trip.images ?? []} title={trip.title} />
+          <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.85) 6%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.35))" }} />
 
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="absolute top-3 right-3 bg-black/45 text-white rounded-full px-3 py-1.5 text-xs backdrop-blur-sm"
-          >
-            → חזרה
+          <button type="button" onClick={() => router.back()}
+            className="absolute top-4 right-4 w-9 h-9 bg-black/45 text-white rounded-full flex items-center justify-center backdrop-blur-sm">
+            <ArrowRight size={18} />
           </button>
-
-          <div className="absolute top-3 left-3 flex gap-2 items-center">
-            <div className="bg-black/45 backdrop-blur-sm rounded-full">
-              {session && <NotificationBell />}
-            </div>
+          <div className="absolute top-4 left-4 flex gap-2">
             <button type="button" onClick={() => setFav((v) => !v)}
-              className="bg-black/45 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm backdrop-blur-sm">
-              {fav ? "♥" : "♡"}
+              className="w-9 h-9 bg-black/45 text-white rounded-full flex items-center justify-center backdrop-blur-sm">
+              <Heart size={17} fill={fav ? "#fff" : "none"} />
             </button>
             <button type="button" onClick={handleShare}
-              className="bg-black/45 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm backdrop-blur-sm">⬆</button>
+              className="w-9 h-9 bg-black/45 text-white rounded-full flex items-center justify-center backdrop-blur-sm">
+              <Share2 size={16} />
+            </button>
           </div>
 
-          <div
-            className="absolute bottom-0 left-0 right-0 px-4 py-3"
-            style={{ background: "linear-gradient(to top, rgba(0,0,0,0.72), transparent)" }}
-          >
-            <h1 className="text-lg font-medium text-white leading-snug mb-2">{trip.title}</h1>
-            <div className="flex gap-1.5 flex-wrap">
-              <span className="px-2 py-0.5 rounded-full text-[11px] font-medium" style={{ background: "rgba(255,255,255,0.92)", color: "#27500A" }}>
-                📍 {trip.region}
-              </span>
-              {diffBadge && (
-                <span className="px-2 py-0.5 rounded-full text-[11px] font-medium" style={{ background: diffBadge.bg, color: diffBadge.color }}>
-                  {DIFF_LABEL[trip.difficulty]}
-                </span>
-              )}
-              {trip.routeType && ROUTE_TYPE_LABEL[trip.routeType] && (
-                <span className="px-2 py-0.5 rounded-full text-[11px] font-medium" style={{ background: "rgba(255,255,255,0.92)", color: "#185FA5" }}>
-                  {ROUTE_TYPE_LABEL[trip.routeType]}
-                </span>
-              )}
+          <div className="absolute bottom-0 inset-x-0 px-5 pb-6">
+            <div className="flex items-center gap-1.5 text-white/85 text-xs mb-2">
+              <MapPin size={12} /> {trip.region}
             </div>
+            <h1 className="font-display text-white text-[30px] leading-[1.12]">{trip.title}</h1>
           </div>
         </div>
 
-        <div className="p-4 flex flex-col gap-5">
+        <div className="p-5 flex flex-col gap-7">
 
           {trip.status === "POSTPONED" && (
-            <div className="bg-[#FDF3DC] border border-[#E8A020]/40 rounded-xl p-3">
-              <div className="text-sm font-semibold text-[#7A5010] mb-0.5">⏸ הטיול נדחה</div>
-              <div className="text-xs text-[#633806]">
-                {trip.postponeCategory ? `סיבה: ${trip.postponeCategory}. ` : ""}{trip.postponeReason ?? ""}
-                {" "}רשומים יכולים להמתין לתאריך חדש או לבטל לקבלת החזר מלא.
+            <div className="rounded-2xl p-3.5 border" style={{ background: "rgba(200,137,58,0.12)", borderColor: "rgba(200,137,58,0.4)" }}>
+              <div className="text-sm font-semibold text-amber mb-0.5 flex items-center gap-1.5"><PauseCircle size={15} /> הטיול נדחה</div>
+              <div className="text-xs text-fg-muted">
+                {trip.postponeCategory ? `סיבה: ${trip.postponeCategory}. ` : ""}{trip.postponeReason ?? ""}{" "}
+                רשומים יכולים להמתין לתאריך חדש או לבטל לקבלת החזר מלא.
               </div>
             </div>
           )}
 
-          {/* ── Guide ── */}
-          <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
-            <button type="button" onClick={() => router.push(`/guides/${trip.guide.id}`)} className="relative flex-shrink-0">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium text-white"
-                style={{ background: avatarColor(guideName) }}>
-                {initials(guideName)}
-              </div>
-              {(() => {
-                const sec = trip.guides?.find((g) => g.role === "SECONDARY")?.guide?.user?.name;
-                return sec ? (
-                  <div className="absolute -bottom-1 -left-2 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-medium text-white border-2 border-white"
-                    style={{ background: avatarColor(sec) }}>{initials(sec)}</div>
-                ) : null;
-              })()}
-            </button>
-            <button type="button" onClick={() => router.push(`/guides/${trip.guide.id}`)} className="flex-1 min-w-0 text-right">
-              <div className="text-sm font-medium text-gray-900">
-                {guideName}
-                {(() => {
-                  const sec = trip.guides?.find((g) => g.role === "SECONDARY")?.guide?.user?.name;
-                  const role = trip.guides?.find((g) => g.role === "PRIMARY") ? " (ראשי)" : "";
-                  return sec ? <span className="text-gray-500 font-normal">{role} ו{sec} (משני)</span> : null;
-                })()}
-              </div>
-              <div className="text-xs text-gray-500 mt-0.5 flex items-center gap-1 flex-wrap">
-                {guideStars > 0 && <span className="text-amber-500">{"★".repeat(guideStars)}</span>}
-                {trip.guide?.rating > 0 && <span>{trip.guide.rating.toFixed(1)}</span>}
-                {trip.guide?.reviewCount > 0 && <span>· {trip.guide.reviewCount} ביקורות</span>}
-                {trip.guide?.yearsActive && <span>· {trip.guide.yearsActive} שנות ניסיון</span>}
-              </div>
-            </button>
-            <button
-              type="button"
-              onClick={toggleFollow}
-              className={`text-xs rounded-full px-3 py-1.5 transition-colors ${
-                following
-                  ? "bg-[#1A6B4A] text-white border border-[#1A6B4A] hover:bg-[#155a3e]"
-                  : "text-[#1A6B4A] border border-[#1A6B4A] hover:bg-[#D6EDE3]"
-              }`}
-            >
-              {following ? "✓ עוקב" : "+ עקוב"}
-            </button>
-          </div>
-
-          {/* ── Stats grid ── */}
-          <div className="grid grid-cols-4 gap-2">
-            <div className="bg-gray-50 rounded-xl p-3 text-center">
-              <div className="text-sm font-semibold text-gray-900">
-                {trip.distanceKm > 0 ? trip.distanceKm : "—"}
-              </div>
-              <div className="text-[10px] text-gray-400 mt-0.5">ק"מ</div>
-            </div>
-            <div className="bg-gray-50 rounded-xl p-3 text-center">
-              <div className="text-sm font-semibold text-gray-900">
-                {trip.durationMin > 0 ? formatDuration(trip.durationMin) : "—"}
-              </div>
-              <div className="text-[10px] text-gray-400 mt-0.5">שעות</div>
-            </div>
-            <div className="bg-gray-50 rounded-xl p-3 text-center">
-              <div className="text-sm font-semibold text-gray-900">{isSelfGuided ? parsedWaypoints.length : (trip.startTime || "—")}</div>
-              <div className="text-[10px] text-gray-400 mt-0.5">{isSelfGuided ? "תחנות" : "יציאה"}</div>
-            </div>
-            <div className="bg-gray-50 rounded-xl p-3 text-center">
-              <div className="text-sm font-semibold text-gray-900">{isSelfGuided ? (trip.accessWindowDays ?? 30) : (spotsLeft > 0 ? spotsLeft : "מלא")}</div>
-              <div className="text-[10px] text-gray-400 mt-0.5">{isSelfGuided ? "ימי גישה" : "מקומות"}</div>
-            </div>
-          </div>
-
-          {/* ── Occupancy bar (guided only) ── */}
-          {!isSelfGuided && (
-          <div className="-mt-2">
-            <div className="h-[5px] bg-gray-100 rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all"
-                style={{ width: `${Math.min(occupancy * 100, 100)}%`, background: isFull ? "#C0392B" : "#1A6B4A" }}
-              />
-            </div>
-            <div className="flex justify-between text-[11px] text-gray-400 mt-1">
-              <span>{trip.spotsBooked} מתוך {trip.maxSpots} רשומים</span>
-              <span className={isFull ? "text-red-500" : "text-[#1A6B4A]"}>
-                {isFull ? "אין מקום" : `${spotsLeft} מקומות נותרו`}
-              </span>
-            </div>
-            {isFull && (
-              <div className="mt-2 bg-[#FDF3DC] border border-[#E8A020]/40 rounded-xl px-3 py-2 text-xs font-medium text-[#7A5010] flex items-center gap-1.5">
-                ⏰ הטיול מלא — רשימת המתנה פתוחה
-              </div>
-            )}
-          </div>
-          )}
-
-          {/* ── Attribute tags ── */}
-          {Array.isArray(trip.attributeTags) && trip.attributeTags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {trip.attributeTags.map((t) => (
-                <span key={t} className="text-xs px-2.5 py-1 rounded-full bg-gray-50 text-gray-700">{TAG_LABEL[t] ?? t}</span>
+          {/* ── 3. Guides (equal) + rating + follow ── */}
+          <div className="flex items-center gap-3 pb-6 border-b border-border">
+            <button type="button" onClick={() => guideId && router.push(`/guides/${guideId}`)} className="flex -space-x-2 space-x-reverse shrink-0">
+              {allGuides.slice(0, 2).map((g, i) => (
+                <span key={i} className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-semibold text-white border-2"
+                  style={{ background: avatarColor(g.name), borderColor: "var(--bg)" }}>
+                  {g.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={g.image} alt="" className="w-full h-full rounded-full object-cover" />
+                  ) : initials(g.name)}
+                </span>
               ))}
+            </button>
+            <button type="button" onClick={() => guideId && router.push(`/guides/${guideId}`)} className="flex-1 min-w-0 text-right">
+              <div className="text-sm font-semibold text-fg">
+                {allGuides.map((g) => g.name).join(" · ")}
+              </div>
+              <div className="text-xs text-fg-muted mt-0.5 flex items-center gap-1.5 flex-wrap">
+                {guideStars > 0 && (
+                  <span className="flex items-center gap-0.5" style={{ color: "#e0b64a" }}>
+                    <Star size={12} fill="#e0b64a" color="#e0b64a" /> {trip.guide.rating.toFixed(1)}
+                  </span>
+                )}
+                {trip.guide?.reviewCount > 0 && <span>· {trip.guide.reviewCount} ביקורות</span>}
+                {trip.guide?.yearsActive ? <span>· {trip.guide.yearsActive} שנות ניסיון</span> : null}
+                {guideStars === 0 && <span className="text-amber">מדריך חדש</span>}
+              </div>
+            </button>
+            <button type="button" onClick={toggleFollow}
+              className="text-xs rounded-full px-3.5 py-2 flex items-center gap-1 shrink-0"
+              style={following
+                ? { background: "var(--accent)", color: "var(--accent-ink)" }
+                : { border: "1px solid var(--accent)", color: "var(--accent)" }}>
+              {following ? <><Check size={13} /> עוקב</> : <><UserPlus size={13} /> עקוב</>}
+            </button>
+          </div>
+
+          {/* ── 4. Tags (difficulty, region, attribute tags) ── */}
+          <div className="flex flex-wrap gap-2">
+            <span className="text-xs px-3 py-1.5 rounded-full font-medium" style={{ background: "var(--surface-2)", color: "var(--accent)" }}>
+              {DIFF_LABEL[trip.difficulty] ?? trip.difficulty}
+            </span>
+            <span className="text-xs px-3 py-1.5 rounded-full" style={{ background: "var(--surface-2)", color: "var(--fg-muted)" }}>
+              {trip.region}
+            </span>
+            {trip.routeType && ROUTE_TYPE_LABEL[trip.routeType] && (
+              <span className="text-xs px-3 py-1.5 rounded-full" style={{ background: "var(--surface-2)", color: "var(--fg-muted)" }}>
+                {ROUTE_TYPE_LABEL[trip.routeType]}
+              </span>
+            )}
+            {(trip.attributeTags ?? []).map((t) => (
+              <span key={t} className="text-xs px-3 py-1.5 rounded-full" style={{ background: "var(--surface-2)", color: "var(--fg-muted)" }}>
+                {TAG_LABEL[t] ?? t}
+              </span>
+            ))}
+          </div>
+
+          {/* ── 5. Quick stats (km / hours / min age) ── */}
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { icon: Mountain, val: trip.distanceKm > 0 ? trip.distanceKm : "—", label: "ק״מ" },
+              { icon: Clock, val: isSelfGuided ? parsedWaypoints.length : (trip.durationMin > 0 ? formatDuration(trip.durationMin) : "—"), label: isSelfGuided ? "תחנות" : "שעות" },
+              { icon: Users, val: trip.minAge != null ? `${trip.minAge}+` : "כל גיל", label: "גיל מינ׳" },
+            ].map(({ icon: Icon, val, label }, i) => (
+              <div key={i} className="rounded-2xl p-3.5 border border-border bg-surface text-center">
+                <Icon size={16} className="mx-auto mb-1.5" style={{ color: "var(--fg-faint)" }} />
+                <div className="text-base font-semibold text-fg">{val}</div>
+                <div className="text-[10px] text-fg-faint mt-0.5">{label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* ── 6. Capacity bar (prominent, upper section) ── */}
+          {!isSelfGuided ? (
+            <div>
+              <div className="flex justify-between text-xs mb-1.5">
+                <span className="text-fg-muted">{trip.spotsBooked} מתוך {trip.maxSpots} רשומים</span>
+                <span style={{ color: isFull ? "var(--danger)" : "var(--accent)" }} className="font-medium">
+                  {isFull ? "הטיול מלא" : `${spotsLeft} מקומות נותרו`}
+                </span>
+              </div>
+              <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--surface-2)" }}>
+                <div className="h-full rounded-full transition-all"
+                  style={{ width: `${Math.min(occupancy * 100, 100)}%`, background: isFull ? "var(--danger)" : "var(--accent)" }} />
+              </div>
+              {isFull && (
+                <div className="mt-2.5 rounded-xl px-3 py-2 text-xs font-medium flex items-center gap-1.5"
+                  style={{ background: "rgba(200,137,58,0.12)", color: "var(--amber)" }}>
+                  <Clock size={13} /> הטיול מלא — רשימת המתנה פתוחה
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-2xl p-3.5 border border-border bg-surface text-xs text-fg-muted flex items-center gap-2">
+              <Users size={15} style={{ color: "var(--accent)" }} /> ללא הגבלת משתתפים · זמין תמיד · גישה ל-{trip.accessWindowDays ?? 30} ימים מרגע הרכישה
             </div>
           )}
 
-          {/* ── Suitability ── */}
-          {(trip.minAge != null || trip.maxAge != null || trip.fitnessLevel) && (
-            <div>
-              <div className="text-sm font-semibold text-gray-900 mb-2">🧍 התאמה</div>
-              <div className="flex flex-wrap gap-2">
-                {(trip.minAge != null || trip.maxAge != null) && (
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-gray-50 text-gray-700">
-                    👤 גיל {trip.minAge != null ? trip.minAge : "—"}{trip.maxAge != null ? `–${trip.maxAge}` : "+"}
-                  </span>
-                )}
-                {trip.fitnessLevel && (
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-gray-50 text-gray-700">
-                    💪 כושר {FITNESS_LABEL[trip.fitnessLevel] ?? trip.fitnessLevel}
-                  </span>
-                )}
+          {/* ── 7. Date & departure time (guided) ── */}
+          {!isSelfGuided && (
+            <div className="flex items-center gap-3 rounded-2xl p-3.5 border border-border bg-surface">
+              <Calendar size={18} style={{ color: "var(--accent)" }} />
+              <div>
+                <div className="text-sm font-medium text-fg">{formatDateLong(trip.date)}</div>
+                <div className="text-xs text-fg-faint mt-0.5">יציאה בשעה {trip.startTime}</div>
               </div>
             </div>
           )}
 
-          {/* ── Description ── */}
+          {/* ── 8. Meeting point + navigation (guided) ── */}
+          {!isSelfGuided && trip.meetingPoint && (
+            <div className="rounded-2xl p-3.5 border border-border bg-surface">
+              <div className="text-[11px] text-fg-faint mb-1">נקודת מפגש</div>
+              <div className="text-sm text-fg font-medium mb-3">{trip.meetingPoint}</div>
+              <div className="flex gap-2">
+                <a href={`https://waze.com/ul?q=${encodeURIComponent(trip.meetingPoint)}&navigate=yes`} target="_blank" rel="noreferrer"
+                  className="flex-1 text-center text-xs rounded-full py-2 flex items-center justify-center gap-1.5"
+                  style={{ border: "1px solid var(--border)", color: "var(--fg)" }}>
+                  <Navigation size={13} /> נווט ב-Waze
+                </a>
+                <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(trip.meetingPoint)}`} target="_blank" rel="noreferrer"
+                  className="flex-1 text-center text-xs rounded-full py-2 flex items-center justify-center gap-1.5"
+                  style={{ border: "1px solid var(--border)", color: "var(--fg)" }}>
+                  <MapPin size={13} /> Google Maps
+                </a>
+              </div>
+              <a href={googleCalendarUrl({ title: trip.title, dateISO: trip.date, startTime: trip.startTime, durationMin: trip.durationMin, endDateISO: trip.endDate, location: trip.meetingPoint || trip.region })}
+                target="_blank" rel="noreferrer"
+                className="mt-2 inline-flex items-center gap-1.5 text-xs text-accent">
+                <Calendar size={13} /> הוסף ליומן Google
+              </a>
+            </div>
+          )}
+
+          {/* ── 9. Description ── */}
           {trip.description && (
             <div>
-              <div className="text-sm font-semibold text-gray-900 mb-2">📄 על הטיול</div>
-              <p className="text-sm text-gray-600 leading-relaxed">{trip.description}</p>
+              <Heading icon={FileText}>על הטיול</Heading>
+              <p className="text-sm text-fg-muted leading-relaxed">{trip.description}</p>
             </div>
           )}
 
-          {/* ── Source materials (trip-level, visibility-gated) ── */}
-          {Array.isArray(trip.sourceMaterials) && trip.sourceMaterials.length > 0 && (
-            trip.sourceMaterialsVisibility === "preview" || !!myRegStatus || purchase?.purchased ? (
-              <div>
-                <div className="text-sm font-semibold text-gray-900 mb-2">📚 חומרי מקור</div>
-                <div className="bg-gray-50 rounded-xl p-3"><SourceList items={trip.sourceMaterials} /></div>
-              </div>
-            ) : (
-              <div className="text-xs text-gray-400 bg-gray-50 rounded-xl p-3">📚 חומרי מקור ייחשפו במהלך הטיול</div>
-            )
-          )}
-
-          {/* ── Dynamic registration fields preview ── */}
-          {Array.isArray(trip.registrationFields) && trip.registrationFields.length > 0 && (
-            <div>
-              <div className="text-sm font-semibold text-gray-900 mb-2">📝 פרטים שתתבקש למלא בהרשמה</div>
-              <div className="bg-[#EEF5FC] border border-[#185FA5]/15 rounded-xl p-3 flex flex-col gap-1.5">
-                {trip.registrationFields.map((f) => (
-                  <div key={f.id} className="text-xs text-gray-700 flex items-center gap-1.5">
-                    <span className="text-[#185FA5]">•</span>
-                    {f.label}{f.required && <span className="text-red-400">*</span>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Self-guided pre-purchase preview note */}
+          {/* Self-guided pre-purchase note */}
           {isSelfGuided && !purchase?.purchased && (
-            <div className="bg-[#FDF6E8] border border-[#E8A020]/40 rounded-xl p-3 text-xs text-[#7A5010]">
+            <div className="rounded-2xl p-3.5 text-xs text-amber border" style={{ background: "rgba(200,137,58,0.1)", borderColor: "rgba(200,137,58,0.35)" }}>
               🔒 זוהי תצוגה מקדימה. לאחר רכישה ייפתח התוכן המלא: ניווט צעד-אחר-צעד, חומרי הדרכה והקראה בכל תחנה, ואזהרות בטיחות.
             </div>
           )}
 
-          {/* ── Route / map section ── */}
+          {/* ── 10. Map + waypoints (tap → drawer) ── */}
           <div>
-            <div className="text-sm font-semibold text-gray-900 mb-2">{isSelfGuided ? "🗺 מסלול" : "🗺 מסלול ונקודת מפגש"}</div>
-
-            <TripDetailMap
-              region={trip.region}
-              meetingPoint={trip.meetingPoint}
-              waypoints={parsedWaypoints}
-              height={180}
-              liveLocation={showLoc}
-            />
+            <Heading icon={MapPin}>{isSelfGuided ? "מסלול" : "מסלול ותחנות"}</Heading>
+            <div className="rounded-2xl overflow-hidden border border-border">
+              <TripDetailMap region={trip.region} meetingPoint={trip.meetingPoint} waypoints={parsedWaypoints} height={190} liveLocation={showLoc} />
+            </div>
             <button type="button" onClick={() => setShowLoc((v) => !v)}
-              className={`mt-2 text-xs rounded-full px-3 py-1.5 transition-colors ${
-                showLoc ? "bg-[#2C5F8A] text-white" : "border border-[#2C5F8A]/40 text-[#2C5F8A] hover:bg-[#EEF5FC]"
-              }`}>
-              {showLoc ? "● המיקום שלי פעיל" : "📍 הצג את המיקום שלי"}
+              className="mt-2 text-xs rounded-full px-3 py-1.5 inline-flex items-center gap-1.5"
+              style={showLoc ? { background: "var(--accent)", color: "var(--accent-ink)" } : { border: "1px solid var(--border)", color: "var(--fg-muted)" }}>
+              <Navigation size={12} /> {showLoc ? "המיקום שלי פעיל" : "הצג את המיקום שלי"}
             </button>
 
-            {/* Elevation profile (auto-generated from GPX) */}
-            {elevations.length >= 2 && <ElevationChart points={elevations} />}
-
-            {/* Route stats */}
-            {(trip.distanceKm > 0 || trip.durationMin > 0) && (
-              <div className="flex gap-4 mt-2.5 px-1">
-                {trip.distanceKm > 0 && (
-                  <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                    <span className="text-gray-400">📍</span>
-                    <span>{trip.distanceKm} ק"מ</span>
-                  </div>
-                )}
-                {trip.durationMin > 0 && (
-                  <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                    <span className="text-gray-400">⏱</span>
-                    <span>{formatDuration(trip.durationMin)} שעות</span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Meeting point detail (guided trips only) */}
-            {!isSelfGuided && trip.meetingPoint && (
-              <div className="mt-2.5 bg-gray-50 rounded-xl p-3">
-                <div className="text-[11px] text-gray-400 mb-1">נקודת מפגש</div>
-                <div className="text-sm text-gray-800 font-medium">{trip.meetingPoint}</div>
-                <div className="text-xs text-gray-400 mt-0.5">
-                  📅 {formatDateLong(trip.date)} · {trip.startTime}
-                </div>
-                <div className="flex gap-2 mt-2.5">
-                  <a href={`https://waze.com/ul?q=${encodeURIComponent(trip.meetingPoint)}&navigate=yes`}
-                    target="_blank" rel="noreferrer"
-                    className="flex-1 text-center text-xs text-[#0A7AA3] bg-[#E6F7FD] border border-[#33CCFF]/40 rounded-full py-1.5 hover:bg-[#D4F0FA] transition-colors">
-                    🚗 נווט ב-Waze
-                  </a>
-                  <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(trip.meetingPoint)}`}
-                    target="_blank" rel="noreferrer"
-                    className="flex-1 text-center text-xs text-[#185FA5] bg-[#EEF5FC] border border-[#185FA5]/30 rounded-full py-1.5 hover:bg-[#DCEBF7] transition-colors">
-                    📍 Google Maps
-                  </a>
-                </div>
-              </div>
-            )}
-
-            {!isSelfGuided && (
-              <a href={googleCalendarUrl({ title: trip.title, dateISO: trip.date, startTime: trip.startTime, durationMin: trip.durationMin, endDateISO: trip.endDate, location: trip.meetingPoint || trip.region })}
-                target="_blank" rel="noreferrer"
-                className="mt-2 inline-flex items-center gap-1.5 text-xs text-[#185FA5] border border-[#185FA5]/30 rounded-full px-3 py-1.5 hover:bg-[#EEF5FC]">
-                📅 הוסף ליומן Google
-              </a>
-            )}
-
-            {/* Waypoints list */}
             {parsedWaypoints.length > 0 && (
-              <div className="mt-3">
-                <div className="flex flex-col">
-                  {parsedWaypoints.map((wp, i) => {
-                    const isFirst = i === 0;
-                    const isLast = i === parsedWaypoints.length - 1;
-                    const dotBg = isFirst ? "#2C5F8A" : isLast ? "#C0392B" : "#1A6B4A";
-                    const dotLabel = isFirst ? "פ" : isLast ? "ס" : String(i);
-                    return (
-                      <div key={i} className="flex gap-3 py-2 border-b border-gray-50 last:border-b-0">
-                        <div className="flex flex-col items-center flex-shrink-0">
-                          <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-medium text-white"
-                            style={{ background: dotBg }}>
-                            {dotLabel}
-                          </div>
-                          {!isLast && <div className="w-[1.5px] flex-1 bg-gray-100 mt-1" style={{ minHeight: 12 }} />}
-                        </div>
-                        <div className="pb-1">
-                          <div className="text-sm font-medium text-gray-900">{wp.label || `נקודה ${i + 1}`}</div>
-                          {wp.description ? (
-                            <div className="text-xs text-gray-500 mt-0.5">{wp.description}</div>
-                          ) : (
-                            <div className="text-xs text-gray-400 mt-0.5">{wp.lat.toFixed(5)}, {wp.lng.toFixed(5)}</div>
-                          )}
-                          {Array.isArray(wp.sources) && wp.sources.length > 0 && (
-                            <div className="mt-1"><SourceList items={wp.sources} /></div>
-                          )}
-                        </div>
+              <div className="mt-4 flex flex-col">
+                {parsedWaypoints.map((wp, i) => {
+                  const isFirst = i === 0, isLast = i === parsedWaypoints.length - 1;
+                  const dotBg = isFirst ? "#2C5F8A" : isLast ? "#C0392B" : "var(--accent)";
+                  const dotLabel = isFirst ? "פ" : isLast ? "ס" : String(i);
+                  const hasMore = !!(wp.description || (wp.sources && wp.sources.length));
+                  return (
+                    <button key={i} type="button" onClick={() => setDrawer(wp)}
+                      className="flex gap-3 py-2.5 border-b border-border last:border-b-0 text-right">
+                      <div className="flex flex-col items-center shrink-0">
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-medium text-white" style={{ background: dotBg }}>{dotLabel}</div>
+                        {!isLast && <div className="w-[1.5px] flex-1 mt-1" style={{ background: "var(--border)", minHeight: 14 }} />}
                       </div>
-                    );
-                  })}
-                </div>
+                      <div className="flex-1 min-w-0 pb-1">
+                        <div className="text-sm font-medium text-fg flex items-center gap-1.5">
+                          {wp.label || `נקודה ${i + 1}`}
+                          {wp.sources && wp.sources.length > 0 && <BookOpen size={12} style={{ color: "var(--accent)" }} />}
+                        </div>
+                        {wp.description && <div className="text-xs text-fg-faint mt-0.5 line-clamp-1">{wp.description}</div>}
+                      </div>
+                      {hasMore && <ChevronDown size={15} className="text-fg-faint self-center -rotate-90" />}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
 
-          {/* ── Equipment ── */}
+          {/* ── 11. Elevation chart ── */}
+          {elevations.length >= 2 && <ElevationChart points={elevations} />}
+
+          {/* ── 12. Equipment + copy list ── */}
           {equipment.length > 0 && (
             <div>
-              <div className="text-sm font-semibold text-gray-900 mb-2">🎒 ציוד נדרש</div>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Backpack size={16} style={{ color: "var(--accent)" }} strokeWidth={2} />
+                  <h2 className="font-display text-lg text-fg">ציוד נדרש</h2>
+                </div>
+                <button type="button" onClick={copyEquipment}
+                  className="text-xs flex items-center gap-1" style={{ color: copied ? "var(--accent)" : "var(--fg-muted)" }}>
+                  {copied ? <><Check size={13} /> הועתק</> : <><Copy size={13} /> העתק רשימה</>}
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
                 {equipment.map((item) => (
-                  <span
-                    key={item}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-50 border border-gray-100 rounded-full text-xs text-gray-600"
-                  >
-                    ✓ {item}
+                  <span key={item} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs text-fg-muted border border-border">
+                    <Check size={11} style={{ color: "var(--accent)" }} /> {item}
                   </span>
                 ))}
               </div>
             </div>
           )}
 
-          {/* ── Cancellation policy ── */}
+          {/* ── 13. Source materials (closed by default) ── */}
+          {Array.isArray(trip.sourceMaterials) && trip.sourceMaterials.length > 0 && (
+            sourcesVisible ? (
+              <div className="rounded-2xl border border-border bg-surface overflow-hidden">
+                <button type="button" onClick={() => setSourcesOpen((v) => !v)} className="w-full flex items-center justify-between px-4 py-3.5">
+                  <span className="flex items-center gap-2 font-display text-lg text-fg"><BookOpen size={16} style={{ color: "var(--accent)" }} /> חומרי מקור</span>
+                  <ChevronDown size={17} className={`text-fg-faint transition-transform ${sourcesOpen ? "rotate-180" : ""}`} />
+                </button>
+                {sourcesOpen && <div className="px-4 pb-4 pt-1 border-t border-border"><SourceList items={trip.sourceMaterials} /></div>}
+              </div>
+            ) : (
+              <div className="rounded-2xl p-3.5 border border-border bg-surface text-xs text-fg-faint flex items-center gap-2">
+                <BookOpen size={14} /> חומרי מקור ייחשפו במהלך הטיול
+              </div>
+            )
+          )}
+
+          {/* ── Journey timeline (if multi-day) ── */}
+          {trip.days && trip.days.length > 0 && <JourneyTimeline days={trip.days} />}
+
+          {/* ── 14. Q&A (official first) ── */}
+          {!isSelfGuided && (
+            <div>
+              <Heading icon={MessageCircle}>שאלות ותשובות</Heading>
+              {sortedQuestions.length === 0 && <p className="text-xs text-fg-faint mb-3">אין שאלות עדיין. שאל את המדריך!</p>}
+              {sortedQuestions.length > 0 && (
+                <div className="flex flex-col gap-3 mb-3">
+                  {sortedQuestions.map((q) => (
+                    <div key={q.id} className="rounded-2xl p-3.5 border border-border bg-surface">
+                      {q.official && <div className="text-[10px] font-semibold text-amber mb-1.5">★ תשובה רשמית</div>}
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-medium text-white" style={{ background: avatarColor(q.user.name) }}>{initials(q.user.name)}</div>
+                        <span className="text-xs font-medium text-fg">{q.user.name ?? "מטייל"}</span>
+                        <span className="text-[10px] text-fg-faint mr-auto">{new Date(q.createdAt).toLocaleDateString("he-IL")}</span>
+                      </div>
+                      <p className="text-sm text-fg mb-1">{q.body}</p>
+                      {q.answer && (
+                        <div className="mt-2 pr-3 border-r-2" style={{ borderColor: "var(--accent)" }}>
+                          <div className="text-[10px] text-accent font-medium mb-0.5">תשובת המדריך</div>
+                          <p className="text-xs text-fg-muted">{q.answer}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {session ? (
+                <div className="flex gap-2">
+                  <textarea value={qaBody} onChange={(e) => setQaBody(e.target.value)} placeholder="שאל שאלה…" rows={2}
+                    className="flex-1 rounded-xl px-3 py-2 text-sm resize-none bg-surface border border-border text-fg placeholder:text-fg-faint focus:outline-none focus:border-accent" />
+                  <button type="button" onClick={submitQuestion} disabled={!qaBody.trim() || qaLoading}
+                    className="px-3 py-2 text-xs rounded-xl self-end font-medium disabled:opacity-50" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
+                    {qaLoading ? "…" : "שלח"}
+                  </button>
+                </div>
+              ) : (
+                <p className="text-xs text-fg-faint">
+                  <button type="button" onClick={() => router.push("/auth/login")} className="text-accent underline">התחבר</button> כדי לשאול שאלה
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Write a review (eligible) */}
+          {session && (!!myRegStatus || purchase?.purchased) && (
+            <div className="rounded-2xl p-3.5 border" style={{ background: "rgba(61,143,95,0.08)", borderColor: "rgba(61,143,95,0.25)" }}>
+              {reviewDone ? (
+                <div className="text-xs text-accent">תודה! הביקורת נשמרה.</div>
+              ) : (
+                <>
+                  <div className="text-sm font-semibold text-fg mb-1.5">כתוב ביקורת</div>
+                  <div className="flex gap-1 mb-2">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button key={n} type="button" onClick={() => setReviewRating(n)}>
+                        <Star size={22} fill={n <= reviewRating ? "#e0b64a" : "none"} color={n <= reviewRating ? "#e0b64a" : "var(--fg-faint)"} />
+                      </button>
+                    ))}
+                  </div>
+                  <textarea value={reviewComment} onChange={(e) => setReviewComment(e.target.value)} rows={2} placeholder="ספר על החוויה (אופציונלי)"
+                    className="w-full rounded-lg px-3 py-2 text-sm resize-none mb-2 bg-surface border border-border text-fg placeholder:text-fg-faint focus:outline-none focus:border-accent" />
+                  <button type="button" onClick={submitReview} disabled={!reviewRating}
+                    className="px-4 py-1.5 rounded-full text-xs font-medium disabled:opacity-50" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>שלח ביקורת</button>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* ── 15. Reviews (all, no pagination) ── */}
+          {trip.reviews.length > 0 && (
+            <div>
+              <Heading icon={Star}>ביקורות ({trip.reviews.length})</Heading>
+              <div className="flex flex-col gap-2">
+                {trip.reviews.map((rev) => (
+                  <div key={rev.id} className="rounded-2xl p-3.5 border border-border bg-surface">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-medium text-white shrink-0" style={{ background: avatarColor(rev.user.name) }}>{initials(rev.user.name)}</div>
+                      <span className="text-xs font-medium text-fg">{rev.user.name}</span>
+                      <span className="flex items-center gap-0.5 mr-auto">
+                        {[1, 2, 3, 4, 5].map((n) => <Star key={n} size={12} fill={n <= rev.rating ? "#e0b64a" : "none"} color={n <= rev.rating ? "#e0b64a" : "var(--fg-faint)"} />)}
+                      </span>
+                    </div>
+                    {rev.comment && <p className="text-xs text-fg-muted leading-relaxed">{rev.comment}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── 16. Rideshare board ── */}
+          {session && !isSelfGuided && <RideshareBoard tripId={trip.id} />}
+
+          {/* ── 17. Cancellation policy ── */}
           {cancellationLines.length > 0 && (
             <div>
-              <div className="text-sm font-semibold text-gray-900 mb-2">🧾 מדיניות ביטולים</div>
-              <div className="bg-[#FDF3DC] rounded-xl p-3 flex flex-col gap-1.5">
+              <Heading icon={FileText}>מדיניות ביטולים</Heading>
+              <div className="rounded-2xl p-3.5 border border-border bg-surface flex flex-col gap-1.5">
                 {cancellationLines.map((line, i) => {
                   const dashIdx = line.indexOf("—");
                   const left = dashIdx >= 0 ? line.slice(0, dashIdx).trim() : line;
                   const right = dashIdx >= 0 ? line.slice(dashIdx + 1).trim() : "";
                   return (
                     <div key={i} className="flex justify-between text-xs">
-                      <span className="text-amber-700">{left}</span>
-                      {right && <span className="text-amber-900 font-medium">{right}</span>}
+                      <span className="text-fg-muted">{left}</span>
+                      {right && <span className="text-fg font-medium">{right}</span>}
                     </div>
                   );
                 })}
               </div>
             </div>
           )}
-
-          {/* ── Journey day timeline ── */}
-          {trip.days && trip.days.length > 0 && <JourneyTimeline days={trip.days} />}
-
-          {/* ── Rideshare board (not for self-guided — no shared date) ── */}
-          {session && !isSelfGuided && <RideshareBoard tripId={trip.id} />}
-
-          {/* ── Q&A (not for self-guided — pure content, no contact) ── */}
-          {!isSelfGuided && (
-          <div>
-            <div className="text-sm font-semibold text-gray-900 mb-3">💬 שאלות ותשובות</div>
-            {questions.length === 0 && (
-              <p className="text-xs text-gray-400 mb-3">אין שאלות עדיין. שאל את המדריך!</p>
-            )}
-            {questions.length > 0 && (
-              <div className="flex flex-col gap-3 mb-3">
-                {questions.map((q) => (
-                  <div key={q.id} className="bg-gray-50 rounded-xl p-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div
-                        className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-medium text-white"
-                        style={{ background: avatarColor(q.user.name) }}
-                      >
-                        {initials(q.user.name)}
-                      </div>
-                      <span className="text-xs font-medium text-gray-700">{q.user.name ?? "מטייל"}</span>
-                      <span className="text-[10px] text-gray-400 mr-auto">
-                        {new Date(q.createdAt).toLocaleDateString("he-IL")}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-800 mb-1">{q.body}</p>
-                    {q.answer && (
-                      <div className="mt-2 pr-3 border-r-2 border-[#1A6B4A]">
-                        <div className="text-[10px] text-[#1A6B4A] font-medium mb-0.5">תשובת המדריך</div>
-                        <p className="text-xs text-gray-700">{q.answer}</p>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-            {session ? (
-              <div className="flex gap-2">
-                <textarea
-                  value={qaBody}
-                  onChange={(e) => setQaBody(e.target.value)}
-                  placeholder="שאל שאלה..."
-                  rows={2}
-                  className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:border-[#1A6B4A]"
-                />
-                <button
-                  type="button"
-                  onClick={submitQuestion}
-                  disabled={!qaBody.trim() || qaLoading}
-                  className="px-3 py-2 bg-[#1A6B4A] text-white text-xs rounded-xl disabled:opacity-50 self-end"
-                >
-                  {qaLoading ? "..." : "שלח"}
-                </button>
-              </div>
-            ) : (
-              <p className="text-xs text-gray-400">
-                <button type="button" onClick={() => router.push("/auth/login")} className="text-[#1A6B4A] underline">התחבר</button> כדי לשאול שאלה
-              </p>
-            )}
-          </div>
-          )}
-
-          {/* ── Write a review (eligible: registered or purchased) ── */}
-          {session && (!!myRegStatus || purchase?.purchased) && (
-            <div className="bg-[#F0FAF5] border border-[#1A6B4A]/15 rounded-xl p-3">
-              {reviewDone ? (
-                <div className="text-xs text-[#0F5038]">תודה! הביקורת נשמרה.</div>
-              ) : (
-                <>
-                  <div className="text-sm font-semibold text-gray-900 mb-1.5">כתוב ביקורת</div>
-                  <div className="flex gap-1 mb-2">
-                    {[1, 2, 3, 4, 5].map((n) => (
-                      <button key={n} type="button" onClick={() => setReviewRating(n)}
-                        className={`text-xl ${n <= reviewRating ? "text-amber-500" : "text-gray-300"}`}>★</button>
-                    ))}
-                  </div>
-                  <textarea value={reviewComment} onChange={(e) => setReviewComment(e.target.value)} rows={2}
-                    placeholder="ספר על החוויה (אופציונלי)"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-[#1A6B4A] mb-2" />
-                  <button type="button" onClick={submitReview} disabled={!reviewRating}
-                    className="px-4 py-1.5 bg-[#1A6B4A] text-white rounded-full text-xs font-medium disabled:opacity-50">שלח ביקורת</button>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* ── Reviews ── */}
-          {trip.reviews.length > 0 && (
-            <div>
-              <div className="text-sm font-semibold text-gray-900 mb-2">
-                ⭐ ביקורות
-                <span className="text-xs font-normal text-gray-400 mr-2">({trip.reviews.length})</span>
-              </div>
-              <div className="flex flex-col gap-2">
-                {trip.reviews.map((rev) => (
-                  <div key={rev.id} className="bg-gray-50 rounded-xl p-3">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <div
-                        className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-medium text-white flex-shrink-0"
-                        style={{ background: avatarColor(rev.user.name) }}
-                      >
-                        {initials(rev.user.name)}
-                      </div>
-                      <span className="text-xs font-medium text-gray-900">{rev.user.name}</span>
-                      <span className="text-amber-500 text-xs mr-auto">
-                        {"★".repeat(rev.rating)}{"☆".repeat(5 - rev.rating)}
-                      </span>
-                    </div>
-                    {rev.comment && (
-                      <p className="text-xs text-gray-600 leading-relaxed">{rev.comment}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* ── Fixed footer ── */}
-      <div
-        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100"
-        dir="rtl"
-        style={{ boxShadow: "0 -4px 12px rgba(0,0,0,0.06)" }}
-      >
-        {/* Chat with guide button — shown to registered/interested users */}
-        {session && myRegStatus && myRegStatus !== "CANCELLED" && (
-          <div className="px-4 pt-2 pb-0">
-            <button
-              type="button"
-              onClick={() => router.push(`/trips/${trip.id}/chat`)}
-              className="w-full py-2 text-xs text-[#185FA5] border border-[#185FA5]/30 bg-[#E8F2FB] rounded-full flex items-center justify-center gap-1.5 hover:bg-[#D4E9F7] transition-colors"
-            >
-              ✉️ שלח הודעה למדריך
-            </button>
-          </div>
-        )}
-
-        {/* Registration status banner */}
-        {myRegStatus && REG_STATUS_UI[myRegStatus] && myRegStatus !== "CANCELLED" && (
-          <div
-            className="px-4 py-2 flex items-center justify-between text-xs"
-            style={{ background: REG_STATUS_UI[myRegStatus].bg, color: REG_STATUS_UI[myRegStatus].color }}
-          >
-            <span className="font-medium">
-              {REG_STATUS_UI[myRegStatus].icon} {REG_STATUS_UI[myRegStatus].text}
-            </span>
-            <button
-              type="button"
-              onClick={() => router.push("/my-trips")}
-              className="underline text-[11px]"
-            >
-              הטיולים שלי →
-            </button>
-          </div>
-        )}
-
-        <div className="px-4 py-3 flex items-center justify-between">
-          <div>
-            <div className="text-lg font-semibold text-gray-900">
-              ₪{trip.price.toLocaleString("he-IL")}
-              <span className="text-xs font-normal text-gray-400 mr-1">{isSelfGuided ? "רכישה חד-פעמית" : "לאדם"}</span>
+      {/* ── Waypoint drawer ── */}
+      {drawer && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setDrawer(null)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div dir="rtl" className="relative w-full max-w-[480px] bg-surface rounded-t-3xl p-5 pb-8 max-h-[70vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: "var(--border)" }} />
+            <div className="flex items-start justify-between mb-3">
+              <h3 className="font-display text-xl text-fg flex items-center gap-2"><MapPin size={16} style={{ color: "var(--accent)" }} /> {drawer.label || "תחנה"}</h3>
+              <button type="button" onClick={() => setDrawer(null)} className="text-fg-faint"><X size={20} /></button>
             </div>
-            <div className="text-xs text-gray-400">
-              {isSelfGuided ? `גישה ל-${trip.accessWindowDays ?? 30} ימים` : formatDateShort(trip.date)}
-            </div>
+            {drawer.description && <p className="text-sm text-fg-muted leading-relaxed mb-4">{drawer.description}</p>}
+            <div className="text-[11px] text-fg-faint mb-4">{drawer.lat.toFixed(5)}, {drawer.lng.toFixed(5)}</div>
+            {drawer.sources && drawer.sources.length > 0 && (
+              <div>
+                <div className="text-xs font-semibold text-fg mb-2 flex items-center gap-1.5"><BookOpen size={13} style={{ color: "var(--accent)" }} /> חומרי מקור לתחנה</div>
+                <SourceList items={drawer.sources} />
+              </div>
+            )}
           </div>
-          <div className="flex gap-2">
-            {isSelfGuided ? (
-              purchase?.purchased && !purchase?.expired ? (
+        </div>
+      )}
+
+      {/* ── Floating registration bar ── */}
+      <div className="fixed bottom-0 inset-x-0 flex justify-center z-40" dir="rtl">
+        <div className="w-full max-w-[480px] bg-surface/95 backdrop-blur-xl border-t border-border" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+          {session && myRegStatus && myRegStatus !== "CANCELLED" && (
+            <button type="button" onClick={() => router.push(`/trips/${trip.id}/chat`)}
+              className="w-full flex items-center justify-center gap-1.5 py-2 text-xs border-b border-border" style={{ color: "var(--accent)" }}>
+              <MessageCircle size={13} /> שלח הודעה למדריך
+            </button>
+          )}
+          {myRegStatus && REG_STATUS_UI[myRegStatus] && myRegStatus !== "CANCELLED" && (
+            <div className="px-5 py-2 flex items-center justify-between text-xs" style={{ background: REG_STATUS_UI[myRegStatus].bg, color: REG_STATUS_UI[myRegStatus].color }}>
+              <span className="font-medium">{REG_STATUS_UI[myRegStatus].text}</span>
+              <button type="button" onClick={() => router.push("/my-trips")} className="underline text-[11px]">הטיולים שלי →</button>
+            </div>
+          )}
+
+          <div className="px-5 py-3.5 flex items-center justify-between gap-3">
+            <div>
+              <div className="text-xl font-semibold text-fg">
+                ₪{trip.price.toLocaleString("he-IL")}
+                <span className="text-xs font-normal text-fg-faint mr-1">{isSelfGuided ? "רכישה חד-פעמית" : "לאדם"}</span>
+              </div>
+              <div className="text-xs text-fg-faint">{isSelfGuided ? `גישה ל-${trip.accessWindowDays ?? 30} ימים` : formatDateShort(trip.date)}</div>
+            </div>
+            <div className="flex gap-2">
+              {isSelfGuided ? (
+                purchase?.purchased && !purchase?.expired ? (
+                  <>
+                    <button type="button" onClick={requestRefund} className="px-3 py-2.5 text-xs rounded-full" style={{ border: "1px solid var(--danger)", color: "var(--danger)" }}>בקשה להחזר</button>
+                    <button type="button" onClick={() => router.push(`/trips/${trip.id}/start`)} className="px-5 py-2.5 text-sm rounded-full font-semibold flex items-center gap-1" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}><Play size={14} /> התחל טיול</button>
+                  </>
+                ) : (
+                  <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)} className="px-6 py-2.5 text-sm rounded-full font-semibold" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>רכוש טיול עצמאי ←</button>
+                )
+              ) : myRegStatus === "CONFIRMED" ? (
+                <button type="button" onClick={() => router.push("/my-trips")} className="px-5 py-2.5 text-sm rounded-full font-medium" style={{ background: "rgba(61,143,95,0.18)", color: "#7fd4a3", border: "1px solid var(--accent)" }}>✓ רשום</button>
+              ) : myRegStatus === "WAITLIST" ? (
+                <button type="button" onClick={() => router.push("/my-trips")} className="px-5 py-2.5 text-sm rounded-full font-medium" style={{ background: "rgba(44,95,138,0.22)", color: "#8fc0e8" }}>⏰ ברשימת המתנה</button>
+              ) : (
                 <>
-                  <button type="button" onClick={requestRefund}
-                    className="px-3 py-2 text-xs text-[#C0392B] border border-[#C0392B]/30 rounded-full hover:bg-[#FADBD8]">
-                    בקשה להחזר
-                  </button>
-                  <button type="button" onClick={() => router.push(`/trips/${trip.id}/start`)}
-                    className="px-5 py-2 text-sm bg-[#1A6B4A] text-white rounded-full font-medium hover:bg-[#155a3e]">
-                    ▶ התחל טיול
+                  <button type="button" onClick={() => router.push(`/trips/${trip.id}/register?flow=interest`)} className="px-4 py-2.5 text-sm rounded-full" style={{ border: "1px solid var(--border)", color: "var(--fg-muted)" }}>מתעניין</button>
+                  <button type="button" onClick={() => router.push(isFull ? `/trips/${trip.id}/register?flow=waitlist` : `/trips/${trip.id}/register`)}
+                    className="px-5 py-2.5 text-sm rounded-full text-white font-semibold" style={{ background: isFull ? "var(--danger)" : "var(--accent)" }}>
+                    {isFull ? "רשימת המתנה" : "להרשמה ←"}
                   </button>
                 </>
-              ) : (
-                <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)}
-                  className="px-5 py-2 text-sm bg-[#1A6B4A] text-white rounded-full font-medium hover:bg-[#155a3e] disabled:opacity-60">
-                  {"רכוש טיול עצמאי ←"}
-                </button>
-              )
-            ) : myRegStatus === "CONFIRMED" ? (
-              <button
-                type="button"
-                onClick={() => router.push("/my-trips")}
-                className="px-5 py-2 text-sm bg-[#D6EDE3] text-[#0F5038] rounded-full font-medium border border-[#1A6B4A]"
-              >
-                ✓ רשום — הטיולים שלי
-              </button>
-            ) : myRegStatus === "WAITLIST" ? (
-              <button
-                type="button"
-                onClick={() => router.push("/my-trips")}
-                className="px-5 py-2 text-sm bg-[#D4E4F0] text-[#185FA5] rounded-full font-medium"
-              >
-                ⏰ ברשימת המתנה
-              </button>
-            ) : myRegStatus === "PENDING" ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => router.push("/my-trips")}
-                  className="px-4 py-2 text-sm border border-gray-200 text-gray-500 rounded-full hover:bg-gray-50 transition-colors"
-                >
-                  👀 מתעניין
-                </button>
-                <button
-                  type="button"
-                  onClick={() => router.push(isFull ? `/trips/${trip.id}/register?flow=waitlist` : `/trips/${trip.id}/register`)}
-                  className={`px-5 py-2 text-sm rounded-full text-white font-medium transition-colors ${
-                    isFull ? "bg-[#C0392B] hover:bg-[#a93226]" : "bg-[#1A6B4A] hover:bg-[#155a3e]"
-                  }`}
-                >
-                  {isFull ? "רשימת המתנה" : "להרשמה ←"}
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={() => router.push(`/trips/${trip.id}/register?flow=interest`)}
-                  className="px-4 py-2 text-sm border border-gray-200 text-gray-500 rounded-full hover:bg-gray-50 transition-colors"
-                >
-                  מתעניין
-                </button>
-                <button
-                  type="button"
-                  onClick={() => router.push(isFull ? `/trips/${trip.id}/register?flow=waitlist` : `/trips/${trip.id}/register`)}
-                  className={`px-5 py-2 text-sm rounded-full text-white font-medium transition-colors ${
-                    isFull ? "bg-[#C0392B] hover:bg-[#a93226]" : "bg-[#1A6B4A] hover:bg-[#155a3e]"
-                  }`}
-                >
-                  {isFull ? "רשימת המתנה" : "להרשמה ←"}
-                </button>
-              </>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
