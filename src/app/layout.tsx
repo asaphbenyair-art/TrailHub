@@ -31,7 +31,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="he" dir="rtl" className={`h-full ${playfair.variable} ${inter.variable}`}>
+    <html lang="he" dir="rtl" suppressHydrationWarning className={`h-full ${playfair.variable} ${inter.variable}`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>

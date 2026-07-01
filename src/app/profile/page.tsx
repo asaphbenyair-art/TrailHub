@@ -4,6 +4,8 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import ThemeToggle from "@/components/ThemeToggle";
+import ModeSwitch from "@/components/ModeSwitch";
+import { SignOutButton } from "@/components/SignOutButton";
 
 const REGIONS = ["גליל עליון", "גליל תחתון", "כרמל", "ירושלים", "שפלה", "נגב", "ערבה", "גולן", "עמק יזרעאל"];
 const DIFFICULTIES = ["EASY", "MEDIUM", "HARD", "EXTREME"];
@@ -544,6 +546,15 @@ export default function ProfilePage() {
                 </button>
               </>
             )}
+          </div>
+        </div>
+
+        {/* Account actions — mode switch + sign out */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 flex items-center justify-between">
+          <span className="text-sm font-medium text-gray-900">חשבון</span>
+          <div className="flex items-center gap-3">
+            <ModeSwitch current="hiker" />
+            <SignOutButton />
           </div>
         </div>
       </div>
