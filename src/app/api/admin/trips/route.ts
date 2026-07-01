@@ -21,7 +21,6 @@ export async function GET(req: NextRequest) {
       guide: {
         include: {
           user: { select: { name: true, email: true } },
-          organization: { select: { name: true } },
         },
       },
     },

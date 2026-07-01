@@ -10,7 +10,6 @@ datasource db {
 enum Role {
   USER
   GUIDE
-  ORG_ADMIN
   ADMIN
 }
 
@@ -30,11 +29,6 @@ enum TripStatus {
   POSTPONED
   CANCELLED
   COMPLETED
-}
-
-enum OrgMemberRole {
-  MEMBER
-  ADMIN
 }
 
 enum RegistrationStatus {
@@ -171,7 +165,6 @@ model User {
   questions            TripQuestion[]
   sentMessages         ChatMessage[] @relation("SentMessages")
   receivedMessages     ChatMessage[] @relation("ReceivedMessages")
-  orgMemberships       OrganizationMembership[]
   follows              GuideFollow[]
   managedTrips         TripManager[]
   rideOffers           RideshareOffer[]
@@ -225,7 +218,6 @@ model Guide {
   reviewCount    Int     @default(0)
   isVerified     Boolean @default(false)
   yearsActive    Int?
-  organizationId String?
 
   headline             String?
   specialtyRegions     String[]
@@ -237,7 +229,6 @@ model Guide {
   selfGuidedReviewCount Int    @default(0)
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   trips        Trip[]
   coupons      Coupon[]
   followers    GuideFollow[]
@@ -491,39 +482,6 @@ model ChatMessage {
 
   @@index([tripId, fromUserId])
   @@index([tripId, toUserId])
-}
-
-// ─── Institutional models ────────────────────────────────────────────────────
-
-model Organization {
-  id          String   @id @default(cuid())
-  name        String
-  type        String   // "company" | "camp" | "association" | "school" | "other"
-  contactName String?
-  contactEmail String?
-  contactPhone String?
-  logoUrl     String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  guides      Guide[]
-  memberships OrganizationMembership[]
-}
-
-model OrganizationMembership {
-  id             String        @id @default(cuid())
-  organizationId String
-  userId         String
-  role           OrgMemberRole @default(MEMBER)
-  isIndependent  Boolean       @default(true)
-  joinedAt       DateTime      @default(now())
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([organizationId, userId])
-  @@index([userId])
 }
 
 model TripDay {

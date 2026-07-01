@@ -27,7 +27,6 @@ interface PendingTrip {
   guide: {
     isVerified: boolean;
     user: { name: string | null; email: string };
-    organization: { name: string } | null;
   };
 }
 
@@ -35,16 +34,7 @@ interface PendingGuide {
   id: string;
   isVerified: boolean;
   user: { id: string; name: string | null; email: string };
-  organization: { name: string } | null;
   _count: { trips: number };
-}
-
-interface Org {
-  id: string;
-  name: string;
-  type: string;
-  isActive: boolean;
-  _count: { guides: number; memberships: number };
 }
 
 function formatDate(d: string) {
@@ -56,21 +46,15 @@ export default function AdminPage() {
   const { data: session, status } = useSession();
   const role = (session?.user as { role?: string })?.role;
 
-  const [tab, setTab] = useState<"trips" | "guides" | "orgs">("trips");
+  const [tab, setTab] = useState<"trips" | "guides">("trips");
   const [pendingTrips, setPendingTrips] = useState<PendingTrip[]>([]);
   const [unverifiedGuides, setUnverifiedGuides] = useState<PendingGuide[]>([]);
-  const [orgs, setOrgs] = useState<Org[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Trip review state
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [rejectNote, setRejectNote] = useState("");
   const [saving, setSaving] = useState(false);
-
-  // New org form
-  const [orgForm, setOrgForm] = useState({ name: "", type: "company", contactName: "", contactEmail: "" });
-  const [addingOrg, setAddingOrg] = useState(false);
-  const [showOrgForm, setShowOrgForm] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/auth/login");
@@ -83,11 +67,9 @@ export default function AdminPage() {
     Promise.all([
       fetch("/api/admin/trips?status=PENDING_REVIEW").then((r) => r.json()),
       fetch("/api/admin/guides?unverified=1").then((r) => r.json()),
-      fetch("/api/admin/organizations").then((r) => r.json()),
-    ]).then(([trips, guides, orgsList]) => {
+    ]).then(([trips, guides]) => {
       setPendingTrips(Array.isArray(trips) ? trips : []);
       setUnverifiedGuides(Array.isArray(guides) ? guides : []);
-      setOrgs(Array.isArray(orgsList) ? orgsList : []);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [role]);
@@ -130,23 +112,6 @@ export default function AdminPage() {
     setSaving(false);
   }
 
-  async function createOrg() {
-    if (!orgForm.name || !orgForm.type) return;
-    setAddingOrg(true);
-    const res = await fetch("/api/admin/organizations", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(orgForm),
-    });
-    if (res.ok) {
-      const org = await res.json();
-      setOrgs((prev) => [org, ...prev]);
-      setOrgForm({ name: "", type: "company", contactName: "", contactEmail: "" });
-      setShowOrgForm(false);
-    }
-    setAddingOrg(false);
-  }
-
   if (status === "loading" || loading) {
     return <div dir="rtl" className="min-h-screen bg-[#f5f5f5] flex items-center justify-center text-gray-400 text-sm">טוען...</div>;
   }
@@ -154,7 +119,6 @@ export default function AdminPage() {
   const TABS = [
     { key: "trips", label: "טיולים לאישור", count: pendingTrips.length },
     { key: "guides", label: "מדריכים", count: unverifiedGuides.filter((g) => !g.isVerified).length },
-    { key: "orgs", label: "ארגונים", count: orgs.length },
   ] as const;
 
   return (
@@ -170,11 +134,10 @@ export default function AdminPage() {
       </div>
 
       {/* Stats bar */}
-      <div className="grid grid-cols-3 gap-px bg-gray-200 border-b border-gray-200">
+      <div className="grid grid-cols-2 gap-px bg-gray-200 border-b border-gray-200">
         {[
           { label: "ממתינים לאישור", val: pendingTrips.length, color: "#92400E", bg: "#FEF9EC" },
           { label: "מדריכים לא מאושרים", val: unverifiedGuides.filter((g) => !g.isVerified).length, color: "#1E40AF", bg: "#EFF6FF" },
-          { label: "ארגונים פעילים", val: orgs.filter((o) => o.isActive).length, color: "#065F46", bg: "#ECFDF5" },
         ].map((s) => (
           <div key={s.label} className="py-3 px-4 text-center" style={{ background: s.bg }}>
             <div className="text-2xl font-bold" style={{ color: s.color }}>{s.val}</div>
@@ -232,7 +195,6 @@ export default function AdminPage() {
                     </div>
                     <div className="flex flex-wrap gap-2 text-[11px] text-gray-500 mb-2">
                       <span>👤 {trip.guide.user.name ?? trip.guide.user.email}</span>
-                      {trip.guide.organization && <span>🏢 {trip.guide.organization.name}</span>}
                       {trip.guide.isVerified && <span className="text-[#1A6B4A]">✓ מאושר</span>}
                       <span>📅 {formatDate(trip.date)}</span>
                       <span>📍 {trip.region}</span>
@@ -291,7 +253,6 @@ export default function AdminPage() {
                     <div className="text-sm font-semibold text-gray-900">{guide.user.name ?? "—"}</div>
                     <div className="text-xs text-gray-500">{guide.user.email}</div>
                     <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-400">
-                      {guide.organization && <span>🏢 {guide.organization.name}</span>}
                       <span>{guide._count.trips} טיולים</span>
                     </div>
                   </div>
@@ -310,65 +271,6 @@ export default function AdminPage() {
                 </div>
               </div>
             ))}
-          </>
-        )}
-
-        {/* ── Organizations ── */}
-        {tab === "orgs" && (
-          <>
-            <button type="button" onClick={() => setShowOrgForm((v) => !v)}
-              className="w-full py-2.5 border-2 border-dashed border-[#1A6B4A] text-[#1A6B4A] text-sm rounded-2xl hover:bg-[#F0FAF5] transition-colors">
-              + ארגון חדש
-            </button>
-
-            {showOrgForm && (
-              <div className="bg-white rounded-2xl border border-gray-100 p-4 flex flex-col gap-3">
-                <input value={orgForm.name} onChange={(e) => setOrgForm((p) => ({ ...p, name: e.target.value }))}
-                  placeholder="שם הארגון *" className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
-                <select value={orgForm.type} onChange={(e) => setOrgForm((p) => ({ ...p, type: e.target.value }))}
-                  className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]">
-                  <option value="company">חברה</option>
-                  <option value="camp">מחנה</option>
-                  <option value="association">עמותה</option>
-                  <option value="school">בית ספר</option>
-                  <option value="other">אחר</option>
-                </select>
-                <input value={orgForm.contactName} onChange={(e) => setOrgForm((p) => ({ ...p, contactName: e.target.value }))}
-                  placeholder="איש קשר" className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
-                <input value={orgForm.contactEmail} onChange={(e) => setOrgForm((p) => ({ ...p, contactEmail: e.target.value }))}
-                  placeholder="אימייל" type="email" className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" dir="ltr" />
-                <div className="flex gap-2">
-                  <button type="button" onClick={createOrg} disabled={!orgForm.name || addingOrg}
-                    className="flex-1 py-2 bg-[#1A6B4A] text-white text-sm rounded-full disabled:opacity-50">
-                    {addingOrg ? "יוצר..." : "צור ארגון"}
-                  </button>
-                  <button type="button" onClick={() => setShowOrgForm(false)}
-                    className="px-4 py-2 border border-gray-200 text-gray-500 text-sm rounded-full">ביטול</button>
-                </div>
-              </div>
-            )}
-
-            {orgs.map((org) => {
-              const ORG_TYPE: Record<string, string> = { company: "חברה", camp: "מחנה", association: "עמותה", school: "בית ספר", other: "אחר" };
-              return (
-                <div key={org.id} className="bg-white rounded-2xl border border-gray-100 px-4 py-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900">{org.name}</div>
-                      <div className="text-[11px] text-gray-500 mt-0.5">
-                        {ORG_TYPE[org.type] ?? org.type} · {org._count.guides} מדריכים · {org._count.memberships} חברים
-                      </div>
-                    </div>
-                    <Link
-                      href={`/org/${org.id}`}
-                      className="text-xs text-[#1A6B4A] border border-[#1A6B4A]/30 px-3 py-1 rounded-full hover:bg-[#D6EDE3] transition-colors"
-                    >
-                      נהל ←
-                    </Link>
-                  </div>
-                </div>
-              );
-            })}
           </>
         )}
 

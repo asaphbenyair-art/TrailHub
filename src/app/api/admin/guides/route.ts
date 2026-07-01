@@ -19,7 +19,6 @@ export async function GET(req: NextRequest) {
     where: onlyUnverified ? { isVerified: false } : undefined,
     include: {
       user: { select: { id: true, name: true, email: true, createdAt: true } },
-      organization: { select: { id: true, name: true } },
       _count: { select: { trips: true } },
     },
     orderBy: { user: { createdAt: "desc" } },
