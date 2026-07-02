@@ -70,6 +70,15 @@ function formatDate(d: string) {
 function formatDateLong(d: string) {
   return new Date(d).toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" });
 }
+// Remaining access time for a purchased self-guided trip (green >7d, amber 2-7d, red <2d, muted expired).
+function accessRemaining(iso: string | null | undefined): { text: string; color: string } {
+  if (!iso) return { text: "🔓 גישה פעילה", color: "#1A6B4A" };
+  const days = Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000);
+  if (days <= 0) return { text: "⏳ הגישה הסתיימה", color: "#9ca3af" };
+  const text = days === 1 ? "⏳ זמין עוד יום אחד" : `⏳ זמין עוד ${days} ימים`;
+  const color = days > 7 ? "#1A6B4A" : days >= 2 ? "#B45309" : "#C0392B";
+  return { text, color };
+}
 
 const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }> = {
   CONFIRMED: { bg: "#D6EDE3", color: "#0F5038", label: "✓ רשום" },
@@ -385,9 +394,9 @@ export default function MyTripsPage() {
                       <div>
                         <div className="text-sm font-medium text-gray-900 truncate">{p.trip.title}</div>
                         <div className="text-xs text-gray-400 mt-0.5">📍 {p.trip.region}</div>
-                        <div className={`text-[11px] mt-1 ${expired ? "text-red-500" : "text-[#0F5038]"}`}>
-                          {expired ? "פג תוקף הגישה" : p.accessExpiresAt ? `גישה עד ${new Date(p.accessExpiresAt).toLocaleDateString("he-IL")}` : "גישה פעילה"}
-                        </div>
+                        {(() => { const r = accessRemaining(p.accessExpiresAt); return (
+                          <div className="text-[11px] mt-1 font-semibold" style={{ color: r.color }}>{r.text}</div>
+                        ); })()}
                       </div>
                       {!expired && (
                         <button type="button" onClick={() => router.push(`/trips/${p.trip.id}/start`)}

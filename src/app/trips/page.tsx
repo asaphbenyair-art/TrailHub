@@ -50,6 +50,16 @@ function formatDate(d: string) {
 function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
+// Remaining access time for a purchased self-guided trip (spec: green >7d,
+// amber 2-7d, red <2d, muted if expired).
+function accessRemaining(iso: string | null | undefined): { text: string; color: string } {
+  if (!iso) return { text: "🔓 גישה פעילה", color: "#1A6B4A" };
+  const days = Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000);
+  if (days <= 0) return { text: "⏳ הגישה הסתיימה", color: "#9ca3af" };
+  const text = days === 1 ? "⏳ זמין עוד יום אחד" : `⏳ זמין עוד ${days} ימים`;
+  const color = days > 7 ? "#1A6B4A" : days >= 2 ? "#B45309" : "#C0392B";
+  return { text, color };
+}
 
 interface GuideCard {
   id: string; name: string | null; image: string | null; headline: string | null;
@@ -173,6 +183,7 @@ export default function TripsPage() {
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
   const [myRegIdMap, setMyRegIdMap] = useState<Record<string, string>>({});
   const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set());
+  const [purchaseExpiry, setPurchaseExpiry] = useState<Record<string, string | null>>({});
   const [purchasesOnly, setPurchasesOnly] = useState(false);
   const [rideDrawer, setRideDrawer] = useState<string | null>(null);
   const [guides, setGuides] = useState<GuideCard[]>([]);
@@ -215,8 +226,12 @@ export default function TripsPage() {
       localStorage.setItem("trailhub_last_user", JSON.stringify({ name: session.user?.name ?? null, image: session.user?.image ?? null }));
     } catch { /* noop */ }
     fetch("/api/favorites").then((r) => r.json()).then((d) => setFavIds(new Set(d.ids ?? []))).catch(() => {});
-    fetch("/api/my-purchases").then((r) => r.ok ? r.json() : []).then((d) => {
-      if (Array.isArray(d)) setPurchasedIds(new Set(d.map((p: { trip: { id: string } }) => p.trip.id)));
+    fetch("/api/my-purchases").then((r) => r.ok ? r.json() : []).then((d: Array<{ accessExpiresAt: string | null; trip: { id: string } }>) => {
+      if (!Array.isArray(d)) return;
+      setPurchasedIds(new Set(d.map((p) => p.trip.id)));
+      const exp: Record<string, string | null> = {};
+      d.forEach((p) => { exp[p.trip.id] = p.accessExpiresAt; });
+      setPurchaseExpiry(exp);
     }).catch(() => {});
   }, [session]);
 
@@ -344,7 +359,7 @@ export default function TripsPage() {
     let list = trips;
     if (purchasesOnly && filters.category === "self_guided") list = list.filter((t) => purchasedIds.has(t.id));
     if (myTripsOnly && filters.category === "guided") list = list.filter((t) => myRegMap[t.id]);
-    if (favoritesOnly && filters.category === "guided") list = list.filter((t) => favIds.has(t.id));
+    if (favoritesOnly) list = list.filter((t) => favIds.has(t.id));
     if (!range.start) return list;
     const startMs = new Date(range.start.getFullYear(), range.start.getMonth(), range.start.getDate()).getTime();
     const endRef = range.end ?? range.start;
@@ -441,13 +456,6 @@ export default function TripsPage() {
             </button>
           ))}
         </div>
-        {filters.category === "self_guided" && session && (
-          <button type="button" onClick={() => setPurchasesOnly((v) => !v)}
-            className={`text-[11px] rounded-full px-3 py-1.5 border transition-colors shrink-0 ${
-              purchasesOnly ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-gray-200 text-gray-500"}`}>
-            🎒 הרכישות שלי
-          </button>
-        )}
       </div>
 
       {/* ── Guides directory (מדריכים tab) ── */}
@@ -616,6 +624,20 @@ export default function TripsPage() {
                   className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap border flex-shrink-0 transition-colors ${
                     myTripsOnly ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "bg-white border-gray-200 text-gray-600"}`}>
                   🎒 הטיולים שלי
+                </button>
+                <button type="button" onClick={() => setFavoritesOnly((v) => !v)}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap border flex-shrink-0 transition-colors ${
+                    favoritesOnly ? "bg-[#FDE8EC] border-[#E86A87] text-[#B0324D]" : "bg-white border-gray-200 text-gray-600"}`}>
+                  ♥ מועדפים
+                </button>
+              </>
+            )}
+            {session && filters.category === "self_guided" && (
+              <>
+                <button type="button" onClick={() => setPurchasesOnly((v) => !v)}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap border flex-shrink-0 transition-colors ${
+                    purchasesOnly ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "bg-white border-gray-200 text-gray-600"}`}>
+                  🎒 הרכישות שלי
                 </button>
                 <button type="button" onClick={() => setFavoritesOnly((v) => !v)}
                   className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap border flex-shrink-0 transition-colors ${
@@ -893,10 +915,13 @@ export default function TripsPage() {
                   {(() => {
                     const isJourney = !!trip.tripType && trip.tripType !== "DAY_HIKE" && !isSG;
                     const nDays = tripDayCount(trip);
-                    const meta = isSG
+                    const meta: { t: string; color?: string }[] = isSG
                       ? [
                           { t: `🎒 טיול עצמאי` },
-                          { t: `🔓 גישה ל-${trip.accessWindowDays ?? 30} ימים` },
+                          // Purchased → remaining access time (color-coded) where the date would be
+                          isPurchased
+                            ? (() => { const r = accessRemaining(purchaseExpiry[trip.id]); return { t: r.text, color: r.color }; })()
+                            : { t: `🔓 גישה ל-${trip.accessWindowDays ?? 30} ימים` },
                           ...(trip.distanceKm > 0 ? [{ t: `📍 ${trip.distanceKm} ק"מ` }] : []),
                         ]
                       : isJourney
@@ -917,7 +942,7 @@ export default function TripsPage() {
                       <div className="flex flex-wrap" style={{ gap: 0 }}>
                         {meta.map((m, i, arr) => (
                           <span key={i} className="text-[11px] text-gray-500"
-                            style={{ paddingLeft: i < arr.length-1 ? 8 : 0, marginLeft: i < arr.length-1 ? 8 : 0, borderLeft: i < arr.length-1 ? "1px solid #eee" : "none" }}>
+                            style={{ paddingLeft: i < arr.length-1 ? 8 : 0, marginLeft: i < arr.length-1 ? 8 : 0, borderLeft: i < arr.length-1 ? "1px solid #eee" : "none", ...(m.color ? { color: m.color, fontWeight: 600 } : {}) }}>
                             {m.t}
                           </span>
                         ))}

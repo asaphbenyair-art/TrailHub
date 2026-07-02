@@ -454,6 +454,20 @@ export default function TripDetailPage() {
     <div dir="rtl" className="min-h-screen bg-bg flex justify-center pb-28">
       <div className="w-full max-w-[480px]">
 
+        {/* ── Registered: sticky top status bar with cancel (replaces bottom CTA) ── */}
+        {!isSelfGuided && (myRegStatus === "CONFIRMED" || myRegStatus === "WAITLIST") && (
+          <div className="sticky top-0 z-40 flex items-center justify-between px-5 py-3"
+            style={{ background: myRegStatus === "CONFIRMED" ? "#1A6B4A" : "#2C5F8A" }}>
+            <span className="text-sm font-semibold text-white">
+              {myRegStatus === "CONFIRMED" ? "✓ רשום לטיול" : "⏰ ברשימת המתנה"}
+            </span>
+            <button type="button" onClick={cancelRegistration}
+              className="text-xs font-medium text-white border border-white/45 rounded-full px-3.5 py-1.5 hover:bg-white/10">
+              בטל הרשמה
+            </button>
+          </div>
+        )}
+
         {/* ── 1. Photos + 2. Name ── */}
         <div className="relative overflow-hidden" style={{ height: 340 }}>
           <HeroSlideshow images={coverImages(trip.images, trip.id, { region: trip.region, tags: trip.attributeTags, title: trip.title })} title={trip.title} />
@@ -904,7 +918,8 @@ export default function TripDetailPage() {
         </div>
       )}
 
-      {/* ── Floating registration bar ── */}
+      {/* ── Floating registration bar (hidden once registered — the top bar takes over) ── */}
+      {(isSelfGuided || !(myRegStatus === "CONFIRMED" || myRegStatus === "WAITLIST")) && (
       <div className="fixed bottom-0 inset-x-0 flex justify-center z-40" dir="rtl">
         <div className="w-full max-w-[480px] bg-surface/95 backdrop-blur-xl border-t border-border" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
           {session && myRegStatus && myRegStatus !== "CANCELLED" && (
@@ -961,6 +976,7 @@ export default function TripDetailPage() {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }
