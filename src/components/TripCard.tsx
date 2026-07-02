@@ -97,7 +97,7 @@ export default function TripCard({
     >
       {/* Cover ~ 60% of the card */}
       <div className="relative w-full" style={{ height: 220 }}>
-        <Cover images={coverImages(trip.images, trip.id)} title={trip.title} />
+        <Cover images={coverImages(trip.images, trip.id, { region: trip.region, title: trip.title })} title={trip.title} />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.82) 4%, rgba(0,0,0,0.15) 45%, rgba(0,0,0,0.15))" }} />
 
         {/* Top row: badges + favorite */}

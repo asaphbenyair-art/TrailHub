@@ -117,7 +117,7 @@ export default function HikerHome() {
           category, eyebrow: "קרוב אליך",
           title: near.title,
           subtitle: `${near.region} · ₪${near.price.toLocaleString("he-IL")}`,
-          image: hikingPhoto(near.id),
+          image: hikingPhoto(near.id, 0, { region: near.region, title: near.title }),
           cta: { label: "צפה בטיול", href: `/trips/${near.id}` },
         };
       }
@@ -136,7 +136,7 @@ export default function HikerHome() {
         category: "featured_trip", eyebrow: "הטיול המומלץ",
         title: featured.title,
         subtitle: parts.join(" · "),
-        image: hikingPhoto(featured.id),
+        image: hikingPhoto(featured.id, 0, { region: featured.region, title: featured.title }),
         cta: { label: "צפה בטיול", href: `/trips/${featured.id}` },
       };
     }

@@ -124,7 +124,7 @@ function TripCard({
         {/* Image */}
         <div className="w-24 flex-shrink-0" style={{ minHeight: 90 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={coverImages(trip.images, trip.id)[0]} alt="" className="w-full h-full object-cover" />
+          <img src={coverImages(trip.images, trip.id, { region: trip.region, title: trip.title })[0]} alt="" className="w-full h-full object-cover" />
         </div>
 
         {/* Body */}
@@ -379,7 +379,7 @@ export default function MyTripsPage() {
                   <div key={p.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden flex">
                     <div className="w-24 flex-shrink-0" style={{ minHeight: 90 }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={coverImages(p.trip.images, p.trip.id)[0]} alt="" className="w-full h-full object-cover" />
+                      <img src={coverImages(p.trip.images, p.trip.id, { region: p.trip.region, title: p.trip.title })[0]} alt="" className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
                       <div>

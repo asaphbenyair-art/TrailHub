@@ -790,7 +790,7 @@ export default function TripsPage() {
 
                   {/* Hero with image slideshow */}
                   <div className="relative overflow-hidden" style={{ height: 160 }}>
-                    <TripCardHero images={coverImages(trip.images, trip.id)} title={trip.title} />
+                    <TripCardHero images={coverImages(trip.images, trip.id, { region: trip.region, title: trip.title })} title={trip.title} />
 
                     <div className="absolute top-2.5 right-2.5 flex gap-1.5 z-10">
                       {trip.tripType && trip.tripType !== "DAY_HIKE" && (

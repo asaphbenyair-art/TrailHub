@@ -399,7 +399,7 @@ export default function TripDetailPage() {
 
         {/* ── 1. Photos + 2. Name ── */}
         <div className="relative overflow-hidden" style={{ height: 340 }}>
-          <HeroSlideshow images={coverImages(trip.images, trip.id)} title={trip.title} />
+          <HeroSlideshow images={coverImages(trip.images, trip.id, { region: trip.region, tags: trip.attributeTags, title: trip.title })} title={trip.title} />
           <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.85) 6%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.35))" }} />
 
           <button type="button" onClick={() => router.back()}
