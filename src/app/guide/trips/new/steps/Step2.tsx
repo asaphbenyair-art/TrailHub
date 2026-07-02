@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useRef, useState, useCallback, useMemo } from "react";
+import { useRef, useState, useCallback, useMemo, useEffect } from "react";
 import { WizardData, WaypointData } from "../types";
 import SourceMaterialsEditor from "./SourceMaterialsEditor";
 
@@ -53,25 +53,50 @@ export default function Step2({ data, onChange }: Props) {
   const mapWaypoints = data.waypointsJson;
   const routePoints = useMemo(() => parseGpxPoints(gpxContent), [gpxContent]);
 
+  // After adding a waypoint, scroll its form into view and focus the name field.
+  const nameInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [pendingFocus, setPendingFocus] = useState<number | null>(null);
+  useEffect(() => {
+    if (pendingFocus == null) return;
+    const el = nameInputRefs.current[pendingFocus];
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.focus({ preventScroll: true });
+    }
+    setPendingFocus(null);
+  }, [pendingFocus, mapWaypoints.length]);
+
+  // Guard against the synthetic click some browsers fire at the cursor when the
+  // GPX file dialog closes — GPX must only draw the route, never add a waypoint.
+  const gpxPickedAt = useRef(0);
+
   function handleGpxFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    gpxPickedAt.current = Date.now();
     setGpxName(file.name);
     const reader = new FileReader();
     reader.onload = (ev) => onChange("routeGpx", (ev.target?.result as string) ?? "");
     reader.readAsText(file);
   }
 
-  const handleMapClick = useCallback((lat: number, lng: number) => {
-    onChange("waypointsJson", [...mapWaypoints, { lat, lng, name: `נקודת עצירה ${mapWaypoints.length + 1}`, description: "" }]);
+  const addWaypointAt = useCallback((lat: number, lng: number) => {
+    const idx = mapWaypoints.length;
+    onChange("waypointsJson", [...mapWaypoints, { lat, lng, name: `נקודת עצירה ${idx + 1}`, description: "" }]);
+    setPendingFocus(idx);
   }, [mapWaypoints, onChange]);
+
+  const handleMapClick = useCallback((lat: number, lng: number) => {
+    if (Date.now() - gpxPickedAt.current < 700) return; // ignore post-dialog synthetic click
+    addWaypointAt(lat, lng);
+  }, [addWaypointAt]);
 
   function addWaypoint() {
     // Default near the last point (or Israel's center) — guide fine-tunes on the map / via nav text
     const last = mapWaypoints[mapWaypoints.length - 1];
     const lat = last ? last.lat + 0.003 : 31.5;
     const lng = last ? last.lng + 0.003 : 34.9;
-    onChange("waypointsJson", [...mapWaypoints, { lat, lng, name: `נקודת עצירה ${mapWaypoints.length + 1}`, description: "" }]);
+    addWaypointAt(lat, lng);
   }
 
   function patchWaypoint(i: number, patch: Partial<WaypointData>) {
@@ -159,7 +184,7 @@ export default function Step2({ data, onChange }: Props) {
             <div key={i} className="border border-border rounded-xl p-2.5 flex flex-col gap-1.5">
               <div className="flex items-center gap-2">
                 <span className="text-[#1A6B4A] font-medium text-xs shrink-0">📍 {i + 1}</span>
-                <input type="text" value={wp.name} onChange={(e) => patchWaypoint(i, { name: e.target.value })}
+                <input ref={(el) => { nameInputRefs.current[i] = el; }} type="text" value={wp.name} onChange={(e) => patchWaypoint(i, { name: e.target.value })}
                   placeholder="שם הנקודה" className="flex-1 border border-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-[#1A6B4A]" />
                 <button type="button" onClick={() => removeWaypoint(i)} className="text-fg-faint hover:text-red-400 px-1">✕</button>
               </div>
