@@ -90,11 +90,13 @@ function HeroSlideshow({ images, title }: { images: string[]; title: string }) {
   }
   return (
     <>
+      {/* Stacked images — each fades independently (staggered cross-fade, one at
+          a time), never a synchronized swap. */}
       {images.map((src, i) => (
         // eslint-disable-next-line @next/next/no-img-element
         <img key={i} src={src} alt={title}
-          className="absolute inset-0 w-full h-full object-cover transition-opacity ease-in-out"
-          style={{ opacity: i === idx ? 1 : 0, transitionDuration: "1100ms" }} />
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ opacity: i === idx ? 1 : 0, transition: "opacity 1400ms ease-in-out", willChange: "opacity" }} />
       ))}
       {images.length > 1 && (
         <div className="absolute bottom-24 left-0 right-0 flex justify-center gap-1 z-10">

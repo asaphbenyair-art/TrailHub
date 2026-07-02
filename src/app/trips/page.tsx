@@ -138,15 +138,24 @@ function TripCardHero({ images, title }: { images: string[]; title: string }) {
   const [idx, setIdx] = useState(0);
   useEffect(() => {
     if (images.length <= 1) return;
-    const t = setInterval(() => setIdx((i) => (i + 1) % images.length), 3200);
+    const t = setInterval(() => setIdx((i) => (i + 1) % images.length), 5500);
     return () => clearInterval(t);
   }, [images.length]);
 
-  return images[idx] ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img key={idx} src={images[idx]} alt={title} className="w-full h-full object-cover" style={{ animation: "fadeIn .35s ease" }} />
-  ) : (
-    <div className="w-full h-full" style={{ background: "linear-gradient(160deg,#3d6b35,#1a3d16)" }} />
+  if (images.length === 0) {
+    return <div className="w-full h-full" style={{ background: "linear-gradient(160deg,#3d6b35,#1a3d16)" }} />;
+  }
+  // Stacked images, each with its own independent opacity fade (staggered
+  // cross-fade — one fades out while the next fades in, not a hard swap).
+  return (
+    <>
+      {images.map((src, i) => (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img key={i} src={src} alt={title}
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ opacity: i === idx ? 1 : 0, transition: "opacity 1400ms ease-in-out", willChange: "opacity" }} />
+      ))}
+    </>
   );
 }
 
