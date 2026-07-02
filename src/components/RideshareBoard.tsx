@@ -141,7 +141,8 @@ export default function RideshareBoard({ tripId }: { tripId: string }) {
           const isPoster = o.posterId === meId;
           const iClaimed = o.claims.some((c) => c.userId === meId);
           return (
-            <div key={o.id} className="border border-border rounded-xl p-3 bg-surface-2/50">
+            <div key={o.id} className={`rounded-xl p-3 border ${isPoster ? "border-accent bg-accent/10" : "border-border bg-surface-2/50"}`}>
+              {isPoster && <div className="mb-1.5"><span className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>הטרמפ שלי</span></div>}
               <div className="flex items-center justify-between">
                 <div className="text-sm font-medium text-fg">
                   📍 {o.departureCity} · {o.direction === "ONE_WAY" ? "כיוון אחד" : "הלוך ושוב"}

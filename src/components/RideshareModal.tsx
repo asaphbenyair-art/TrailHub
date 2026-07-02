@@ -169,12 +169,15 @@ export default function RideshareModal({
                       const isPoster = o.posterId === meId;
                       const iClaimed = o.claims.some((c) => c.userId === meId);
                       return (
-                        <div key={o.id} className="border border-border rounded-xl p-3">
+                        <div key={o.id} className={`rounded-xl p-3 border ${isPoster ? "border-accent bg-accent/10" : "border-border"}`}>
                           <div className="flex items-start gap-2.5">
                             <Avatar name={o.poster.name} image={o.poster.image} />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between gap-2">
-                                <div className="text-sm font-medium text-fg truncate">{o.poster.name ?? "משתתף"}</div>
+                                <div className="text-sm font-medium text-fg truncate flex items-center gap-1.5">
+                                  {o.poster.name ?? "משתתף"}
+                                  {isPoster && <span className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold shrink-0" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>הטרמפ שלי</span>}
+                                </div>
                                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ${left > 0 ? "bg-[#D6EDE3] text-[#0F5038]" : "bg-[#FADBD8] text-[#791F1F]"}`}>
                                   {left > 0 ? `${left} מקומות` : "מלא"}
                                 </span>
@@ -230,23 +233,29 @@ export default function RideshareModal({
                   <div className="text-center py-8 text-fg-faint text-xs">אין מחפשי טרמפ כרגע</div>
                 ) : (
                   <div className="flex flex-col gap-2.5">
-                    {seekers.map((s) => (
-                      <div key={s.id} className="border border-border rounded-xl p-3 flex items-center gap-2.5">
+                    {seekers.map((s) => {
+                      const isMe = s.userId === meId;
+                      return (
+                      <div key={s.id} className={`rounded-xl p-3 flex items-center gap-2.5 border ${isMe ? "border-accent bg-accent/10" : "border-border"}`}>
                         <Avatar name={s.name} image={s.image} />
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-fg truncate">{s.name ?? "מטייל"}</div>
+                          <div className="text-sm font-medium text-fg truncate flex items-center gap-1.5">
+                            {s.name ?? "מטייל"}
+                            {isMe && <span className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold shrink-0" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>אני מחפש/ת</span>}
+                          </div>
                           <div className="text-[11px] text-fg-muted flex items-center gap-1">
                             <UserSearch size={11} /> מחפש/ת טרמפ{s.area ? ` · ${s.area}` : ""}
                           </div>
                         </div>
-                        {s.userId !== meId && (
+                        {!isMe && (
                           <button type="button" onClick={() => openChat(s.userId)}
                             className="py-1.5 px-3 rounded-full text-xs font-medium text-white bg-[#185FA5] hover:bg-[#134e73] flex items-center gap-1.5 shrink-0">
                             <MessageCircle size={13} /> פתח צ׳אט
                           </button>
                         )}
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )
               )}

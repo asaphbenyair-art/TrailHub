@@ -274,7 +274,8 @@ export default function TripDetailPage() {
   const [myRegId, setMyRegId] = useState<string | null>(null);
   const [myRegPos, setMyRegPos] = useState<number | null>(null);
   const [coupon, setCoupon] = useState("");
-  const [couponMsg, setCouponMsg] = useState<string | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [couponResult, setCouponResult] = useState<{ original: number; newTotal: number; discountPct: number; refund: number } | null>(null);
   const [following, setFollowing] = useState(false);
   const [fav, setFav] = useState(false);
   const [purchase, setPurchase] = useState<{ purchased: boolean; expired?: boolean } | null>(null);
@@ -293,8 +294,20 @@ export default function TripDetailPage() {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: coupon.trim() }),
     });
     const d = await res.json().catch(() => ({}));
-    setCouponMsg(res.ok ? `הקוד הוחל! זוכית ב-₪${d.refund} (${d.discountPct}%).` : (d.error ?? "שגיאה"));
-    if (res.ok) setCoupon("");
+    if (res.ok) {
+      const original = trip?.price ?? 0;
+      setCouponResult({
+        original,
+        newTotal: d.newTotal ?? Math.max(original - (d.refund ?? 0), 0),
+        discountPct: d.discountPct ?? 0,
+        refund: d.refund ?? 0,
+      });
+      setCouponError(null);
+      setCoupon("");
+    } else {
+      setCouponResult(null);
+      setCouponError(d.error ?? "קוד לא תקין");
+    }
   }
   const [sourcesOpen, setSourcesOpen] = useState(false); // closed by default (spec)
   const [copied, setCopied] = useState(false);
@@ -951,7 +964,16 @@ export default function TripDetailPage() {
                 <button type="button" onClick={applyCoupon} disabled={!coupon.trim()}
                   className="px-4 rounded-lg text-sm font-medium disabled:opacity-50" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>החל</button>
               </div>
-              {couponMsg && <div className="text-xs mt-1.5" style={{ color: couponMsg.includes("שגיאה") || couponMsg.includes("לא") || couponMsg.includes("כבר") || couponMsg.includes("פג") || couponMsg.includes("מוצה") ? "var(--danger)" : "var(--accent)" }}>{couponMsg}</div>}
+              {couponError && <div className="text-xs mt-1.5" style={{ color: "var(--danger)" }}>{couponError}</div>}
+              {couponResult && (
+                <div className="mt-2 rounded-lg p-2.5 bg-accent/10 border border-accent/30 flex items-center gap-2 flex-wrap">
+                  <span className="text-sm text-fg-faint line-through">₪{couponResult.original.toLocaleString("he-IL")}</span>
+                  <span className="text-base font-semibold" style={{ color: "var(--accent)" }}>₪{couponResult.newTotal.toLocaleString("he-IL")}</span>
+                  <span className="text-[11px] px-2 py-0.5 rounded-full font-semibold" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
+                    -{couponResult.discountPct}% · חסכת ₪{couponResult.refund.toLocaleString("he-IL")}
+                  </span>
+                </div>
+              )}
             </div>
           )}
 
