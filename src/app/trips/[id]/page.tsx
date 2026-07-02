@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import RideshareBoard from "@/components/RideshareBoard";
@@ -239,6 +239,8 @@ export default function TripDetailPage() {
   const [fav, setFav] = useState(false);
   const [purchase, setPurchase] = useState<{ purchased: boolean; expired?: boolean } | null>(null);
   const [showLoc, setShowLoc] = useState(false);
+  const [focusWp, setFocusWp] = useState<number | null>(null);
+  const mapWrapRef = useRef<HTMLDivElement>(null);
   const [sourcesOpen, setSourcesOpen] = useState(false); // closed by default (spec)
   const [copied, setCopied] = useState(false);
   const [drawer, setDrawer] = useState<Waypoint | null>(null);
@@ -584,11 +586,11 @@ export default function TripDetailPage() {
             </div>
           )}
 
-          {/* ── 10. Map + waypoints (tap → drawer) ── */}
+          {/* ── 10. Map + waypoints (tap row → pan map; details → drawer) ── */}
           <div>
             <Heading icon={MapPin}>{isSelfGuided ? "מסלול" : "מסלול ותחנות"}</Heading>
-            <div className="rounded-2xl overflow-hidden border border-border">
-              <TripDetailMap region={trip.region} meetingPoint={trip.meetingPoint} waypoints={parsedWaypoints} height={190} liveLocation={showLoc} />
+            <div ref={mapWrapRef} className="rounded-2xl overflow-hidden border border-border">
+              <TripDetailMap region={trip.region} meetingPoint={trip.meetingPoint} waypoints={parsedWaypoints} height={190} liveLocation={showLoc} focusWaypoint={focusWp} />
             </div>
             <button type="button" onClick={() => setShowLoc((v) => !v)}
               className="mt-2 text-xs rounded-full px-3 py-1.5 inline-flex items-center gap-1.5"
@@ -601,24 +603,46 @@ export default function TripDetailPage() {
                 {parsedWaypoints.map((wp, i) => {
                   const isFirst = i === 0, isLast = i === parsedWaypoints.length - 1;
                   const dotBg = isFirst ? "#2C5F8A" : isLast ? "#C0392B" : "var(--accent)";
-                  const dotLabel = isFirst ? "פ" : isLast ? "ס" : String(i);
                   const hasMore = !!(wp.description || (wp.sources && wp.sources.length));
+                  const canFocus = Number.isFinite(wp.lat) && (wp.lat !== 0 || wp.lng !== 0);
+                  function onRow() {
+                    if (canFocus) {
+                      setFocusWp(i);
+                      mapWrapRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    } else {
+                      setDrawer(wp);
+                    }
+                  }
                   return (
-                    <button key={i} type="button" onClick={() => setDrawer(wp)}
-                      className="flex gap-3 py-2.5 border-b border-border last:border-b-0 text-right">
-                      <div className="flex flex-col items-center shrink-0">
-                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-medium text-white" style={{ background: dotBg }}>{dotLabel}</div>
-                        {!isLast && <div className="w-[1.5px] flex-1 mt-1" style={{ background: "var(--border)", minHeight: 14 }} />}
-                      </div>
-                      <div className="flex-1 min-w-0 pb-1">
-                        <div className="text-sm font-medium text-fg flex items-center gap-1.5">
-                          {wp.label || `נקודה ${i + 1}`}
-                          {wp.sources && wp.sources.length > 0 && <BookOpen size={12} style={{ color: "var(--accent)" }} />}
+                    <div key={i} className="flex gap-3 py-2.5 border-b border-border last:border-b-0">
+                      <button type="button" onClick={onRow} className="flex gap-3 flex-1 min-w-0 text-right items-start">
+                        <div className="flex flex-col items-center shrink-0">
+                          <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-semibold text-white" style={{ background: dotBg }}>{i + 1}</div>
+                          {!isLast && <div className="w-[1.5px] flex-1 mt-1" style={{ background: "var(--border)", minHeight: 14 }} />}
                         </div>
-                        {wp.description && <div className="text-xs text-fg-faint mt-0.5 line-clamp-1">{wp.description}</div>}
+                        <div className="flex-1 min-w-0 pb-1">
+                          <div className="text-sm font-medium text-fg flex items-center gap-1.5">
+                            {wp.label || `נקודה ${i + 1}`}
+                            {wp.sources && wp.sources.length > 0 && <BookOpen size={12} style={{ color: "var(--accent)" }} />}
+                          </div>
+                          {wp.description && <div className="text-xs text-fg-faint mt-0.5 line-clamp-1">{wp.description}</div>}
+                        </div>
+                      </button>
+                      <div className="flex items-center gap-1 self-center shrink-0">
+                        {canFocus && (
+                          <button type="button" onClick={onRow} aria-label="הצג במפה"
+                            className="text-[11px] rounded-full px-2 py-1 inline-flex items-center gap-1"
+                            style={{ border: "1px solid var(--border)", color: "var(--accent)" }}>
+                            <MapPin size={11} /> במפה
+                          </button>
+                        )}
+                        {hasMore && (
+                          <button type="button" onClick={() => setDrawer(wp)} aria-label="פרטים" className="text-fg-faint p-1">
+                            <ChevronDown size={15} className="-rotate-90" />
+                          </button>
+                        )}
                       </div>
-                      {hasMore && <ChevronDown size={15} className="text-fg-faint self-center -rotate-90" />}
-                    </button>
+                    </div>
                   );
                 })}
               </div>

@@ -47,8 +47,10 @@ export default function TripDetailMap({
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
-  const markerRefs = useRef<L.Marker[]>([]);
+  const markerRefs = useRef<(L.Marker | null)[]>([]);
+  const routeLineRef = useRef<L.Polyline | null>(null);
   const dotRef = useRef<L.CircleMarker | null>(null);
+  const wpKeyRef = useRef<string>("");
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -86,16 +88,60 @@ export default function TripDetailMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sync waypoint markers
+  // Sync waypoint markers — numbered pins along the route + connecting line
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
-    markerRefs.current.forEach((m) => m.remove());
-    markerRefs.current = waypoints.map((wp, i) =>
-      L.marker([wp.lat, wp.lng])
-        .bindPopup(`<div dir="rtl" style="font-size:12px">📍 ${wp.label || `נקודה ${i + 1}`}</div>`)
-        .addTo(map)
-    );
+
+    // Only rebuild when the waypoint data actually changes (the parent passes a
+    // fresh array each render — without this the view would reset every render).
+    const key = waypoints.map((w) => `${w.lat},${w.lng},${w.label}`).join("|");
+    if (key === wpKeyRef.current) return;
+    wpKeyRef.current = key;
+
+    // Clear previous markers + route line
+    markerRefs.current.forEach((m) => m?.remove());
+    markerRefs.current = [];
+    if (routeLineRef.current) { routeLineRef.current.remove(); routeLineRef.current = null; }
+
+    const hasCoord = (wp: { lat: number; lng: number }) =>
+      Number.isFinite(wp.lat) && Number.isFinite(wp.lng) && (wp.lat !== 0 || wp.lng !== 0);
+
+    const validPts: [number, number][] = [];
+
+    // Route line connecting all valid waypoints in order
+    const linePts = waypoints.filter(hasCoord).map((wp) => [wp.lat, wp.lng] as [number, number]);
+    if (linePts.length >= 2) {
+      routeLineRef.current = L.polyline(linePts, {
+        color: "#1A6B4A", weight: 3, opacity: 0.75, dashArray: "6 8",
+      }).addTo(map);
+    }
+
+    // One numbered pin per waypoint (index aligned to the list below the map)
+    markerRefs.current = waypoints.map((wp, i) => {
+      if (!hasCoord(wp)) return null;
+      const isFirst = i === 0;
+      const isLast = i === waypoints.length - 1;
+      const bg = isFirst ? "#2C5F8A" : isLast ? "#C0392B" : "#1A6B4A";
+      const icon = L.divIcon({
+        className: "",
+        html: `<div style="background:${bg};color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.45)">${i + 1}</div>`,
+        iconSize: [26, 26],
+        iconAnchor: [13, 13],
+        popupAnchor: [0, -14],
+      });
+      validPts.push([wp.lat, wp.lng]);
+      return L.marker([wp.lat, wp.lng], { icon })
+        .bindPopup(`<div dir="rtl" style="font-size:12px"><b>${i + 1}. ${wp.label || `נקודה ${i + 1}`}</b></div>`)
+        .addTo(map);
+    });
+
+    // Zoom the map to show all waypoints at once
+    if (validPts.length >= 2) {
+      map.fitBounds(L.latLngBounds(validPts), { padding: [32, 32], maxZoom: 15 });
+    } else if (validPts.length === 1) {
+      map.setView(validPts[0], 14);
+    }
   }, [waypoints, ready]);
 
   // Pan/zoom to a waypoint when its card is tapped (self-guided content view)
