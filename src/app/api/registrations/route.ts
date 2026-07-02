@@ -28,7 +28,10 @@ export async function POST(req: NextRequest) {
 
   if (!tripId) return NextResponse.json({ error: "חסר tripId" }, { status: 400 });
 
-  const trip = await prisma.trip.findUnique({ where: { id: tripId } });
+  const trip = await prisma.trip.findUnique({
+    where: { id: tripId },
+    include: { guide: { select: { userId: true } } },
+  });
   if (!trip) return NextResponse.json({ error: "טיול לא נמצא" }, { status: 404 });
 
   // Health declaration is mandatory to register when the guide attached one.
@@ -134,6 +137,20 @@ export async function POST(req: NextRequest) {
 
   if (type === "REGISTER" && !trip.unlimitedCapacity) {
     await prisma.trip.update({ where: { id: tripId }, data: { spotsBooked: { increment: count } } });
+  }
+
+  // Notify the guide about a new registrant → deep-links to the registrant list.
+  if (type === "REGISTER" && trip.guide.userId !== userId) {
+    await prisma.notification.create({
+      data: {
+        userId: trip.guide.userId,
+        tripId,
+        type: "NEW_MESSAGE",
+        title: "נרשם משתתף חדש",
+        body: `${session.user.name ?? "מטייל"} נרשם לטיול "${trip.title}"${count > 1 ? ` (${count} משתתפים)` : ""}.`,
+        link: `/guide/trips/${tripId}/registrants`,
+      },
+    });
   }
 
   return NextResponse.json(reg, { status: 201 });
