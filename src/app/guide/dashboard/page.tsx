@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import NotificationBell from "@/components/NotificationBell";
 import ModeSwitch from "@/components/ModeSwitch";
+import { googleCalendarUrl } from "@/lib/calendar";
 import { coverImages } from "@/lib/tripImage";
 import { useDateFmt } from "@/components/CalendarModeProvider";
 import Brand from "@/components/Brand";
 import ThemeToggle from "@/components/ThemeToggle";
+import RegistrantsModal from "@/components/RegistrantsModal";
 
 const DIFF_BADGE: Record<string, { bg: string; color: string; label: string }> = {
   EASY: { bg: "#EAF3DE", color: "#27500A", label: "קל" },
@@ -73,8 +75,10 @@ export default function GuideDashboard() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [tab, setTab] = useState<"trips" | "selfguided" | "stats">("trips");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [selfGuided, setSelfGuided] = useState<SelfGuidedTrip[]>([]);
   const [publishId, setPublishId] = useState<string | null>(null);
+  const [registrantsModal, setRegistrantsModal] = useState<{ id: string; title: string } | null>(null);
 
   async function publish(tripId: string, visibility: "PUBLIC" | "PRIVATE") {
     const res = await fetch(`/api/guide/trips/${tripId}/publish`, {
@@ -86,6 +90,36 @@ export default function GuideDashboard() {
       setSelfGuided((prev) => prev.map((t) => t.id === tripId ? { ...t, status: "OPEN" } : t));
       setPublishId(null);
     }
+  }
+
+  async function broadcast(tripId: string) {
+    const message = window.prompt("הודעה לכל הנרשמים:");
+    if (!message?.trim()) return;
+    const res = await fetch(`/api/guide/trips/${tripId}/broadcast`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message }),
+    });
+    const d = await res.json().catch(() => ({}));
+    window.alert(res.ok ? `ההודעה נשלחה ל-${d.sent ?? 0} נרשמים` : (d.error ?? "שגיאה"));
+  }
+
+  async function postpone(tripId: string) {
+    const category = window.prompt("סיבת הדחייה (מזג אוויר / מחלה / אישי / אחר):");
+    if (!category?.trim()) return;
+    const reason = window.prompt("פירוט (אופציונלי):") ?? "";
+    const res = await fetch(`/api/guide/trips/${tripId}/postpone`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ category, reason }),
+    });
+    if (res.ok) { setTrips((prev) => prev.map((t) => t.id === tripId ? { ...t, status: "POSTPONED" } : t)); }
+  }
+
+  function copyLink(tripId: string) {
+    const url = `${window.location.origin}/trips/${tripId}`;
+    navigator.clipboard?.writeText(url).then(() => {
+      setCopiedId(tripId);
+      setTimeout(() => setCopiedId(null), 1500);
+    }).catch(() => {});
   }
 
   const loadTrips = useCallback(async () => {
@@ -259,11 +293,11 @@ export default function GuideDashboard() {
                 key={trip.id}
                 className={`bg-surface rounded-2xl overflow-hidden border border-border shadow-sm ${isPast ? "opacity-60" : ""}`}
               >
-                {/* Image → trip management page */}
+                {/* Image */}
                 <div
                   className="relative cursor-pointer"
                   style={{ height: 150 }}
-                  onClick={() => router.push(`/guide/trips/${trip.id}/registrants`)}
+                  onClick={() => router.push(`/trips/${trip.id}`)}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={coverImages(trip.images, trip.id, { region: trip.region, title: trip.title })[0]} alt={trip.title} className="w-full h-full object-cover" />
@@ -335,11 +369,8 @@ export default function GuideDashboard() {
                   </div>
                 )}
 
-                {/* Card body — only name/date/capacity/status; actions live in the management page */}
-                <div
-                  className="px-3 py-2.5 cursor-pointer"
-                  onClick={() => router.push(`/guide/trips/${trip.id}/registrants`)}
-                >
+                {/* Card body */}
+                <div className="px-3 py-2.5">
                   <div className="flex flex-wrap gap-x-2.5 gap-y-0.5 mb-2">
                     <span className="text-[11px] text-fg-muted">📅 {dfmt(trip.date, { greg: { weekday: "short", day: "numeric", month: "short" } })}</span>
                     <span className="text-[11px] text-fg-muted">🕐 {trip.startTime}</span>
@@ -359,10 +390,14 @@ export default function GuideDashboard() {
                       ₪{trip.price.toLocaleString("he-IL")}
                       <span className="text-xs font-normal text-fg-faint mr-1">לאדם</span>
                     </span>
-                    <span className="text-xs text-fg-faint">{trip.spotsBooked}/{trip.maxSpots} רשומים</span>
+                    <button type="button"
+                      onClick={(e) => { e.stopPropagation(); setRegistrantsModal({ id: trip.id, title: trip.title }); }}
+                      className="text-xs text-[#1A6B4A] font-medium hover:underline">
+                      נרשמים · {trip.spotsBooked}/{trip.maxSpots}
+                    </button>
                   </div>
 
-                  {/* Move a draft to published — choose Public or Private (status action) */}
+                  {/* Move a draft to published — choose Public or Private */}
                   {(trip.status === "DRAFT" || trip.status === "PENDING_REVIEW" || trip.status === "REJECTED") && (
                     publishId === trip.id ? (
                       <div className="mt-2 flex gap-2" onClick={(e) => e.stopPropagation()}>
@@ -379,12 +414,61 @@ export default function GuideDashboard() {
                       </button>
                     )
                   )}
+
+                  {/* Communication links */}
+                  <div className="flex gap-2 mt-2.5 pt-2.5 border-t border-border">
+                    <Link
+                      href={`/guide/trips/${trip.id}/registrants`}
+                      className="flex-1 text-center text-[11px] text-[#7A5010] border border-[#E8A020]/30 bg-[#FDF6E8] rounded-lg py-1.5 hover:bg-[#FBEFD5] transition-colors"
+                    >
+                      👥 נרשמים
+                    </Link>
+                    <Link
+                      href={`/guide/trips/${trip.id}/qa`}
+                      className="flex-1 text-center text-[11px] text-[#1A6B4A] border border-[#1A6B4A]/25 bg-[#F0FAF5] rounded-lg py-1.5 hover:bg-[#D6EDE3] transition-colors"
+                    >
+                      💬 שאלות
+                    </Link>
+                  </div>
+
+                  {/* Broadcast + private link */}
+                  {(trip.status === "OPEN" || trip.status === "FULL") && (
+                    <div className="flex gap-2 mt-2">
+                      <button type="button" onClick={() => broadcast(trip.id)}
+                        className="flex-1 text-center text-[11px] text-fg-muted border border-border rounded-lg py-1.5 hover:bg-surface-2 transition-colors">
+                        📢 הודעה לקבוצה
+                      </button>
+                      <button type="button" onClick={() => postpone(trip.id)}
+                        className="flex-1 text-center text-[11px] text-[#7A5010] border border-[#E8A020]/40 rounded-lg py-1.5 hover:bg-[#FDF6E8] transition-colors">
+                        ⏸ דחה
+                      </button>
+                      <a href={googleCalendarUrl({ title: trip.title, dateISO: trip.date, startTime: trip.startTime, location: trip.region })}
+                        target="_blank" rel="noreferrer"
+                        className="flex-1 text-center text-[11px] text-[#185FA5] border border-[#185FA5]/30 rounded-lg py-1.5 hover:bg-[#EEF5FC] transition-colors">
+                        📅 ליומן
+                      </a>
+                      {trip.visibility === "PRIVATE" && (
+                        <button type="button" onClick={() => copyLink(trip.id)}
+                          className="flex-1 text-center text-[11px] text-[#185FA5] border border-[#185FA5]/25 rounded-lg py-1.5 hover:bg-[#EEF5FC] transition-colors">
+                          {copiedId === trip.id ? "✓ הועתק" : "🔗 העתק לינק"}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
       </div>
+
+      {registrantsModal && (
+        <RegistrantsModal
+          tripId={registrantsModal.id}
+          tripTitle={registrantsModal.title}
+          onClose={() => setRegistrantsModal(null)}
+        />
+      )}
     </div>
   );
 }
