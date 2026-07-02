@@ -167,6 +167,7 @@ model User {
   favorites     FavoriteTrip[]
   notifications        Notification[]
   questions            TripQuestion[]
+  questionReplies      TripQuestionReply[]
   sentMessages         ChatMessage[] @relation("SentMessages")
   receivedMessages     ChatMessage[] @relation("ReceivedMessages")
   follows              GuideFollow[]
@@ -471,8 +472,23 @@ model TripQuestion {
 
   trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replies TripQuestionReply[]
 
   @@index([tripId])
+}
+
+// Threaded follow-up replies on a Q&A question (hiker ↔ guide back-and-forth).
+model TripQuestionReply {
+  id         String   @id @default(cuid())
+  questionId String
+  userId     String
+  body       String   @db.Text
+  createdAt  DateTime @default(now())
+
+  question TripQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
 }
 
 model ChatMessage {

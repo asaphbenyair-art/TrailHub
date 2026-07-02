@@ -10,7 +10,13 @@ export async function GET(
 
   const questions = await prisma.tripQuestion.findMany({
     where: { tripId: id },
-    include: { user: { select: { name: true, image: true } } },
+    include: {
+      user: { select: { name: true, image: true } },
+      replies: {
+        include: { user: { select: { name: true, image: true } } },
+        orderBy: { createdAt: "asc" },
+      },
+    },
     orderBy: { createdAt: "asc" },
   });
 
@@ -48,6 +54,7 @@ export async function POST(
         type: "NEW_MESSAGE",
         title: "שאלה חדשה על הטיול",
         body: `בטיול "${trip.title}": ${body.trim().slice(0, 60)}`,
+        link: `/guide/trips/${id}/qa`,
       },
     });
   }

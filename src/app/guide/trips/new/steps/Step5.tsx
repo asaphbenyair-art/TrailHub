@@ -3,10 +3,11 @@
 import { WizardData } from "../types";
 import SourceMaterialsEditor from "./SourceMaterialsEditor";
 
+// Order (RTL, right→left): טיוטה → פרסום פרטי → ציבורי
 const PUBLISH_OPTIONS = [
   { key: "DRAFT",   status: "DRAFT", visibility: "PUBLIC",  icon: "📄", label: "טיוטה", desc: "שמור, גלוי רק לך" },
-  { key: "PUBLIC",  status: "OPEN",  visibility: "PUBLIC",  icon: "🌍", label: "פרסום ציבורי", desc: "גלוי בחיפוש" },
   { key: "PRIVATE", status: "OPEN",  visibility: "PRIVATE", icon: "🔗", label: "פרסום פרטי", desc: "רק דרך לינק ישיר" },
+  { key: "PUBLIC",  status: "OPEN",  visibility: "PUBLIC",  icon: "🌍", label: "פרסום ציבורי", desc: "גלוי בחיפוש" },
 ] as const;
 
 const DIFFICULTY_LABELS: Record<string, string> = {

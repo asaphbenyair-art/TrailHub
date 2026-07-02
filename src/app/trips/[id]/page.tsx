@@ -353,13 +353,18 @@ export default function TripDetailPage() {
     await fetch(`/api/guides/${guideId}/follow`, { method: next ? "POST" : "DELETE" }).catch(() => setFollowing(!next));
   }
 
+  interface QReply { id: string; body: string; createdAt: string; userId: string; user: { name: string | null; image: string | null } }
   interface Question {
-    id: string; body: string; answer: string | null; answeredAt: string | null;
+    id: string; userId: string; body: string; answer: string | null; answeredAt: string | null;
     createdAt: string; official?: boolean; user: { name: string | null; image: string | null };
+    replies?: QReply[];
   }
   const [questions, setQuestions] = useState<Question[]>([]);
   const [qaBody, setQaBody] = useState("");
   const [qaLoading, setQaLoading] = useState(false);
+  const [replyBody, setReplyBody] = useState<Record<string, string>>({});
+  const [replyBusy, setReplyBusy] = useState<string | null>(null);
+  const meId = (session?.user as { id?: string })?.id;
 
   useEffect(() => {
     fetch(`/api/trips/${id}`).then((r) => r.json())
@@ -377,10 +382,24 @@ export default function TripDetailPage() {
       }).catch(() => {});
   }, [session, id]);
 
-  useEffect(() => {
+  function loadQuestions() {
     fetch(`/api/trips/${id}/questions`).then((r) => r.json())
       .then((data) => { if (Array.isArray(data)) setQuestions(data); }).catch(() => {});
-  }, [id]);
+  }
+  useEffect(() => { loadQuestions(); }, [id]);
+
+  async function submitReply(qid: string) {
+    const text = (replyBody[qid] ?? "").trim();
+    if (!text || replyBusy) return;
+    setReplyBusy(qid);
+    try {
+      const res = await fetch(`/api/trips/${id}/questions/${qid}/reply`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body: text }),
+      });
+      if (res.ok) { setReplyBody((p) => ({ ...p, [qid]: "" })); loadQuestions(); }
+    } finally { setReplyBusy(null); }
+  }
 
   async function submitQuestion() {
     if (!qaBody.trim() || qaLoading) return;
@@ -786,6 +805,34 @@ export default function TripDetailPage() {
                         <div className="mt-2 pr-3 border-r-2" style={{ borderColor: "var(--accent)" }}>
                           <div className="text-[10px] text-accent font-medium mb-0.5">תשובת המדריך</div>
                           <p className="text-xs text-fg-muted">{q.answer}</p>
+                        </div>
+                      )}
+                      {/* Threaded follow-up replies */}
+                      {q.replies && q.replies.length > 0 && (
+                        <div className="mt-2 pr-3 border-r border-border flex flex-col gap-2">
+                          {q.replies.map((rp) => (
+                            <div key={rp.id}>
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-medium text-white" style={{ background: avatarColor(rp.user.name) }}>{initials(rp.user.name)}</div>
+                                <span className="text-[11px] font-medium text-fg">{rp.user.name ?? "מטייל"}</span>
+                                <span className="text-[9px] text-fg-faint mr-auto">{new Date(rp.createdAt).toLocaleDateString("he-IL")}</span>
+                              </div>
+                              <p className="text-xs text-fg-muted pr-6 mt-0.5">{rp.body}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {/* Reply box — the asker can continue the thread after an answer/reply */}
+                      {session && q.answer && meId === q.userId && (
+                        <div className="mt-2 flex gap-2">
+                          <input value={replyBody[q.id] ?? ""} onChange={(e) => setReplyBody((p) => ({ ...p, [q.id]: e.target.value }))}
+                            onKeyDown={(e) => { if (e.key === "Enter") submitReply(q.id); }}
+                            placeholder="הגב בשרשור…"
+                            className="flex-1 rounded-lg px-2.5 py-1.5 text-xs bg-surface-2 border border-border text-fg placeholder:text-fg-faint focus:outline-none focus:border-accent" />
+                          <button type="button" onClick={() => submitReply(q.id)} disabled={!(replyBody[q.id] ?? "").trim() || replyBusy === q.id}
+                            className="px-3 py-1.5 text-xs rounded-lg font-medium disabled:opacity-50" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
+                            {replyBusy === q.id ? "…" : "הגב"}
+                          </button>
                         </div>
                       )}
                     </div>

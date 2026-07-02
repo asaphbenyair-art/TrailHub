@@ -10,6 +10,7 @@ import { coverImages } from "@/lib/tripImage";
 import { useDateFmt } from "@/components/CalendarModeProvider";
 import Brand from "@/components/Brand";
 import ThemeToggle from "@/components/ThemeToggle";
+import RegistrantsModal from "@/components/RegistrantsModal";
 
 const DIFF_BADGE: Record<string, { bg: string; color: string; label: string }> = {
   EASY: { bg: "#EAF3DE", color: "#27500A", label: "קל" },
@@ -77,6 +78,7 @@ export default function GuideDashboard() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [selfGuided, setSelfGuided] = useState<SelfGuidedTrip[]>([]);
   const [publishId, setPublishId] = useState<string | null>(null);
+  const [registrantsModal, setRegistrantsModal] = useState<{ id: string; title: string } | null>(null);
 
   async function publish(tripId: string, visibility: "PUBLIC" | "PRIVATE") {
     const res = await fetch(`/api/guide/trips/${tripId}/publish`, {
@@ -222,8 +224,8 @@ export default function GuideDashboard() {
                   {(t.status === "DRAFT" || t.status === "PENDING_REVIEW") && (
                     publishId === t.id ? (
                       <div className="flex gap-2 mt-2">
-                        <button type="button" onClick={() => publish(t.id, "PUBLIC")} className="flex-1 py-1.5 text-[11px] font-semibold rounded-lg bg-[#1A6B4A] text-white">🌍 ציבורי</button>
                         <button type="button" onClick={() => publish(t.id, "PRIVATE")} className="flex-1 py-1.5 text-[11px] font-semibold rounded-lg border border-[#185FA5] text-[#185FA5]">🔒 פרטי</button>
+                        <button type="button" onClick={() => publish(t.id, "PUBLIC")} className="flex-1 py-1.5 text-[11px] font-semibold rounded-lg bg-[#1A6B4A] text-white">🌍 ציבורי</button>
                         <button type="button" onClick={() => setPublishId(null)} className="px-2 text-[11px] text-fg-faint">✕</button>
                       </div>
                     ) : (
@@ -388,17 +390,21 @@ export default function GuideDashboard() {
                       ₪{trip.price.toLocaleString("he-IL")}
                       <span className="text-xs font-normal text-fg-faint mr-1">לאדם</span>
                     </span>
-                    <span className="text-xs text-fg-faint">{trip.spotsBooked}/{trip.maxSpots} מקומות</span>
+                    <button type="button"
+                      onClick={(e) => { e.stopPropagation(); setRegistrantsModal({ id: trip.id, title: trip.title }); }}
+                      className="text-xs text-[#1A6B4A] font-medium hover:underline">
+                      נרשמים · {trip.spotsBooked}/{trip.maxSpots}
+                    </button>
                   </div>
 
                   {/* Move a draft to published — choose Public or Private */}
                   {(trip.status === "DRAFT" || trip.status === "PENDING_REVIEW" || trip.status === "REJECTED") && (
                     publishId === trip.id ? (
                       <div className="mt-2 flex gap-2" onClick={(e) => e.stopPropagation()}>
-                        <button type="button" onClick={() => publish(trip.id, "PUBLIC")}
-                          className="flex-1 py-1.5 text-xs font-semibold rounded-full bg-[#1A6B4A] text-white hover:bg-[#155a3e]">🌍 ציבורי</button>
                         <button type="button" onClick={() => publish(trip.id, "PRIVATE")}
                           className="flex-1 py-1.5 text-xs font-semibold rounded-full border border-[#185FA5] text-[#185FA5] hover:bg-[#EEF5FC]">🔒 פרטי</button>
+                        <button type="button" onClick={() => publish(trip.id, "PUBLIC")}
+                          className="flex-1 py-1.5 text-xs font-semibold rounded-full bg-[#1A6B4A] text-white hover:bg-[#155a3e]">🌍 ציבורי</button>
                         <button type="button" onClick={() => setPublishId(null)} className="px-2 text-xs text-fg-faint">✕</button>
                       </div>
                     ) : (
@@ -461,6 +467,14 @@ export default function GuideDashboard() {
           })}
         </div>
       </div>
+
+      {registrantsModal && (
+        <RegistrantsModal
+          tripId={registrantsModal.id}
+          tripTitle={registrantsModal.title}
+          onClose={() => setRegistrantsModal(null)}
+        />
+      )}
     </div>
   );
 }

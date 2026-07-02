@@ -4,13 +4,16 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
+interface QReply { id: string; body: string; createdAt: string; userId: string; user: { name: string | null; image: string | null } }
 interface Question {
   id: string;
+  userId: string;
   body: string;
   answer: string | null;
   answeredAt: string | null;
   createdAt: string;
   user: { name: string | null; image: string | null };
+  replies?: QReply[];
 }
 
 const AVATAR_COLORS = ["#854F0B", "#3B6D11", "#185FA5", "#6B3B87", "#1A6B4A"];
@@ -34,22 +37,41 @@ export default function GuideQAPage() {
   const [tripTitle, setTripTitle] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<Record<string, boolean>>({});
+  const [replyBody, setReplyBody] = useState<Record<string, string>>({});
+  const [replyBusy, setReplyBusy] = useState<string | null>(null);
+  const meId = (session?.user as { id?: string })?.id;
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/auth/login");
   }, [status, router]);
+
+  function loadQuestions() {
+    fetch(`/api/trips/${tripId}/questions`)
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setQuestions(data); })
+      .catch(() => {});
+  }
 
   useEffect(() => {
     fetch(`/api/trips/${tripId}`)
       .then((r) => r.json())
       .then((d) => { if (d.title) setTripTitle(d.title); })
       .catch(() => {});
-
-    fetch(`/api/trips/${tripId}/questions`)
-      .then((r) => r.json())
-      .then((data) => { if (Array.isArray(data)) setQuestions(data); })
-      .catch(() => {});
+    loadQuestions();
   }, [tripId]);
+
+  async function submitReply(qid: string) {
+    const text = (replyBody[qid] ?? "").trim();
+    if (!text || replyBusy) return;
+    setReplyBusy(qid);
+    try {
+      const res = await fetch(`/api/trips/${tripId}/questions/${qid}/reply`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body: text }),
+      });
+      if (res.ok) { setReplyBody((p) => ({ ...p, [qid]: "" })); loadQuestions(); }
+    } finally { setReplyBusy(null); }
+  }
 
   async function submitAnswer(qid: string) {
     const answer = answers[qid]?.trim();
@@ -161,6 +183,32 @@ export default function GuideQAPage() {
                 <div className="pr-3 border-r-2 border-[#1A6B4A]">
                   <div className="text-[10px] text-[#1A6B4A] font-medium mb-0.5">תשובתך</div>
                   <p className="text-xs text-fg">{q.answer}</p>
+                </div>
+                {/* Thread of follow-up replies */}
+                {q.replies && q.replies.length > 0 && (
+                  <div className="mt-2 pr-3 border-r border-border flex flex-col gap-2">
+                    {q.replies.map((rp) => (
+                      <div key={rp.id}>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-medium text-white" style={{ background: avatarColor(rp.user.name) }}>{initials(rp.user.name)}</div>
+                          <span className="text-[11px] font-medium text-fg">{rp.userId === meId ? "אתה" : (rp.user.name ?? "מטייל")}</span>
+                          <span className="text-[9px] text-fg-faint mr-auto">{new Date(rp.createdAt).toLocaleDateString("he-IL")}</span>
+                        </div>
+                        <p className="text-xs text-fg-muted pr-6 mt-0.5">{rp.body}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {/* Continue the thread */}
+                <div className="mt-2 flex gap-2">
+                  <input value={replyBody[q.id] ?? ""} onChange={(e) => setReplyBody((p) => ({ ...p, [q.id]: e.target.value }))}
+                    onKeyDown={(e) => { if (e.key === "Enter") submitReply(q.id); }}
+                    placeholder="הגב בשרשור…"
+                    className="flex-1 rounded-lg px-2.5 py-1.5 text-xs bg-surface-2 border border-border text-fg placeholder:text-fg-faint focus:outline-none focus:border-[#1A6B4A]" />
+                  <button type="button" onClick={() => submitReply(q.id)} disabled={!(replyBody[q.id] ?? "").trim() || replyBusy === q.id}
+                    className="px-3 py-1.5 text-xs rounded-lg font-medium bg-[#1A6B4A] text-white disabled:opacity-50">
+                    {replyBusy === q.id ? "…" : "הגב"}
+                  </button>
                 </div>
               </div>
             ))}
