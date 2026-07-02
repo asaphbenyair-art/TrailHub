@@ -154,6 +154,7 @@ interface TripDay {
 }
 
 function JourneyTimeline({ days }: { days: TripDay[] }) {
+  const dfmt = useDateFmt();
   const [open, setOpen] = useState<number | null>(days[0]?.dayNumber ?? null);
   return (
     <div>
@@ -174,7 +175,7 @@ function JourneyTimeline({ days }: { days: TripDay[] }) {
                     {d.isRestDay ? "🛖 " : ""}{d.title || `יום ${d.dayNumber}`}
                   </div>
                   <div className="text-[11px] text-fg-faint">
-                    {d.date ? new Date(d.date).toLocaleDateString("he-IL", { weekday: "short", day: "numeric", month: "short" }) : ""}
+                    {d.date ? dfmt(d.date, { greg: { weekday: "short", day: "numeric", month: "short" } }) : ""}
                     {d.startTime ? ` · ${d.startTime}` : ""}
                     {!d.isRestDay && d.distanceKm ? ` · ${d.distanceKm} ק״מ` : ""}
                   </div>

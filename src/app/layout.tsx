@@ -4,6 +4,7 @@ import "./globals.css";
 import Providers from "@/components/Providers";
 import BottomNav from "@/components/BottomNav";
 import { CalendarModeProvider } from "@/components/CalendarModeProvider";
+import ThemeGuard from "@/components/ThemeGuard";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -24,7 +25,8 @@ export const metadata: Metadata = {
 };
 
 // Apply the saved theme before first paint to avoid a flash of the wrong mode.
-const themeInit = `(function(){try{var t=localStorage.getItem('trailhub-theme');if(t==='light')document.documentElement.classList.add('theme-light');}catch(e){}})();`;
+// Default is dark; light only when explicitly saved. Idempotent (add + remove).
+const themeInit = `(function(){try{var t=localStorage.getItem('trailhub-theme');document.documentElement.classList.toggle('theme-light',t==='light');}catch(e){}})();`;
 
 export default function RootLayout({
   children,
@@ -39,6 +41,7 @@ export default function RootLayout({
       <body suppressHydrationWarning className="min-h-full flex flex-col bg-bg text-fg antialiased">
         <Providers>
           <CalendarModeProvider>
+            <ThemeGuard />
             {children}
             <BottomNav />
           </CalendarModeProvider>

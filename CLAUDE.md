@@ -1465,3 +1465,86 @@ Each participant card must show:
 - Name (or "משתתף אנונימי" if registered anonymously)
 - Personal slogan ("סלוגן אישי") if filled in profile
 - Waitlist members shown separately below a divider
+
+---
+
+## Waitlist — Status & Button Fix
+
+### "הצטרף לרשימת המתנה" Button
+- Must look clearly clickable — styled as a button (background, border, or distinct style), not plain text.
+
+### Status After Joining Waitlist
+- Show: "ממתין למקום — מיקום X בתור"
+- Replace the registration button area with this status label + "בטל המתנה" button (same pattern as "בטל הרשמה" for registered hikers)
+- Color: amber/warning tone to distinguish from the green "רשום לטיול ✓" state
+
+---
+
+## Search Filters — Additional Removal
+- Remove "רק מדריכים שאני עוקב אחריהם" filter — unnecessary.
+
+---
+
+## Hebrew Calendar Support
+
+### Guide (input side)
+- Guide always enters dates in Gregorian calendar only — no change to the creation flow.
+
+### Hiker (display side)
+- User preference in profile settings: "לוח שנה לועזי" or "לוח שנה עברי"
+- All dates displayed throughout the app (trip cards, trip detail page, registration confirmation, My Trips, notifications) automatically convert to the chosen calendar.
+- Conversion is automatic — no manual input needed from guide or hiker.
+- Default: Gregorian.
+
+### Implementation
+- Use a Hebrew date conversion library (e.g. `@hebcal/core` or similar) to convert Gregorian → Hebrew dates automatically.
+- Hebrew date format: "י״ד תמוז תשפ״ה" or shorter "י״ד תמוז" depending on context.
+
+---
+
+## Hebrew Calendar Toggle — Placement
+
+### Two locations:
+1. **Profile settings** — permanent preference (Gregorian / Hebrew)
+2. **Date filter panel** — quick toggle next to "נקה" button: small "ע׳ / ל׳" toggle that switches all displayed dates instantly without going to settings
+
+### Date filter panel layout:
+```
+סינון לפי תאריך 📅        נקה  |  ע׳/ל׳
+```
+
+### Behavior:
+- Toggle in date filter panel changes display immediately for that session
+- If user has a saved preference in profile, that's the default
+- Toggling in the panel does NOT permanently change the profile preference — it's a session-level override
+
+---
+
+## Hebrew Calendar Toggle — Full Spec (Updated)
+
+### Two locations:
+1. **Profile settings** — permanent preference: "לוח שנה לועזי" (default) or "לוח שנה עברי"
+2. **Date filter panel** — quick toggle "ע׳/ל׳" next to "נקה" button. Session-level only, does NOT save to profile.
+
+### Date filter panel layout:
+`סינון לפי תאריך 📅` — — — `נקה | ע׳ ל׳`
+
+### Display behavior:
+- All dates throughout the app convert automatically based on preference: trip cards, trip detail page, registration confirmation, My Trips, notifications, guide dashboard
+- Guide always inputs dates in Gregorian only — conversion is display-side only
+- Hebrew date format: "י״ד תמוז תשפ״ה" (full) or "י״ד תמוז" (short, for cards)
+
+### Date picker (borer):
+- The date picker UI itself stays in Gregorian (easier UX, avoids complexity)
+- Only the displayed result after selection converts to Hebrew if preference is set
+
+### Implementation:
+- Use `@hebcal/core` npm package for Gregorian → Hebrew conversion
+- Add "לוח שנה" field to user profile schema (enum: 'gregorian' | 'hebrew', default: 'gregorian')
+
+---
+
+## Google OAuth — Fix Login Flow
+- After Google authentication completes, the app currently ignores the result and continues with the previous session.
+- Fix: Google sign-in must create or log into the correct account and redirect the user to the app as that Google user.
+- Ensure NextAuth Google provider is correctly configured and the session is updated after OAuth callback.

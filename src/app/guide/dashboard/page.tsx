@@ -7,6 +7,7 @@ import NotificationBell from "@/components/NotificationBell";
 import ModeSwitch from "@/components/ModeSwitch";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { coverImages } from "@/lib/tripImage";
+import { useDateFmt } from "@/components/CalendarModeProvider";
 
 const DIFF_BADGE: Record<string, { bg: string; color: string; label: string }> = {
   EASY: { bg: "#EAF3DE", color: "#27500A", label: "קל" },
@@ -55,9 +56,6 @@ interface Guide {
   reviewCount: number;
 }
 
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString("he-IL", { weekday: "short", day: "numeric", month: "short" });
-}
 function formatDuration(min: number) {
   if (!min) return "";
   const h = Math.floor(min / 60);
@@ -67,6 +65,7 @@ function formatDuration(min: number) {
 
 export default function GuideDashboard() {
   const router = useRouter();
+  const dfmt = useDateFmt();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [guide, setGuide] = useState<Guide | null>(null);
   const [loading, setLoading] = useState(true);
@@ -367,7 +366,7 @@ export default function GuideDashboard() {
                 {/* Card body */}
                 <div className="px-3 py-2.5">
                   <div className="flex flex-wrap gap-x-2.5 gap-y-0.5 mb-2">
-                    <span className="text-[11px] text-gray-500">📅 {formatDate(trip.date)}</span>
+                    <span className="text-[11px] text-gray-500">📅 {dfmt(trip.date, { greg: { weekday: "short", day: "numeric", month: "short" } })}</span>
                     <span className="text-[11px] text-gray-500">🕐 {trip.startTime}</span>
                     {trip.distanceKm > 0 && <span className="text-[11px] text-gray-500">📍 {trip.distanceKm} ק"מ</span>}
                     {trip.durationMin > 0 && <span className="text-[11px] text-gray-500">⏱ {formatDuration(trip.durationMin)}</span>}

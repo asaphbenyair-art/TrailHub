@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Heart, Star, Mountain, Clock, Calendar, MapPin } from "lucide-react";
 import { coverImages } from "@/lib/tripImage";
+import { useDateFmt } from "@/components/CalendarModeProvider";
 
 export interface TripCardData {
   id: string;
@@ -38,10 +39,6 @@ function initials(name: string | null) {
   if (!name) return "?";
   return name.split(" ").map((n) => n[0]).join("").slice(0, 2);
 }
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString("he-IL", { weekday: "short", day: "numeric", month: "short" });
-}
-
 /** Staggered cross-fade cover — never a hard swap. */
 function Cover({ images, title }: { images: string[]; title: string }) {
   const [idx, setIdx] = useState(0);
@@ -81,6 +78,7 @@ export default function TripCard({
   favorite?: boolean;
   onToggleFavorite?: () => void;
 }) {
+  const dfmt = useDateFmt();
   const isSelfGuided = trip.tripType === "SELF_GUIDED";
   const isJourney = (trip.dayCount ?? 0) > 1;
   const spotsLeft = Math.max(trip.maxSpots - trip.spotsBooked, 0);
@@ -163,7 +161,7 @@ export default function TripCard({
               <span className="flex items-center gap-1"><Clock size={13} /> {hours} שע׳</span>
             )}
             {!isSelfGuided && (
-              <span className="flex items-center gap-1"><Calendar size={13} /> {formatDate(trip.date)}</span>
+              <span className="flex items-center gap-1"><Calendar size={13} /> {dfmt(trip.date, { greg: { weekday: "short", day: "numeric", month: "short" } })}</span>
             )}
           </div>
           <span className="text-fg font-semibold text-sm">

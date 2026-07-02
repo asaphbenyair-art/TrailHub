@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { coverImages } from "@/lib/tripImage";
+import { useDateFmt } from "@/components/CalendarModeProvider";
 import {
   ArrowRight, Check, ChevronDown, Lock, CalendarPlus, Search, CreditCard, Backpack, Bell,
 } from "lucide-react";
@@ -19,9 +20,7 @@ interface Trip {
   guide: { user: { name: string | null } };
 }
 
-function formatDateFull(d: string) {
-  return new Date(d).toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" });
-}
+const FULL_GREG = { weekday: "long", day: "numeric", month: "long" } as const;
 
 // ── Card form (saved card option + save new card) ──
 function CardForm({ note }: { note: string }) {
@@ -79,6 +78,7 @@ function CardForm({ note }: { note: string }) {
 }
 
 function TripSummary({ trip }: { trip: Trip }) {
+  const dfmt = useDateFmt();
   const spotsLeft = Math.max(trip.maxSpots - trip.spotsBooked, 0);
   const isSG = trip.tripType === "SELF_GUIDED";
   return (
@@ -91,7 +91,7 @@ function TripSummary({ trip }: { trip: Trip }) {
         <div className="text-sm font-medium text-fg leading-snug mb-0.5 truncate">{trip.title}</div>
         <div className="text-xs text-fg-muted">
           {isSG ? `טיול עצמאי · ${trip.guide?.user?.name || "מדריך"}`
-            : `${formatDateFull(trip.date)} · ${trip.startTime} · ${spotsLeft} מקומות נותרו`}
+            : `${dfmt(trip.date, { long: true, weekday: true, greg: FULL_GREG })} · ${trip.startTime} · ${spotsLeft} מקומות נותרו`}
         </div>
       </div>
       <div className="text-left shrink-0">
@@ -317,9 +317,9 @@ function StepDot({ n }: { n: number }) {
 // ── Step 5: confirmation screen ──
 function SuccessScreen({ trip, alertHours }: { trip: Trip; alertHours: number }) {
   const router = useRouter();
+  const dfmt = useDateFmt();
   const total = trip.price;
-  const chargeDate = new Date(new Date(trip.date).getTime() - 24 * 3600 * 1000)
-    .toLocaleDateString("he-IL", { day: "numeric", month: "short" });
+  const chargeDate = dfmt(new Date(new Date(trip.date).getTime() - 24 * 3600 * 1000), { greg: { day: "numeric", month: "short" } });
   return (
     <div className="p-6 text-center">
       <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: "rgba(61,143,95,0.15)" }}>
@@ -330,7 +330,7 @@ function SuccessScreen({ trip, alertHours }: { trip: Trip; alertHours: number })
       <div className="rounded-xl p-3 text-right mb-4 border border-border" style={{ background: "var(--surface-2)" }}>
         {[
           ["טיול", trip.title],
-          ["תאריך ושעה", `${formatDateFull(trip.date)} · ${trip.startTime}`],
+          ["תאריך ושעה", `${dfmt(trip.date, { long: true, weekday: true, greg: FULL_GREG })} · ${trip.startTime}`],
           ["מדריך", trip.guide?.user?.name || "מדריך"],
           ["סכום", `₪${total}`],
           ["מועד חיוב", `${chargeDate} · אם לא בוטל`],
@@ -526,6 +526,7 @@ function WaitlistFlow({ trip }: { trip: Trip }) {
 // ── Self-guided purchase flow ──
 function SelfGuidedPurchaseFlow({ trip }: { trip: Trip }) {
   const router = useRouter();
+  const dfmt = useDateFmt();
   const [buying, setBuying] = useState(false);
   const [done, setDone] = useState(false);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
@@ -537,7 +538,7 @@ function SelfGuidedPurchaseFlow({ trip }: { trip: Trip }) {
     if (res.ok) { const d = await res.json().catch(() => ({})); setExpiresAt(d.purchase?.accessExpiresAt ?? null); setDone(true); }
   }
 
-  const fmt = (iso: string | null) => iso ? new Date(iso).toLocaleDateString("he-IL", { day: "numeric", month: "long", year: "numeric" }) : "";
+  const fmt = (iso: string | null) => iso ? dfmt(iso, { long: true, greg: { day: "numeric", month: "long", year: "numeric" } }) : "";
 
   if (done) {
     return (

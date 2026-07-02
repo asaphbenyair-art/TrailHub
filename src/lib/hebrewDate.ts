@@ -2,18 +2,14 @@ import { HDate } from "@hebcal/core";
 
 export type CalendarMode = "gregorian" | "hebrew";
 
-// Strip Hebrew niqqud/cantillation so the date reads clean ("שבט" not "שְׁבָט").
-function stripNiqqud(s: string): string {
-  return s.replace(/[֑-ׇ]/g, "");
-}
-
 /** Gregorian date → Hebrew: "י״ד תמוז תשפ״ה" (long) or "י״ד תמוז" (short). */
 export function toHebrewDate(date: string | Date, opts: { long?: boolean } = {}): string {
   const d = new Date(date);
   if (isNaN(d.getTime())) return "";
-  const parts = new HDate(d).renderGematriya().split(" "); // [day, month, year]
-  const use = opts.long ? parts : parts.slice(0, -1);       // drop year for short form
-  return stripNiqqud(use.join(" "));
+  // renderGematriya(true) suppresses niqqud → "י״ד תמוז תשפ״ה".
+  const parts = new HDate(d).renderGematriya(true).split(" "); // [day, month, year]
+  const use = opts.long ? parts : parts.slice(0, -1);           // drop year for short form
+  return use.join(" ");
 }
 
 /** Hebrew weekday label ("יום ה׳") — same day-of-week in both calendars. */
