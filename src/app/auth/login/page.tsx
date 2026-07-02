@@ -36,6 +36,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleAvailable, setGoogleAvailable] = useState(false);
   const [remembered, setRemembered] = useState<{ name?: string | null; image?: string | null } | null>(null);
 
   useEffect(() => {
@@ -43,6 +44,11 @@ export default function LoginPage() {
       const raw = localStorage.getItem("trailhub_last_user");
       if (raw) setRemembered(JSON.parse(raw));
     } catch { /* noop */ }
+    // Only offer Google if the provider is actually configured on the server.
+    fetch("/api/auth/providers")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((p) => setGoogleAvailable(!!p?.google))
+      .catch(() => {});
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -85,24 +91,26 @@ export default function LoginPage() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-          {/* Google */}
-          <div className="p-6 pb-0">
-            <button
-              type="button"
-              onClick={handleGoogle}
-              disabled={googleLoading}
-              className="w-full flex items-center justify-center gap-3 border border-gray-200 rounded-full py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-60"
-            >
-              <GoogleIcon />
-              {googleLoading ? "מתחבר..." : "כניסה עם Google"}
-            </button>
+          {/* Google — only when configured on the server */}
+          {googleAvailable && (
+            <div className="p-6 pb-0">
+              <button
+                type="button"
+                onClick={handleGoogle}
+                disabled={googleLoading}
+                className="w-full flex items-center justify-center gap-3 border border-gray-200 rounded-full py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-60"
+              >
+                <GoogleIcon />
+                {googleLoading ? "מתחבר..." : "כניסה עם Google"}
+              </button>
 
-            <div className="flex items-center gap-3 my-4">
-              <div className="flex-1 h-px bg-gray-100" />
-              <span className="text-xs text-gray-400">או</span>
-              <div className="flex-1 h-px bg-gray-100" />
+              <div className="flex items-center gap-3 my-4">
+                <div className="flex-1 h-px bg-gray-100" />
+                <span className="text-xs text-gray-400">או</span>
+                <div className="flex-1 h-px bg-gray-100" />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Credentials */}
           <form onSubmit={handleSubmit} className="px-6 pb-4 flex flex-col gap-4">
@@ -146,6 +154,12 @@ export default function LoginPage() {
                   <EyeIcon open={showPassword} />
                 </button>
               </div>
+            </div>
+
+            <div className="-mt-1 text-left">
+              <Link href="/auth/forgot" className="text-xs text-[#1A6B4A] hover:underline">
+                שכחת סיסמה?
+              </Link>
             </div>
 
             <button

@@ -8,6 +8,7 @@ import NotificationBell from "@/components/NotificationBell";
 import CalendarView from "@/components/CalendarView";
 import ModeSwitch from "@/components/ModeSwitch";
 import { TRIP_TAGS } from "@/lib/tripTags";
+import { coverImages } from "@/lib/tripImage";
 
 const REGIONS = ["גליל עליון","גליל תחתון","כרמל","ירושלים","שפלה","נגב","ערבה","גולן","עמק יזרעאל"];
 const DIFFICULTIES = [
@@ -662,7 +663,7 @@ export default function TripsPage() {
 
                   {/* Hero with image slideshow */}
                   <div className="relative overflow-hidden" style={{ height: 160 }}>
-                    <TripCardHero images={trip.images ?? []} title={trip.title} />
+                    <TripCardHero images={coverImages(trip.images, trip.id)} title={trip.title} />
 
                     <div className="absolute top-2.5 right-2.5 flex gap-1.5 z-10">
                       {trip.tripType && trip.tripType !== "DAY_HIKE" && (

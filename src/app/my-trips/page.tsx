@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { googleCalendarUrl } from "@/lib/calendar";
+import { coverImages } from "@/lib/tripImage";
 
 const DIFF_LABEL: Record<string, string> = { EASY: "קל", MEDIUM: "בינוני", HARD: "קשה", EXTREME: "קיצוני" };
 
@@ -121,12 +122,8 @@ function TripCard({
       <div className="flex">
         {/* Image */}
         <div className="w-24 flex-shrink-0" style={{ minHeight: 90 }}>
-          {trip.images?.[0] ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={trip.images[0]} alt="" className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full" style={{ background: "linear-gradient(160deg,#3d6b35,#1a3d16)", minHeight: 90 }} />
-          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={coverImages(trip.images, trip.id)[0]} alt="" className="w-full h-full object-cover" />
         </div>
 
         {/* Body */}
@@ -379,10 +376,8 @@ export default function MyTripsPage() {
                 return (
                   <div key={p.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden flex">
                     <div className="w-24 flex-shrink-0" style={{ minHeight: 90 }}>
-                      {p.trip.images?.[0] ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={p.trip.images[0]} alt="" className="w-full h-full object-cover" />
-                      ) : <div className="w-full h-full" style={{ background: "linear-gradient(160deg,#3d6b35,#1a3d16)", minHeight: 90 }} />}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={coverImages(p.trip.images, p.trip.id)[0]} alt="" className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
                       <div>

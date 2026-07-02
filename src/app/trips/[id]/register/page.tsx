@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { googleCalendarUrl } from "@/lib/calendar";
+import { coverImages } from "@/lib/tripImage";
 import {
   ArrowRight, Check, ChevronDown, Lock, CalendarPlus, Search, CreditCard, Backpack, Bell,
 } from "lucide-react";
@@ -83,10 +84,8 @@ function TripSummary({ trip }: { trip: Trip }) {
   return (
     <div className="flex items-center gap-3 p-4 border-b border-border">
       <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0">
-        {trip.images?.[0] ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={trip.images[0]} alt="" className="w-full h-full object-cover" />
-        ) : <div className="w-full h-full" style={{ background: "linear-gradient(160deg,#2f5330,#0f2210)" }} />}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={coverImages(trip.images, trip.id)[0]} alt="" className="w-full h-full object-cover" />
       </div>
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium text-fg leading-snug mb-0.5 truncate">{trip.title}</div>

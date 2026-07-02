@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import RideshareBoard from "@/components/RideshareBoard";
 import { TAG_LABEL } from "@/lib/tripTags";
 import { googleCalendarUrl } from "@/lib/calendar";
+import { coverImages } from "@/lib/tripImage";
 import {
   ArrowRight, Heart, Share2, Bell, Star, UserPlus, Check, MapPin, Navigation,
   Clock, Mountain, Users, Calendar, Backpack, Copy, BookOpen, MessageCircle,
@@ -396,7 +397,7 @@ export default function TripDetailPage() {
 
         {/* ── 1. Photos + 2. Name ── */}
         <div className="relative overflow-hidden" style={{ height: 340 }}>
-          <HeroSlideshow images={trip.images ?? []} title={trip.title} />
+          <HeroSlideshow images={coverImages(trip.images, trip.id)} title={trip.title} />
           <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.85) 6%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.35))" }} />
 
           <button type="button" onClick={() => router.back()}
