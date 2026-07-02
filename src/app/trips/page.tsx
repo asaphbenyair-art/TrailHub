@@ -10,6 +10,7 @@ import AvatarMenu from "@/components/AvatarMenu";
 import { TRIP_TAGS } from "@/lib/tripTags";
 import { coverImages } from "@/lib/tripImage";
 import RideshareModal from "@/components/RideshareModal";
+import RegistrantsModal from "@/components/RegistrantsModal";
 import { Car, Lock, UserSearch } from "lucide-react";
 
 const REGIONS = ["גליל עליון","גליל תחתון","כרמל","ירושלים","שפלה","נגב","ערבה","גולן","עמק יזרעאל"];
@@ -186,6 +187,7 @@ export default function TripsPage() {
   const [purchaseExpiry, setPurchaseExpiry] = useState<Record<string, string | null>>({});
   const [purchasesOnly, setPurchasesOnly] = useState(false);
   const [rideDrawer, setRideDrawer] = useState<string | null>(null);
+  const [registrantsModal, setRegistrantsModal] = useState<{ id: string; title: string } | null>(null);
   const [guides, setGuides] = useState<GuideCard[]>([]);
   const [guidesLoaded, setGuidesLoaded] = useState(false);
   const [guideRegion, setGuideRegion] = useState<string | null>(null);
@@ -835,8 +837,14 @@ export default function TripsPage() {
                       myStatus === "CONFIRMED" ? "bg-[#D6EDE3] text-[#0F5038]" :
                       myStatus === "WAITLIST"  ? "bg-[#D4E4F0] text-[#185FA5]" : "bg-gray-50 text-gray-500"
                     }`}>
-                      {myStatus === "CONFIRMED" ? "✓ רשום לטיול" :
-                       myStatus === "WAITLIST"  ? "⏰ ברשימת המתנה" : "👀 מתעניין"}
+                      <span>{myStatus === "CONFIRMED" ? "✓ רשום לטיול" :
+                       myStatus === "WAITLIST"  ? "⏰ ברשימת המתנה" : "👀 מתעניין"}</span>
+                      {(myStatus === "CONFIRMED" || myStatus === "WAITLIST") && (
+                        <button type="button" onClick={(e) => { e.stopPropagation(); cancelReg(trip.id); }}
+                          className="mr-auto border border-current rounded-full px-2.5 py-0.5 text-[11px] font-medium hover:bg-black/5">
+                          בטל הרשמה
+                        </button>
+                      )}
                     </div>
                   )}
                   {isSG && isPurchased && (
@@ -948,11 +956,21 @@ export default function TripsPage() {
                         ))}
                       </div>
                       {!isSG && (
-                        <RideshareIndicator
-                          trip={trip}
-                          hasAccess={!!myStatus && myStatus !== "CANCELLED"}
-                          onOpen={() => setRideDrawer(trip.id)}
-                        />
+                        <div className="flex items-end gap-3 shrink-0">
+                          {/* Registrants indicator → opens modal */}
+                          <button type="button" onClick={(e) => { e.stopPropagation(); setRegistrantsModal({ id: trip.id, title: trip.title }); }}
+                            className="flex flex-col items-end">
+                            <span className="text-[9px] leading-none mb-1 text-gray-400">משתתפים</span>
+                            <span className="text-[10px] font-semibold text-[#185FA5] underline decoration-dotted underline-offset-2">
+                              👥 {trip.spotsBooked}
+                            </span>
+                          </button>
+                          <RideshareIndicator
+                            trip={trip}
+                            hasAccess={!!myStatus && myStatus !== "CANCELLED"}
+                            onOpen={() => setRideDrawer(trip.id)}
+                          />
+                        </div>
                       )}
                     </div>
                     {!isSG && (
@@ -969,6 +987,8 @@ export default function TripsPage() {
                       </div>
                     </div>
                     )}
+                    {/* Once registered, the top banner takes over — hide the whole price/action row */}
+                    {!(myStatus === "CONFIRMED" || myStatus === "WAITLIST") && (
                     <div className="flex items-center justify-between pt-2 border-t border-gray-50">
                       <div>
                         <span className="text-[17px] font-medium text-gray-900">₪{trip.price.toLocaleString("he-IL")}</span>
@@ -1025,6 +1045,7 @@ export default function TripsPage() {
                         )}
                       </div>
                     </div>
+                    )}
                   </div>
                   );
                   })()}
@@ -1047,6 +1068,14 @@ export default function TripsPage() {
           />
         );
       })()}
+
+      {registrantsModal && (
+        <RegistrantsModal
+          tripId={registrantsModal.id}
+          tripTitle={registrantsModal.title}
+          onClose={() => setRegistrantsModal(null)}
+        />
+      )}
     </div>
   );
 }
