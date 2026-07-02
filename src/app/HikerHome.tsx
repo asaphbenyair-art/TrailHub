@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Bell, CalendarDays, SlidersHorizontal, Clock, Sparkles, Heart, ChevronLeft } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import { hikingPhoto } from "@/lib/tripImage";
 
 interface HomeTrip {
   id: string;
@@ -97,7 +98,7 @@ export default function HikerHome({
           category, eyebrow: "מדריך מוביל",
           title: top.g.user.name ?? "מדריך",
           subtitle: `${top.n} טיולים קרובים${top.g.rating > 0 ? ` · דירוג ${top.g.rating.toFixed(1)}` : ""}`,
-          image: top.g.user.image ?? pool.find((t) => t.guide.id === top.g.id)?.images?.[0] ?? null,
+          image: top.g.user.image ?? hikingPhoto(top.g.id),
           cta: { label: "ראה פרופיל מדריך", href: `/guides/${top.g.id}` },
         };
       }
@@ -109,7 +110,7 @@ export default function HikerHome({
         category, eyebrow: "חדש באפליקציה",
         title: "טיולים עצמאיים הגיעו ל-TrailHub",
         subtitle: "חבילות תוכן מלאות לניווט עצמי — צאו מתי שמתחשק לכם, בקצב שלכם.",
-        image: pool[0]?.images?.[0] ?? null,
+        image: hikingPhoto("new-in-app"),
         cta: { label: "קרא עוד", href: "/trips?category=self_guided" },
       };
     }
@@ -121,7 +122,7 @@ export default function HikerHome({
           category, eyebrow: "קרוב אליך",
           title: near.title,
           subtitle: `${near.region} · ₪${near.price.toLocaleString("he-IL")}`,
-          image: near.images?.[0] ?? null,
+          image: hikingPhoto(near.id),
           cta: { label: "צפה בטיול", href: `/trips/${near.id}` },
         };
       }
@@ -140,7 +141,7 @@ export default function HikerHome({
         category: "featured_trip", eyebrow: "הטיול המומלץ",
         title: featured.title,
         subtitle: parts.join(" · "),
-        image: featured.images?.[0] ?? null,
+        image: hikingPhoto(featured.id),
         cta: { label: "צפה בטיול", href: `/trips/${featured.id}` },
       };
     }
