@@ -82,7 +82,7 @@ export default function NewTripWizard() {
     }
   }
 
-  async function handleSave() {
+  async function handleSave(forceDraft = false) {
     setSaving(true);
     setError("");
 
@@ -126,7 +126,8 @@ export default function NewTripWizard() {
       healthDeclarationUrl: isSelfGuided ? null : (data.healthDeclarationUrl || null),
       // Self-guided is a content product — no cancellation policy, no dynamic reg fields, no team/capacity
       cancellationPolicy: isSelfGuided ? null : cancellationPolicy,
-      status: data.status === "PREVIEW" ? "DRAFT" : data.status,
+      status: forceDraft ? "DRAFT" : (data.status === "PREVIEW" ? "DRAFT" : data.status),
+      isDraftSave: forceDraft,
       visibility: data.visibility || "PUBLIC",
       images,
       tripType: data.tripType || "DAY_HIKE",
@@ -222,6 +223,25 @@ export default function NewTripWizard() {
           {!isSelfGuided && step === 5 && <Step5 data={data} onChange={onChange} />}
           {isSelfGuided && step === 4 && <Step5 data={data} onChange={onChange} />}
 
+          {/* Save-draft / cancel bar — available at every step */}
+          <div className="flex items-center justify-between px-5 pt-3 gap-2">
+            <button
+              type="button"
+              onClick={() => { if (window.confirm("לבטל את יצירת הטיול? השינויים לא יישמרו.")) router.push("/guide/dashboard"); }}
+              className="px-3 py-1.5 text-xs text-red-500 border border-red-500/30 rounded-full hover:bg-red-500/10 transition-colors"
+            >
+              בטל טיול
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSave(true)}
+              disabled={saving}
+              className="px-3 py-1.5 text-xs text-[#1A6B4A] border border-[#1A6B4A]/40 rounded-full hover:bg-[#D6EDE3] transition-colors disabled:opacity-60"
+            >
+              {saving ? "שומר..." : "💾 שמור טיוטא"}
+            </button>
+          </div>
+
           {/* Footer */}
           <div className="flex items-center justify-between px-5 py-3 border-t border-border bg-surface-2">
             <button
@@ -252,7 +272,7 @@ export default function NewTripWizard() {
             ) : (
               <button
                 type="button"
-                onClick={handleSave}
+                onClick={() => handleSave()}
                 disabled={saving}
                 className="px-5 py-2 text-xs bg-[#1A6B4A] text-white rounded-full font-medium hover:bg-[#155a3e] transition-colors disabled:opacity-60"
               >

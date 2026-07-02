@@ -1,11 +1,39 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useMemo } from "react";
 import { WizardData, WaypointData } from "../types";
 import SourceMaterialsEditor from "./SourceMaterialsEditor";
 
 const TripMap = dynamic(() => import("./TripMap"), { ssr: false });
+
+// ── GPX route parsing + distance (for the 10m waypoint-off-route warning) ──
+type LL = { lat: number; lng: number };
+function parseGpxPoints(gpx: string): LL[] {
+  if (!gpx) return [];
+  const pts: LL[] = [];
+  const tagRe = /<(?:trkpt|rtept|wpt)\b([^>/]*)\/?>/g;
+  let m: RegExpExecArray | null;
+  while ((m = tagRe.exec(gpx)) !== null) {
+    const lat = /lat="([-\d.]+)"/.exec(m[1]);
+    const lon = /lon="([-\d.]+)"/.exec(m[1]);
+    if (lat && lon) pts.push({ lat: parseFloat(lat[1]), lng: parseFloat(lon[1]) });
+  }
+  return pts;
+}
+function haversineM(a: LL, b: LL): number {
+  const R = 6371000;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const la1 = (a.lat * Math.PI) / 180, la2 = (b.lat * Math.PI) / 180;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(la1) * Math.cos(la2) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+function metersToRoute(wp: LL, route: LL[]): number {
+  let min = Infinity;
+  for (const p of route) { const d = haversineM(wp, p); if (d < min) min = d; }
+  return min;
+}
 
 const ROUTE_TYPES = [
   { value: "one-way", label: "חד-כיווני" },
@@ -23,6 +51,7 @@ export default function Step2({ data, onChange }: Props) {
   const [gpxName, setGpxName] = useState<string>(data.routeGpx ? "מסלול קיים" : "");
   const gpxContent = data.routeGpx;
   const mapWaypoints = data.waypointsJson;
+  const routePoints = useMemo(() => parseGpxPoints(gpxContent), [gpxContent]);
 
   function handleGpxFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -79,7 +108,7 @@ export default function Step2({ data, onChange }: Props) {
 
       {/* GPX upload */}
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-medium text-fg-muted">קובץ GPX (אופציונלי)</label>
+        <label className="text-xs font-medium text-fg-muted">קובץ GPX <span className="text-danger">(חובה)</span></label>
         {gpxName ? (
           <div className="flex items-center gap-2 border border-[#1A6B4A] bg-[#D6EDE3] rounded-lg px-3 py-2.5">
             <span className="text-lg">🗺</span>
@@ -124,7 +153,9 @@ export default function Step2({ data, onChange }: Props) {
         )}
         {mapWaypoints.length > 0 && (
           <>
-          {mapWaypoints.map((wp, i) => (
+          {mapWaypoints.map((wp, i) => {
+            const offRoute = routePoints.length > 0 && Number.isFinite(wp.lat) && metersToRoute(wp, routePoints) > 10;
+            return (
             <div key={i} className="border border-border rounded-xl p-2.5 flex flex-col gap-1.5">
               <div className="flex items-center gap-2">
                 <span className="text-[#1A6B4A] font-medium text-xs shrink-0">📍 {i + 1}</span>
@@ -132,6 +163,11 @@ export default function Step2({ data, onChange }: Props) {
                   placeholder="שם הנקודה" className="flex-1 border border-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-[#1A6B4A]" />
                 <button type="button" onClick={() => removeWaypoint(i)} className="text-fg-faint hover:text-red-400 px-1">✕</button>
               </div>
+              {offRoute && (
+                <div className="text-[11px] text-[#7A5010] bg-[#FDF6E8] border border-[#E8A020]/30 rounded-lg px-2 py-1">
+                  ⚠ הנקודה רחוקה מהמסלול — האם אתה בטוח?
+                </div>
+              )}
               <input type="text" value={wp.description} onChange={(e) => patchWaypoint(i, { description: e.target.value })}
                 placeholder="תיאור קצר (אופציונלי)" className="border border-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1A6B4A]" />
               {data.tripType === "SELF_GUIDED" && (
@@ -149,7 +185,8 @@ export default function Step2({ data, onChange }: Props) {
                   onChange={(next) => patchWaypoint(i, { sources: next })} />
               </div>
             </div>
-          ))}
+            );
+          })}
           </>
         )}
       </div>

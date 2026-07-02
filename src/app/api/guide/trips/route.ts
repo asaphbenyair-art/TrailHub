@@ -63,26 +63,28 @@ export async function POST(req: NextRequest) {
     routeGpx, waypointsJson, individualDayPrice,
     unlimitedCapacity, accessWindowDays, attributeTags,
     sourceMaterials, sourceMaterialsVisibility, multiPersonMode,
+    isDraftSave,
   } = body;
 
-  if (!title || !region || !date || !startTime || !price) {
+  // A draft save may omit mandatory fields; a real publish must have them.
+  if (!isDraftSave && (!title || !region || !date || !startTime || !price)) {
     return NextResponse.json({ error: "שדות חובה חסרים" }, { status: 400 });
   }
 
   try {
     const trip = await prisma.trip.create({
       data: {
-        title,
+        title: title || "טיוטה ללא שם",
         description: description || null,
-        region,
-        date: new Date(date),
+        region: region || "",
+        date: date ? new Date(date) : new Date(),
         endDate: endDate ? new Date(endDate) : null,
-        startTime,
+        startTime: startTime || "07:00",
         meetingPoint: meetingPoint || null,
         waypoints: waypoints || null,
         difficulty: difficulty || "MEDIUM",
         maxSpots: parseInt(maxSpots) || 20,
-        price: parseFloat(price),
+        price: parseFloat(price) || 0,
         distanceKm: parseFloat(distanceKm) || 0,
         durationMin: parseInt(durationMin) || 0,
         whatToBring: whatToBring || null,
