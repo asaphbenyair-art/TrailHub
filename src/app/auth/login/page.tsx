@@ -87,10 +87,10 @@ export default function LoginPage() {
             )
           )}
           <h1 className="text-2xl font-semibold text-[#1A6B4A] mb-1">TrailHub</h1>
-          <p className="text-gray-500 text-sm">{remembered?.name ? `ברוך שובך, ${remembered.name}` : "ברוך הבא בחזרה"}</p>
+          <p className="text-fg-muted text-sm">{remembered?.name ? `ברוך שובך, ${remembered.name}` : "ברוך הבא בחזרה"}</p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+        <div className="bg-surface rounded-2xl border border-border overflow-hidden shadow-sm">
           {/* Google — only when configured on the server */}
           {googleAvailable && (
             <div className="p-6 pb-0">
@@ -98,16 +98,16 @@ export default function LoginPage() {
                 type="button"
                 onClick={handleGoogle}
                 disabled={googleLoading}
-                className="w-full flex items-center justify-center gap-3 border border-gray-200 rounded-full py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-60"
+                className="w-full flex items-center justify-center gap-3 border border-border rounded-full py-3 text-sm font-medium text-fg hover:bg-surface-2 transition-colors disabled:opacity-60"
               >
                 <GoogleIcon />
                 {googleLoading ? "מתחבר..." : "כניסה עם Google"}
               </button>
 
               <div className="flex items-center gap-3 my-4">
-                <div className="flex-1 h-px bg-gray-100" />
-                <span className="text-xs text-gray-400">או</span>
-                <div className="flex-1 h-px bg-gray-100" />
+                <div className="flex-1 h-px bg-surface-2" />
+                <span className="text-xs text-fg-faint">או</span>
+                <div className="flex-1 h-px bg-surface-2" />
               </div>
             </div>
           )}
@@ -115,40 +115,40 @@ export default function LoginPage() {
           {/* Credentials */}
           <form onSubmit={handleSubmit} className="px-6 pb-4 flex flex-col gap-4">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+              <div className="bg-surface-2 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
                 {error}
               </div>
             )}
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-gray-500">אימייל</label>
+              <label className="text-xs text-fg-muted">אימייל</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+                className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
                 placeholder="you@example.com"
                 dir="ltr"
               />
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-gray-500">סיסמה</label>
+              <label className="text-xs text-fg-muted">סיסמה</label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] pl-10"
+                  className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] pl-10"
                   placeholder="••••••••"
                   dir="ltr"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-faint hover:text-fg-muted"
                   tabIndex={-1}
                 >
                   <EyeIcon open={showPassword} />
@@ -171,7 +171,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="px-6 pb-6 text-center text-sm text-gray-500">
+          <div className="px-6 pb-6 text-center text-sm text-fg-muted">
             אין לך חשבון?{" "}
             <Link href="/auth/register" className="text-[#1A6B4A] font-medium hover:underline">
               הרשמה

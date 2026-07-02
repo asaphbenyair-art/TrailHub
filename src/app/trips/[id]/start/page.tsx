@@ -76,9 +76,9 @@ export default function SelfGuidedStartPage() {
     try { localStorage.removeItem(cacheKey); setOfflineSaved(false); } catch { /* noop */ }
   }
 
-  if (loading || allowed === null) return <div dir="rtl" className="min-h-screen flex items-center justify-center text-gray-400 text-sm">טוען...</div>;
+  if (loading || allowed === null) return <div dir="rtl" className="min-h-screen flex items-center justify-center text-fg-faint text-sm">טוען...</div>;
   if (!allowed) return (
-    <div dir="rtl" className="min-h-screen flex flex-col items-center justify-center gap-3 text-sm text-gray-500">
+    <div dir="rtl" className="min-h-screen flex flex-col items-center justify-center gap-3 text-sm text-fg-muted">
       אין לך גישה לתוכן זה
       <button type="button" onClick={() => router.push(`/trips/${id}`)} className="text-[#1A6B4A] underline">חזרה לדף הטיול</button>
     </div>
@@ -98,11 +98,11 @@ export default function SelfGuidedStartPage() {
   }
 
   return (
-    <div dir="rtl" className="min-h-screen bg-[#f5f5f5] py-4 px-3">
+    <div dir="rtl" className="min-h-screen bg-bg py-4 px-3">
       <div className="max-w-[480px] mx-auto pb-10">
         <div className="flex items-center gap-3 mb-3">
-          <button type="button" onClick={() => router.push(`/trips/${id}`)} className="text-gray-400 hover:text-gray-600 text-sm">← חזרה</button>
-          <h1 className="text-sm font-semibold text-gray-900 flex-1 truncate">טיול עצמאי — {trip.title}</h1>
+          <button type="button" onClick={() => router.push(`/trips/${id}`)} className="text-fg-faint hover:text-fg-muted text-sm">← חזרה</button>
+          <h1 className="text-sm font-semibold text-fg flex-1 truncate">טיול עצמאי — {trip.title}</h1>
           {offlineSaved ? (
             <button type="button" onClick={removeOffline} className="text-[11px] text-[#0F5038] border border-[#1A6B4A]/30 rounded-full px-2.5 py-1 shrink-0">✓ זמין לא מקוון</button>
           ) : (
@@ -132,15 +132,15 @@ export default function SelfGuidedStartPage() {
 
         {/* Share access (owner only, up to 3 people) */}
         {isOwner && !offlineMode && (
-          <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-3">
-            <div className="text-sm font-semibold text-gray-900 mb-1">שתף גישה (עד 3 אנשים)</div>
-            <div className="text-[11px] text-gray-400 mb-2">בני משפחה שתשתף יוכלו לגשת לתוכן עם המייל שלהם</div>
+          <div className="bg-surface rounded-2xl border border-border p-4 mb-3">
+            <div className="text-sm font-semibold text-fg mb-1">שתף גישה (עד 3 אנשים)</div>
+            <div className="text-[11px] text-fg-faint mb-2">בני משפחה שתשתף יוכלו לגשת לתוכן עם המייל שלהם</div>
             <div className="flex flex-col gap-1.5">
               {shareEmails.map((e, i) => (
                 <input key={i} type="email" value={e} dir="ltr"
                   onChange={(ev) => setShareEmails((prev) => prev.map((x, j) => j === i ? ev.target.value : x))}
                   placeholder={`אימייל ${i + 1}`}
-                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+                  className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
               ))}
             </div>
             <div className="flex items-center gap-2 mt-2">
@@ -151,27 +151,27 @@ export default function SelfGuidedStartPage() {
         )}
 
         {trip.description && (
-          <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-3">
+          <div className="bg-surface rounded-2xl border border-border p-4 mb-3">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-sm font-semibold text-gray-900">📄 על הטיול</span>
+              <span className="text-sm font-semibold text-fg">📄 על הטיול</span>
               <button type="button" onClick={() => speak(trip.description ?? "")} className="text-xs text-[#1A6B4A]">🔊 הקרא</button>
             </div>
-            <p className="text-sm text-gray-600 leading-relaxed">{trip.description}</p>
+            <p className="text-sm text-fg-muted leading-relaxed">{trip.description}</p>
           </div>
         )}
 
         <div className="flex flex-col gap-2">
-          {waypoints.length === 0 && <div className="text-center py-8 text-gray-400 text-sm">אין תחנות מוגדרות</div>}
+          {waypoints.length === 0 && <div className="text-center py-8 text-fg-faint text-sm">אין תחנות מוגדרות</div>}
           {waypoints.map((wp, i) => {
             const hasLoc = wp.lat != null && wp.lng != null;
             return (
-            <div key={i} className="bg-white rounded-2xl border border-gray-100 p-4">
+            <div key={i} className="bg-surface rounded-2xl border border-border p-4">
               <div className="flex items-center gap-2 mb-2">
                 <button type="button" onClick={() => hasLoc && focusOnWaypoint(i)}
                   className={`w-7 h-7 rounded-full bg-[#D6EDE3] text-[#1A6B4A] flex items-center justify-center text-xs font-semibold shrink-0 ${hasLoc ? "hover:bg-[#1A6B4A] hover:text-white transition-colors" : ""}`}
                   title={hasLoc ? "הצג במפה" : undefined}>{i + 1}</button>
                 <button type="button" onClick={() => hasLoc && focusOnWaypoint(i)}
-                  className="text-sm font-medium text-gray-900 flex-1 text-right">{wp.name || `תחנה ${i + 1}`}</button>
+                  className="text-sm font-medium text-fg flex-1 text-right">{wp.name || `תחנה ${i + 1}`}</button>
                 {hasLoc && (
                   <button type="button" onClick={() => focusOnWaypoint(i)}
                     className="text-[11px] text-[#185FA5] border border-[#185FA5]/30 rounded-full px-2 py-1 shrink-0">📍 במפה</button>
@@ -180,10 +180,10 @@ export default function SelfGuidedStartPage() {
                   className="text-xs text-[#1A6B4A] border border-[#1A6B4A]/30 rounded-full px-2.5 py-1 shrink-0">🔊 הקרא</button>
               </div>
               {wp.navInstructions && (
-                <div className="text-xs text-gray-700 bg-gray-50 rounded-lg px-3 py-2 mb-1.5">🧭 {wp.navInstructions}</div>
+                <div className="text-xs text-fg bg-surface-2 rounded-lg px-3 py-2 mb-1.5">🧭 {wp.navInstructions}</div>
               )}
-              {wp.guidance && <p className="text-sm text-gray-600 leading-relaxed mb-1.5">{wp.guidance}</p>}
-              {wp.description && !wp.guidance && <p className="text-sm text-gray-600 leading-relaxed mb-1.5">{wp.description}</p>}
+              {wp.guidance && <p className="text-sm text-fg-muted leading-relaxed mb-1.5">{wp.guidance}</p>}
+              {wp.description && !wp.guidance && <p className="text-sm text-fg-muted leading-relaxed mb-1.5">{wp.description}</p>}
               {wp.safety && (
                 <div className="text-xs text-[#7A5010] bg-[#FDF3DC] rounded-lg px-3 py-2">⚠ {wp.safety}</div>
               )}
@@ -192,7 +192,7 @@ export default function SelfGuidedStartPage() {
                   {wp.sources.map((m, j) => (
                     <div key={j}>
                       <a href={m.url} target="_blank" rel="noreferrer" className="text-xs text-[#185FA5] hover:underline">{m.type === "pdf" ? "📄" : "🔗"} {m.title}</a>
-                      {m.description && <div className="text-[11px] text-gray-400 pr-4">{m.description}</div>}
+                      {m.description && <div className="text-[11px] text-fg-faint pr-4">{m.description}</div>}
                     </div>
                   ))}
                 </div>

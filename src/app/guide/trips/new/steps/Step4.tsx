@@ -40,13 +40,13 @@ export default function Step4({ data, onChange }: Props) {
 
   return (
     <div className="p-5 flex flex-col gap-4">
-      <div className="text-sm font-medium text-gray-900 border-b border-gray-100 pb-3 mb-1">
+      <div className="text-sm font-medium text-fg border-b border-border pb-3 mb-1">
         תשלום וביטולים
       </div>
 
       {/* Base price */}
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-medium text-gray-500">
+        <label className="text-xs font-medium text-fg-muted">
           {data.tripType !== "DAY_HIKE" ? "מחיר למסע שלם (₪)" : "מחיר רגיל לאדם (₪)"}
         </label>
         <input
@@ -55,33 +55,33 @@ export default function Step4({ data, onChange }: Props) {
           value={data.price}
           onChange={(e) => onChange("price", e.target.value)}
           placeholder="0 = חינם"
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+          className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
           dir="ltr"
         />
-        <p className="text-xs text-gray-400 mt-1">עמלת הפלטפורמה תנוכה אוטומטית</p>
+        <p className="text-xs text-fg-faint mt-1">עמלת הפלטפורמה תנוכה אוטומטית</p>
       </div>
 
       {/* Per-day price for journeys with individual-day registration */}
       {data.registrationMode === "INDIVIDUAL_DAYS" && (
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-500">מחיר ליום בודד (₪)</label>
+          <label className="text-xs font-medium text-fg-muted">מחיר ליום בודד (₪)</label>
           <input
             type="number"
             min="0"
             value={data.individualDayPrice}
             onChange={(e) => onChange("individualDayPrice", e.target.value)}
             placeholder="מחיר להרשמה ליום אחד"
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+            className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
             dir="ltr"
           />
-          <p className="text-xs text-gray-400 mt-1">מאחר שאיפשרת הרשמה לימים בודדים</p>
+          <p className="text-xs text-fg-faint mt-1">מאחר שאיפשרת הרשמה לימים בודדים</p>
         </div>
       )}
 
       {/* Price tiers for special groups */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-medium text-gray-500">מחירים מופחתים לקבוצות</label>
+          <label className="text-xs font-medium text-fg-muted">מחירים מופחתים לקבוצות</label>
           <button
             type="button"
             onClick={addPriceTier}
@@ -92,7 +92,7 @@ export default function Step4({ data, onChange }: Props) {
         </div>
 
         {data.priceTiers.length === 0 && (
-          <p className="text-xs text-gray-400">לחץ להוספת מחיר מופחת (ילדים, סטודנטים, חיילים...)</p>
+          <p className="text-xs text-fg-faint">לחץ להוספת מחיר מופחת (ילדים, סטודנטים, חיילים...)</p>
         )}
 
         {/* Preset chips */}
@@ -103,7 +103,7 @@ export default function Step4({ data, onChange }: Props) {
                 key={label}
                 type="button"
                 onClick={() => onChange("priceTiers", [...data.priceTiers, { label, price: "" }])}
-                className="text-xs border border-gray-200 rounded-full px-2.5 py-1 text-gray-500 hover:border-[#1A6B4A] hover:text-[#1A6B4A] transition-colors"
+                className="text-xs border border-border rounded-full px-2.5 py-1 text-fg-muted hover:border-[#1A6B4A] hover:text-[#1A6B4A] transition-colors"
               >
                 {label}
               </button>
@@ -112,13 +112,13 @@ export default function Step4({ data, onChange }: Props) {
         )}
 
         {data.priceTiers.map((tier, idx) => (
-          <div key={idx} className="flex items-center gap-2 border border-gray-200 rounded-xl p-3">
+          <div key={idx} className="flex items-center gap-2 border border-border rounded-xl p-3">
             <input
               type="text"
               placeholder="שם קבוצה (למשל: ילדים)"
               value={tier.label}
               onChange={(e) => updatePriceTier(idx, "label", e.target.value)}
-              className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+              className="flex-1 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
             />
             <div className="flex items-center gap-1">
               <input
@@ -127,15 +127,15 @@ export default function Step4({ data, onChange }: Props) {
                 value={tier.price}
                 min="0"
                 onChange={(e) => updatePriceTier(idx, "price", e.target.value)}
-                className="w-20 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+                className="w-20 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
                 dir="ltr"
               />
-              <span className="text-xs text-gray-400">₪</span>
+              <span className="text-xs text-fg-faint">₪</span>
             </div>
             <button
               type="button"
               onClick={() => removePriceTier(idx)}
-              className="text-gray-300 hover:text-red-400 text-sm"
+              className="text-fg-faint hover:text-red-400 text-sm"
             >
               ✕
             </button>
@@ -146,7 +146,7 @@ export default function Step4({ data, onChange }: Props) {
       {/* Coupon codes */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-medium text-gray-500">קודי קופון</label>
+          <label className="text-xs font-medium text-fg-muted">קודי קופון</label>
           <button
             type="button"
             onClick={addCoupon}
@@ -157,13 +157,13 @@ export default function Step4({ data, onChange }: Props) {
         </div>
 
         {data.coupons.length === 0 && (
-          <p className="text-xs text-gray-400">הוסף קוד קופון להנחה באחוזים</p>
+          <p className="text-xs text-fg-faint">הוסף קוד קופון להנחה באחוזים</p>
         )}
 
         {data.coupons.map((coupon, idx) => (
-          <div key={idx} className="border border-gray-200 rounded-xl p-3 flex flex-col gap-2">
+          <div key={idx} className="border border-border rounded-xl p-3 flex flex-col gap-2">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-semibold text-gray-600">קופון {idx + 1}</span>
+              <span className="text-xs font-semibold text-fg-muted">קופון {idx + 1}</span>
               <button
                 type="button"
                 onClick={() => removeCoupon(idx)}
@@ -174,18 +174,18 @@ export default function Step4({ data, onChange }: Props) {
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] text-gray-400">קוד</label>
+                <label className="text-[10px] text-fg-faint">קוד</label>
                 <input
                   type="text"
                   placeholder="SAVE20"
                   value={coupon.code}
                   onChange={(e) => updateCoupon(idx, "code", e.target.value.toUpperCase())}
-                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] font-mono"
+                  className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] font-mono"
                   dir="ltr"
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] text-gray-400">הנחה (%)</label>
+                <label className="text-[10px] text-fg-faint">הנחה (%)</label>
                 <input
                   type="number"
                   placeholder="10"
@@ -193,29 +193,29 @@ export default function Step4({ data, onChange }: Props) {
                   max="100"
                   value={coupon.discountPct}
                   onChange={(e) => updateCoupon(idx, "discountPct", e.target.value)}
-                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+                  className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
                   dir="ltr"
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] text-gray-400">שימושים מקסימום</label>
+                <label className="text-[10px] text-fg-faint">שימושים מקסימום</label>
                 <input
                   type="number"
                   placeholder="ללא הגבלה"
                   min="1"
                   value={coupon.maxUses}
                   onChange={(e) => updateCoupon(idx, "maxUses", e.target.value)}
-                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+                  className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
                   dir="ltr"
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] text-gray-400">תפוגה</label>
+                <label className="text-[10px] text-fg-faint">תפוגה</label>
                 <input
                   type="date"
                   value={coupon.expiresAt}
                   onChange={(e) => updateCoupon(idx, "expiresAt", e.target.value)}
-                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+                  className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
                   dir="ltr"
                 />
               </div>
@@ -226,55 +226,55 @@ export default function Step4({ data, onChange }: Props) {
 
       {/* Cancellation policy */}
       <div className="flex flex-col gap-3">
-        <label className="text-xs font-medium text-gray-500">
+        <label className="text-xs font-medium text-fg-muted">
           מדיניות ביטולים — מדרגות החזר
         </label>
-        <p className="text-xs text-gray-400">הגדר עד 3 מדרגות</p>
+        <p className="text-xs text-fg-faint">הגדר עד 3 מדרגות</p>
 
-        <div className="flex items-center gap-2 flex-wrap border border-gray-100 rounded-lg p-3">
-          <span className="text-gray-500 text-xs">עד</span>
+        <div className="flex items-center gap-2 flex-wrap border border-border rounded-lg p-3">
+          <span className="text-fg-muted text-xs">עד</span>
           <input
             type="number"
             value={data.cancelTier1Hours}
             onChange={(e) => onChange("cancelTier1Hours", e.target.value)}
-            className="w-14 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-[#1A6B4A]"
+            className="w-14 border border-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-[#1A6B4A]"
             dir="ltr"
           />
-          <span className="text-gray-500 text-xs">שעות לפני — החזר</span>
+          <span className="text-fg-muted text-xs">שעות לפני — החזר</span>
           <select
             value={data.cancelTier1Refund}
             onChange={(e) => onChange("cancelTier1Refund", e.target.value)}
-            className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-[#1A6B4A] bg-white"
+            className="border border-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-[#1A6B4A] bg-surface"
           >
             {REFUND_OPTIONS.map((o) => <option key={o}>{o}</option>)}
           </select>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap border border-gray-100 rounded-lg p-3">
-          <span className="text-gray-500 text-xs">עד</span>
+        <div className="flex items-center gap-2 flex-wrap border border-border rounded-lg p-3">
+          <span className="text-fg-muted text-xs">עד</span>
           <input
             type="number"
             value={data.cancelTier2Hours}
             onChange={(e) => onChange("cancelTier2Hours", e.target.value)}
-            className="w-14 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-[#1A6B4A]"
+            className="w-14 border border-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-[#1A6B4A]"
             dir="ltr"
           />
-          <span className="text-gray-500 text-xs">שעות לפני — החזר</span>
+          <span className="text-fg-muted text-xs">שעות לפני — החזר</span>
           <select
             value={data.cancelTier2Refund}
             onChange={(e) => onChange("cancelTier2Refund", e.target.value)}
-            className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-[#1A6B4A] bg-white"
+            className="border border-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-[#1A6B4A] bg-surface"
           >
             {REFUND_OPTIONS.map((o) => <option key={o}>{o}</option>)}
           </select>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap border border-gray-100 rounded-lg p-3">
-          <span className="text-gray-500 text-xs">פחות מ-{data.cancelTier2Hours || 24} שעות — החזר</span>
+        <div className="flex items-center gap-2 flex-wrap border border-border rounded-lg p-3">
+          <span className="text-fg-muted text-xs">פחות מ-{data.cancelTier2Hours || 24} שעות — החזר</span>
           <select
             value={data.cancelTier3Refund}
             onChange={(e) => onChange("cancelTier3Refund", e.target.value)}
-            className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-[#1A6B4A] bg-white"
+            className="border border-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-[#1A6B4A] bg-surface"
           >
             {REFUND_OPTIONS.map((o) => <option key={o}>{o}</option>)}
           </select>

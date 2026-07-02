@@ -4,7 +4,7 @@ import "./globals.css";
 import Providers from "@/components/Providers";
 import BottomNav from "@/components/BottomNav";
 import { CalendarModeProvider } from "@/components/CalendarModeProvider";
-import ThemeGuard from "@/components/ThemeGuard";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -24,9 +24,9 @@ export const metadata: Metadata = {
   description: "מצא והירשם לטיולים מודרכים בישראל",
 };
 
-// Apply the saved theme before first paint to avoid a flash of the wrong mode.
-// Default is dark; light only when explicitly saved. Idempotent (add + remove).
-const themeInit = `(function(){try{var t=localStorage.getItem('trailhub-theme');document.documentElement.classList.toggle('theme-light',t==='light');}catch(e){}})();`;
+// Apply the theme before first paint to avoid a flash of the wrong mode.
+// Priority: saved localStorage → system preference → default dark.
+const themeInit = `(function(){try{var t=localStorage.getItem('trailhub-theme');var light=t?t==='light':(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches);document.documentElement.classList.toggle('theme-light',!!light);}catch(e){}})();`;
 
 export default function RootLayout({
   children,
@@ -40,11 +40,12 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning className="min-h-full flex flex-col bg-bg text-fg antialiased">
         <Providers>
-          <CalendarModeProvider>
-            <ThemeGuard />
-            {children}
-            <BottomNav />
-          </CalendarModeProvider>
+          <ThemeProvider>
+            <CalendarModeProvider>
+              {children}
+              <BottomNav />
+            </CalendarModeProvider>
+          </ThemeProvider>
         </Providers>
       </body>
     </html>

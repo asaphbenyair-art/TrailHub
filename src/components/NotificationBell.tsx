@@ -81,10 +81,10 @@ export default function NotificationBell() {
     <div ref={ref} className="relative">
       <button
         onClick={() => { setOpen((v) => !v); if (!open) fetchNotifs(); }}
-        className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+        className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-surface-2 transition-colors"
         aria-label="התראות"
       >
-        <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <svg className="w-5 h-5 text-fg-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
           <path strokeLinecap="round" strokeLinejoin="round"
             d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
@@ -96,9 +96,9 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute left-0 top-11 w-80 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <span className="font-semibold text-sm text-gray-900">התראות</span>
+        <div className="absolute left-0 top-11 w-80 bg-surface rounded-2xl shadow-xl border border-border z-50 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+            <span className="font-semibold text-sm text-fg">התראות</span>
             {unread > 0 && (
               <button onClick={markAllRead} className="text-xs text-[#1A6B4A] hover:underline">
                 סמן הכל כנקרא
@@ -108,21 +108,21 @@ export default function NotificationBell() {
 
           <div className="max-h-80 overflow-y-auto">
             {notifs.length === 0 ? (
-              <div className="py-10 text-center text-sm text-gray-400">אין התראות</div>
+              <div className="py-10 text-center text-sm text-fg-faint">אין התראות</div>
             ) : (
               notifs.map((n) => (
                 <div
                   key={n.id}
-                  className={`flex gap-3 px-4 py-3 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors ${!n.read ? "bg-green-50/60" : ""}`}
+                  className={`flex gap-3 px-4 py-3 border-b border-border cursor-pointer hover:bg-surface-2 transition-colors ${!n.read ? "bg-accent/10" : ""}`}
                   onClick={() => openNotif(n)}
                 >
                   <span className="text-lg mt-0.5 shrink-0">{typeIcon[n.type] ?? "🔔"}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-xs font-semibold text-gray-900 leading-snug">{n.title}</p>
-                      <span className="text-[10px] text-gray-400 shrink-0">{relativeTime(n.createdAt)}</span>
+                      <p className="text-xs font-semibold text-fg leading-snug">{n.title}</p>
+                      <span className="text-[10px] text-fg-faint shrink-0">{relativeTime(n.createdAt)}</span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{n.body}</p>
+                    <p className="text-xs text-fg-muted mt-0.5 line-clamp-2">{n.body}</p>
                     {(n.link || n.tripId) && (
                       <span className="text-[10px] text-[#1A6B4A] mt-1 inline-block">פתח ←</span>
                     )}
@@ -130,7 +130,7 @@ export default function NotificationBell() {
                   {!n.read && (
                     <button type="button" title="סמן כנקרא"
                       onClick={(e) => { e.stopPropagation(); markRead(n.id); }}
-                      className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center border border-gray-200 text-[#1A6B4A] hover:bg-[#D6EDE3] self-start text-xs">
+                      className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center border border-border text-[#1A6B4A] hover:bg-[#D6EDE3] self-start text-xs">
                       ✓
                     </button>
                   )}

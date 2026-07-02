@@ -154,13 +154,13 @@ export default function TripMap({ gpxContent, waypoints = [], onDistanceKm, onMa
     <div className="flex flex-col gap-2">
       <div
         ref={containerRef}
-        className="rounded-lg overflow-hidden border border-gray-200"
+        className="rounded-lg overflow-hidden border border-border"
         style={{ height: 200 }}
       />
 
       {points.length > 0 && (
-        <div className="bg-gray-50 rounded-lg p-3">
-          <div className="flex justify-between text-xs text-gray-400 mb-1">
+        <div className="bg-surface-2 rounded-lg p-3">
+          <div className="flex justify-between text-xs text-fg-faint mb-1">
             <span>פרופיל גבהים</span>
             <span>{eleMin}m — {eleMax}m</span>
           </div>

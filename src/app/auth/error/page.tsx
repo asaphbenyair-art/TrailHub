@@ -17,10 +17,10 @@ function ErrorInner() {
   const msg = MESSAGES[code] ?? "אירעה שגיאה בתהליך ההתחברות.";
   return (
     <div className="min-h-screen flex items-center justify-center p-4" dir="rtl">
-      <div className="w-full max-w-[420px] bg-white rounded-2xl border border-gray-200 shadow-sm p-6 text-center">
-        <div className="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-3 text-2xl">!</div>
-        <h1 className="text-lg font-semibold text-gray-900 mb-1">שגיאת התחברות</h1>
-        <p className="text-sm text-gray-500 leading-relaxed mb-5">{msg}</p>
+      <div className="w-full max-w-[420px] bg-surface rounded-2xl border border-border shadow-sm p-6 text-center">
+        <div className="w-12 h-12 rounded-full bg-surface-2 text-red-500 flex items-center justify-center mx-auto mb-3 text-2xl">!</div>
+        <h1 className="text-lg font-semibold text-fg mb-1">שגיאת התחברות</h1>
+        <p className="text-sm text-fg-muted leading-relaxed mb-5">{msg}</p>
         <Link href="/auth/login" className="inline-block bg-[#1A6B4A] text-white rounded-full px-6 py-2.5 text-sm font-medium hover:bg-[#155a3e] transition-colors">
           חזרה להתחברות
         </Link>

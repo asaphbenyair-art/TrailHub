@@ -69,15 +69,15 @@ export default function UserPicker({
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => results.length && setOpen(true)}
             placeholder={placeholder ?? "חפש לפי שם או אימייל..."}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+            className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
           />
           {open && results.length > 0 && (
-            <div className="absolute z-20 mt-1 w-full bg-white border border-gray-100 rounded-lg shadow-lg overflow-hidden">
+            <div className="absolute z-20 mt-1 w-full bg-surface border border-border rounded-lg shadow-lg overflow-hidden">
               {results.map((u) => (
                 <button key={u.id} type="button" onClick={() => add(u)}
-                  className="w-full text-right px-3 py-2 hover:bg-gray-50 flex items-center justify-between">
-                  <span className="text-sm text-gray-800">{u.name ?? u.email}{u.isGuide && <span className="text-[10px] text-[#1A6B4A] mr-1">· מדריך</span>}</span>
-                  <span className="text-[10px] text-gray-400">{u.email}</span>
+                  className="w-full text-right px-3 py-2 hover:bg-surface-2 flex items-center justify-between">
+                  <span className="text-sm text-fg">{u.name ?? u.email}{u.isGuide && <span className="text-[10px] text-[#1A6B4A] mr-1">· מדריך</span>}</span>
+                  <span className="text-[10px] text-fg-faint">{u.email}</span>
                 </button>
               ))}
             </div>
@@ -85,7 +85,7 @@ export default function UserPicker({
         </div>
       )}
       {query.trim().length >= 2 && results.length === 0 && (
-        <p className="text-[11px] text-gray-400">לא נמצאו משתמשים. ניתן להוסיף רק משתמשים רשומים.</p>
+        <p className="text-[11px] text-fg-faint">לא נמצאו משתמשים. ניתן להוסיף רק משתמשים רשומים.</p>
       )}
     </div>
   );

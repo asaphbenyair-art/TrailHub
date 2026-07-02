@@ -63,12 +63,12 @@ function ImageUpload({
 
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-xs font-medium text-gray-500">{label}</label>
+      <label className="text-xs font-medium text-fg-muted">{label}</label>
 
       {previews.length > 0 ? (
         <div className={`grid gap-2 ${multiple ? "grid-cols-3" : "grid-cols-1"}`}>
           {previews.map((src, i) => (
-            <div key={i} className="relative rounded-lg overflow-hidden bg-gray-100" style={{ height: multiple ? 80 : 160 }}>
+            <div key={i} className="relative rounded-lg overflow-hidden bg-surface-2" style={{ height: multiple ? 80 : 160 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={src} alt="" className="w-full h-full object-cover" />
               <button
@@ -84,7 +84,7 @@ function ImageUpload({
             <button
               type="button"
               onClick={() => ref.current?.click()}
-              className="rounded-lg border border-dashed border-gray-200 flex items-center justify-center text-gray-300 text-2xl hover:border-[#1A6B4A] transition-colors"
+              className="rounded-lg border border-dashed border-border flex items-center justify-center text-fg-faint text-2xl hover:border-[#1A6B4A] transition-colors"
               style={{ height: 80 }}
             >
               +
@@ -96,7 +96,7 @@ function ImageUpload({
           onClick={() => !uploading && ref.current?.click()}
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
-          className="border border-dashed border-gray-200 rounded-lg p-5 text-center text-gray-400 text-sm cursor-pointer hover:border-[#1A6B4A] hover:bg-gray-50 transition-colors select-none"
+          className="border border-dashed border-border rounded-lg p-5 text-center text-fg-faint text-sm cursor-pointer hover:border-[#1A6B4A] hover:bg-surface-2 transition-colors select-none"
         >
           {uploading ? (
             <div className="text-[#1A6B4A] text-sm">מעלה...</div>
@@ -104,7 +104,7 @@ function ImageUpload({
             <>
               <div className="text-2xl mb-1">🖼</div>
               <div>גרור תמונה לכאן או <span className="text-[#1A6B4A] font-medium">לחץ להעלאה</span></div>
-              <div className="text-xs text-gray-300 mt-1">JPG, PNG, WEBP — עד 10MB</div>
+              <div className="text-xs text-fg-faint mt-1">JPG, PNG, WEBP — עד 10MB</div>
             </>
           )}
         </div>
@@ -158,7 +158,7 @@ function TripDayEditor({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-gray-500">ימי המסע</span>
+        <span className="text-xs font-medium text-fg-muted">ימי המסע</span>
         <button
           type="button"
           onClick={addDay}
@@ -168,14 +168,14 @@ function TripDayEditor({
         </button>
       </div>
       {days.length === 0 && (
-        <p className="text-xs text-gray-400 text-center py-3">לחץ "הוסף יום" להגדרת כל יום</p>
+        <p className="text-xs text-fg-faint text-center py-3">לחץ "הוסף יום" להגדרת כל יום</p>
       )}
       {days.map((day, idx) => (
-        <div key={idx} className="border border-gray-200 rounded-xl p-3 flex flex-col gap-2">
+        <div key={idx} className="border border-border rounded-xl p-3 flex flex-col gap-2">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs font-semibold text-[#1A6B4A]">יום {day.dayNumber}</span>
             <div className="flex items-center gap-3">
-              <label className="flex items-center gap-1 text-[11px] text-gray-500">
+              <label className="flex items-center gap-1 text-[11px] text-fg-muted">
                 <input type="checkbox" checked={day.isRestDay} onChange={(e) => updateDay(idx, "isRestDay", e.target.checked)} />
                 יום מנוחה
               </label>
@@ -187,14 +187,14 @@ function TripDayEditor({
               type="date"
               value={day.date}
               onChange={(e) => updateDay(idx, "date", e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+              className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
               dir="ltr"
             />
             <input
               type="time"
               value={day.startTime}
               onChange={(e) => updateDay(idx, "startTime", e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+              className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
               dir="ltr"
             />
           </div>
@@ -203,37 +203,37 @@ function TripDayEditor({
             placeholder={day.isRestDay ? "שם היום (למשל: מנוחה בחניון)" : "שם היום (למשל: מנחל דן לחרמון)"}
             value={day.title}
             onChange={(e) => updateDay(idx, "title", e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+            className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
           />
           <textarea
             placeholder="תיאור קצר של היום"
             value={day.description}
             onChange={(e) => updateDay(idx, "description", e.target.value)}
             rows={2}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] resize-none"
+            className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] resize-none"
           />
           {!day.isRestDay && (
             <>
               <div className="grid grid-cols-2 gap-2">
                 <input type="text" placeholder="נקודת התחלה" value={day.startPoint}
                   onChange={(e) => updateDay(idx, "startPoint", e.target.value)}
-                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+                  className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
                 <input type="text" placeholder="נקודת סיום" value={day.endPoint}
                   onChange={(e) => updateDay(idx, "endPoint", e.target.value)}
-                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+                  className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
                 <input type="number" placeholder="ק״מ" value={day.distanceKm}
                   onChange={(e) => updateDay(idx, "distanceKm", e.target.value)}
-                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+                  className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
                 <input type="number" placeholder="שעות הליכה" value={day.durationHours}
                   onChange={(e) => updateDay(idx, "durationHours", e.target.value)}
-                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+                  className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
               </div>
               <input type="text" placeholder="ציוד מיוחד ליום זה (אופציונלי)" value={day.equipment}
                 onChange={(e) => updateDay(idx, "equipment", e.target.value)}
-                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+                className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
             </>
           )}
-          <div className="pt-1.5 border-t border-gray-100">
+          <div className="pt-1.5 border-t border-border">
             <SourceMaterialsEditor label="חומרי מקור ליום זה" materials={day.sources ?? []}
               onChange={(next) => updateDay(idx, "sources", next)} />
           </div>
@@ -291,7 +291,7 @@ export default function Step1({ data, onChange }: Props) {
 
   return (
     <div className="p-5 flex flex-col gap-4">
-      <div className="text-sm font-medium text-gray-900 border-b border-gray-100 pb-3 mb-1">
+      <div className="text-sm font-medium text-fg border-b border-border pb-3 mb-1">
         פרטים בסיסיים
       </div>
 
@@ -302,7 +302,7 @@ export default function Step1({ data, onChange }: Props) {
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          <label className="text-xs font-medium text-gray-500">סוג הטיול</label>
+          <label className="text-xs font-medium text-fg-muted">סוג הטיול</label>
           <div className="grid grid-cols-3 gap-2">
             {TRIP_TYPES.map((t) => (
               <button
@@ -312,11 +312,11 @@ export default function Step1({ data, onChange }: Props) {
                 className={`rounded-xl border p-2 text-center transition-colors ${
                   data.tripType === t.value
                     ? "border-[#1A6B4A] bg-[#D6EDE3]"
-                    : "border-gray-200 hover:border-gray-300"
+                    : "border-border hover:border-border"
                 }`}
               >
-                <div className="text-xs font-semibold text-gray-800">{t.label}</div>
-                <div className="text-[10px] text-gray-400 mt-0.5">{t.desc}</div>
+                <div className="text-xs font-semibold text-fg">{t.label}</div>
+                <div className="text-[10px] text-fg-faint mt-0.5">{t.desc}</div>
               </button>
             ))}
           </div>
@@ -324,61 +324,61 @@ export default function Step1({ data, onChange }: Props) {
       )}
 
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-medium text-gray-500">שם הטיול</label>
+        <label className="text-xs font-medium text-fg-muted">שם הטיול</label>
         <input
           type="text"
           value={data.title}
           onChange={(e) => onChange("title", e.target.value)}
           placeholder="למשל: טיול נחל פולג — מעיינות ובריכות"
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+          className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
         />
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-medium text-gray-500">תיאור</label>
+        <label className="text-xs font-medium text-fg-muted">תיאור</label>
         <textarea
           value={data.description}
           onChange={(e) => onChange("description", e.target.value)}
           placeholder="תיאור חופשי — מה רואים, מה עושים, מה מיוחד..."
           rows={3}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] resize-none"
+          className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] resize-none"
         />
       </div>
 
       {!isSelfGuided && (
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-500">
+          <label className="text-xs font-medium text-fg-muted">
             {isMultiDay ? "תאריך התחלה" : "תאריך"}
           </label>
           <input
             type="date"
             value={data.date}
             onChange={(e) => onChange("date", e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+            className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
             dir="ltr"
           />
         </div>
         {isMultiDay ? (
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-500">תאריך סיום</label>
+            <label className="text-xs font-medium text-fg-muted">תאריך סיום</label>
             <input
               type="date"
               value={data.endDate}
               min={data.date}
               onChange={(e) => onChange("endDate", e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+              className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
               dir="ltr"
             />
           </div>
         ) : (
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-500">שעת מפגש</label>
+            <label className="text-xs font-medium text-fg-muted">שעת מפגש</label>
             <input
               type="time"
               value={data.startTime}
               onChange={(e) => onChange("startTime", e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+              className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
               dir="ltr"
             />
           </div>
@@ -388,23 +388,23 @@ export default function Step1({ data, onChange }: Props) {
 
       {isMultiDay && (
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-500">שעת מפגש</label>
+          <label className="text-xs font-medium text-fg-muted">שעת מפגש</label>
           <input
             type="time"
             value={data.startTime}
             onChange={(e) => onChange("startTime", e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] w-32"
+            className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] w-32"
             dir="ltr"
           />
         </div>
       )}
 
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-medium text-gray-500">איזור בארץ</label>
+        <label className="text-xs font-medium text-fg-muted">איזור בארץ</label>
         <select
           value={data.region}
           onChange={(e) => onChange("region", e.target.value)}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] bg-white"
+          className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] bg-surface"
         >
           <option value="">בחר איזור...</option>
           {REGIONS.map((r) => (
@@ -414,15 +414,15 @@ export default function Step1({ data, onChange }: Props) {
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-medium text-gray-500">נקודת מפגש</label>
+        <label className="text-xs font-medium text-fg-muted">נקודת מפגש</label>
         <input
           type="text"
           value={data.meetingPoint}
           onChange={(e) => onChange("meetingPoint", e.target.value)}
           placeholder="הקלד כתובת או שם מקום..."
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+          className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
         />
-        <p className="text-xs text-gray-400 mt-1">ניתן להקליד כתובת מדויקת או שם מקום מוכר</p>
+        <p className="text-xs text-fg-faint mt-1">ניתן להקליד כתובת מדויקת או שם מקום מוכר</p>
       </div>
 
       {isMultiDay && (
@@ -434,7 +434,7 @@ export default function Step1({ data, onChange }: Props) {
 
       {isMultiDay && (
         <div className="flex flex-col gap-2">
-          <label className="text-xs font-medium text-gray-500">אופן הרשמה למסע</label>
+          <label className="text-xs font-medium text-fg-muted">אופן הרשמה למסע</label>
           {[
             { value: "FULL_ONLY", label: "מסע מלא בלבד", desc: "הרשמה לכל הימים, ללא ביטול חלקי" },
             { value: "INDIVIDUAL_DAYS", label: "ימים בודדים", desc: "כל יום עצמאי, הרשמה ומחיר נפרדים" },
@@ -445,11 +445,11 @@ export default function Step1({ data, onChange }: Props) {
               type="button"
               onClick={() => onChange("registrationMode", m.value)}
               className={`text-right rounded-xl border p-2.5 transition-colors ${
-                data.registrationMode === m.value ? "border-[#1A6B4A] bg-[#D6EDE3]" : "border-gray-200 hover:border-gray-300"
+                data.registrationMode === m.value ? "border-[#1A6B4A] bg-[#D6EDE3]" : "border-border hover:border-border"
               }`}
             >
-              <div className="text-xs font-semibold text-gray-800">{m.label}</div>
-              <div className="text-[10px] text-gray-400 mt-0.5">{m.desc}</div>
+              <div className="text-xs font-semibold text-fg">{m.label}</div>
+              <div className="text-[10px] text-fg-faint mt-0.5">{m.desc}</div>
             </button>
           ))}
         </div>

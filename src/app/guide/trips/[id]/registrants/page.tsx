@@ -83,16 +83,16 @@ export default function RegistrantsPage() {
   }
 
   return (
-    <div dir="rtl" className="min-h-screen bg-[#f5f5f5] py-4 px-3">
+    <div dir="rtl" className="min-h-screen bg-bg py-4 px-3">
       <div className="max-w-[560px] mx-auto">
         <div className="flex items-center gap-3 mb-4">
-          <button type="button" onClick={() => router.back()} className="text-gray-400 hover:text-gray-600 text-sm">← חזרה</button>
-          <h1 className="text-sm font-semibold text-gray-900">נרשמים לטיול</h1>
-          <span className="text-xs text-gray-400 mr-auto">{active.length} פעילים</span>
+          <button type="button" onClick={() => router.back()} className="text-fg-faint hover:text-fg-muted text-sm">← חזרה</button>
+          <h1 className="text-sm font-semibold text-fg">נרשמים לטיול</h1>
+          <span className="text-xs text-fg-faint mr-auto">{active.length} פעילים</span>
           <button type="button" onClick={generateCompCode}
             className="text-xs text-[#7A5010] border border-[#E8A020]/40 rounded-full px-3 py-1 hover:bg-[#FDF6E8]">🎟 קוד מתנדב</button>
           <button type="button" onClick={broadcast}
-            className="text-xs text-gray-600 border border-gray-200 rounded-full px-3 py-1 hover:bg-gray-100">📢 Broadcast</button>
+            className="text-xs text-fg-muted border border-border rounded-full px-3 py-1 hover:bg-surface-2">📢 Broadcast</button>
         </div>
 
         {/* Aggregated conditional requests */}
@@ -109,55 +109,55 @@ export default function RegistrantsPage() {
           </div>
         )}
 
-        {loading && <div className="text-center py-12 text-gray-400 text-sm">טוען...</div>}
+        {loading && <div className="text-center py-12 text-fg-faint text-sm">טוען...</div>}
         {error && <div className="text-center py-12 text-red-500 text-sm">{error}</div>}
 
         {!loading && !error && active.length === 0 && (
-          <div className="text-center py-14 text-gray-400 text-sm">עדיין אין נרשמים</div>
+          <div className="text-center py-14 text-fg-faint text-sm">עדיין אין נרשמים</div>
         )}
 
         <div className="flex flex-col gap-3">
           {active.map((r) => {
             const su = STATUS_UI[r.status] ?? STATUS_UI.PENDING;
             return (
-              <div key={r.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+              <div key={r.id} className="bg-surface rounded-2xl border border-border shadow-sm p-4">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-9 h-9 rounded-full bg-[#D6EDE3] flex items-center justify-center text-sm font-medium text-[#1A6B4A]">
                     {(r.user.name ?? "?")[0]}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-gray-900">{r.user.name ?? "—"}</div>
-                    <div className="text-[11px] text-gray-400">{r.user.email}</div>
+                    <div className="text-sm font-medium text-fg">{r.user.name ?? "—"}</div>
+                    <div className="text-[11px] text-fg-faint">{r.user.email}</div>
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: su.bg, color: su.color }}>
                       {su.label}{r.status === "WAITLIST" && r.waitlistPosition ? ` #${r.waitlistPosition}` : ""}
                     </span>
-                    <span className="text-[10px] text-gray-400">{PAY_UI[r.paymentStatus] ?? r.paymentStatus}</span>
+                    <span className="text-[10px] text-fg-faint">{PAY_UI[r.paymentStatus] ?? r.paymentStatus}</span>
                   </div>
                 </div>
 
                 {r.notes && (
-                  <div className="text-xs text-gray-600 bg-gray-50 rounded-lg px-3 py-2 mb-2">{r.notes}</div>
+                  <div className="text-xs text-fg-muted bg-surface-2 rounded-lg px-3 py-2 mb-2">{r.notes}</div>
                 )}
 
                 {fields.length > 0 && r.fieldAnswers && Object.keys(r.fieldAnswers).length > 0 && (
-                  <div className="border-t border-gray-50 pt-2 mt-1 flex flex-col gap-1">
+                  <div className="border-t border-border pt-2 mt-1 flex flex-col gap-1">
                     {fields.map((f) => {
                       const val = r.fieldAnswers?.[f.id];
                       if (!val) return null;
                       return (
                         <div key={f.id} className="flex justify-between text-xs">
-                          <span className="text-gray-400">{f.label}</span>
-                          <span className="text-gray-800 font-medium">{answerLabel(f, val)}</span>
+                          <span className="text-fg-faint">{f.label}</span>
+                          <span className="text-fg font-medium">{answerLabel(f, val)}</span>
                         </div>
                       );
                     })}
                   </div>
                 )}
 
-                <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-50">
-                  <span className="text-[10px] text-gray-400">
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
+                  <span className="text-[10px] text-fg-faint">
                     {r.signedPolicy ? "✓ אישר מדיניות ביטולים" : ""}
                   </span>
                   <button

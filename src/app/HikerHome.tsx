@@ -209,7 +209,7 @@ export default function HikerHome() {
                 </button>
               )}
               <button type="button" onClick={likeSignal} disabled={liked}
-                className="w-full py-3 rounded-full text-sm font-medium flex items-center justify-center gap-1.5 border border-white/30 text-white backdrop-blur-sm bg-white/5 disabled:opacity-70">
+                className="w-full py-3 rounded-full text-sm font-medium flex items-center justify-center gap-1.5 border border-white/30 text-white backdrop-blur-sm bg-surface/5 disabled:opacity-70">
                 <Heart size={15} fill={liked ? "#fff" : "none"} />
                 {liked ? "נשמר — נראה לך עוד כאלה" : "אהבתי — הראה לי עוד כאלה"}
               </button>

@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { Settings, LogOut, Repeat } from "lucide-react";
+import { Settings, LogOut, Repeat, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/components/ThemeProvider";
 
 const AVATAR_COLORS = ["#854F0B", "#3B6D11", "#185FA5", "#6B3B87", "#1A6B4A"];
 function avatarColor(name: string | null) {
@@ -22,6 +23,7 @@ function initials(name: string | null) {
 export default function AvatarMenu() {
   const router = useRouter();
   const { data: session } = useSession();
+  const { theme, toggle: toggleTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"hiker" | "guide">("hiker");
   const [isGuide, setIsGuide] = useState(false);
@@ -78,25 +80,31 @@ export default function AvatarMenu() {
       </button>
 
       {open && (
-        <div dir="rtl" className="absolute left-0 top-10 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 z-[70] overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100">
-            <div className="text-sm font-semibold text-gray-900 truncate">{name ?? "משתמש"}</div>
-            <div className="text-xs text-gray-400 truncate" dir="ltr">{email}</div>
+        <div dir="rtl" className="absolute left-0 top-10 w-56 bg-surface rounded-2xl shadow-xl border border-border z-[70] overflow-hidden">
+          <div className="px-4 py-3 border-b border-border">
+            <div className="text-sm font-semibold text-fg truncate">{name ?? "משתמש"}</div>
+            <div className="text-xs text-fg-faint truncate" dir="ltr">{email}</div>
           </div>
           <div className="py-1">
             {isGuide && (
               <button type="button" onClick={switchMode}
-                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 text-right">
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-fg hover:bg-surface-2 text-right">
                 <Repeat size={16} className="text-[#185FA5]" />
                 {target === "guide" ? "עבור למצב מדריך" : "עבור למצב מטייל"}
               </button>
             )}
+            <button type="button" onClick={() => toggleTheme()}
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-fg hover:bg-surface-2 text-right">
+              {theme === "light"
+                ? <><Moon size={16} className="text-[#185FA5]" /> מצב כהה</>
+                : <><Sun size={16} className="text-[#E8A020]" /> מצב בהיר</>}
+            </button>
             <button type="button" onClick={() => { setOpen(false); router.push("/profile"); }}
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 text-right">
-              <Settings size={16} className="text-gray-400" /> הגדרות
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-fg hover:bg-surface-2 text-right">
+              <Settings size={16} className="text-fg-faint" /> הגדרות
             </button>
             <button type="button" onClick={() => { setOpen(false); signOut({ callbackUrl: "/" }); }}
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#C0392B] hover:bg-red-50 text-right">
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#C0392B] hover:bg-surface-2 text-right">
               <LogOut size={16} /> התנתק
             </button>
           </div>

@@ -1,24 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Sun, Moon } from "lucide-react";
+import { useTheme } from "@/components/ThemeProvider";
 
-/** Toggles between the default dark mode and light mode, persisted to localStorage. */
+/** Round icon button that toggles light/dark. Persists via ThemeProvider (localStorage + DB). */
 export default function ThemeToggle({ className = "" }: { className?: string }) {
-  const [light, setLight] = useState(false);
-
-  useEffect(() => {
-    setLight(document.documentElement.classList.contains("theme-light"));
-  }, []);
-
-  function toggle() {
-    const next = !light;
-    setLight(next);
-    document.documentElement.classList.toggle("theme-light", next);
-    try {
-      localStorage.setItem("trailhub-theme", next ? "light" : "dark");
-    } catch {}
-  }
+  const { theme, toggle } = useTheme();
+  const light = theme === "light";
 
   return (
     <button

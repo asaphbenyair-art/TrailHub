@@ -124,7 +124,7 @@ function TripCard({
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden" style={{ opacity: isCancelled ? 0.7 : 1 }}>
+    <div className="bg-surface rounded-2xl border border-border overflow-hidden" style={{ opacity: isCancelled ? 0.7 : 1 }}>
       <div className="flex">
         {/* Image */}
         <div className="w-24 flex-shrink-0" style={{ minHeight: 90 }}>
@@ -138,8 +138,8 @@ function TripCard({
             style={{ background: badge.bg, color: badge.color }}>
             {badge.label}
           </div>
-          <div className="text-sm font-medium text-gray-900 leading-snug mb-1 truncate">{trip.title}</div>
-          <div className="flex flex-col gap-0.5 text-xs text-gray-500">
+          <div className="text-sm font-medium text-fg leading-snug mb-1 truncate">{trip.title}</div>
+          <div className="flex flex-col gap-0.5 text-xs text-fg-muted">
             <span>📅 {isPast ? dfmt(trip.date, { long: true, weekday: true, greg: { weekday: "long", day: "numeric", month: "long" } }) : dfmt(trip.date, { greg: { weekday: "short", day: "numeric", month: "short" } })} · {trip.startTime}</span>
             <span>👤 {guideName}</span>
             {trip.meetingPoint && <span>📍 {trip.meetingPoint}</span>}
@@ -160,7 +160,7 @@ function TripCard({
             </div>
           )}
           {isPending && !reg.conditions?.length && !reg.interestThreshold && reg.notes && (
-            <div className="text-[11px] text-gray-400 mt-1 truncate">⚙ {reg.notes}</div>
+            <div className="text-[11px] text-fg-faint mt-1 truncate">⚙ {reg.notes}</div>
           )}
         </div>
       </div>
@@ -179,8 +179,8 @@ function TripCard({
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between px-3 py-2 border-t border-gray-50 bg-gray-50/60">
-        <span className="text-xs font-medium text-gray-800">
+      <div className="flex items-center justify-between px-3 py-2 border-t border-border bg-surface-2/60">
+        <span className="text-xs font-medium text-fg">
           {isCancelled
             ? `₪${reg.totalPrice.toLocaleString()} · הוחזר`
             : isConfirmed
@@ -191,7 +191,7 @@ function TripCard({
           {isPast && !isCancelled && (
             <>
               <button type="button" onClick={() => router.push(`/trips/${trip.id}`)}
-                className="px-2.5 py-1 border border-gray-200 rounded-full text-[11px] text-gray-600">
+                className="px-2.5 py-1 border border-border rounded-full text-[11px] text-fg-muted">
                 כתוב ביקורת
               </button>
               <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)}
@@ -224,7 +224,7 @@ function TripCard({
                 target="_blank" rel="noreferrer"
                 className="px-2.5 py-1 border border-[#185FA5]/30 text-[#185FA5] rounded-full text-[11px]">📅 ליומן</a>
               <button type="button" onClick={() => router.push(`/trips/${trip.id}`)}
-                className="px-2.5 py-1 border border-gray-200 rounded-full text-[11px] text-gray-600">
+                className="px-2.5 py-1 border border-border rounded-full text-[11px] text-fg-muted">
                 שאלה למדריך
               </button>
               {reg.participantCount > 1 && (
@@ -256,14 +256,14 @@ function TripCard({
             {isConfirmed ? (
               <>
                 <div className="text-xs text-[#791F1F] mb-1.5">ביטול ההרשמה — לפי מדיניות הביטולים, בעת ביטול כעת:</div>
-                <div className="bg-white rounded-lg border border-[#C0392B]/15 p-2.5 mb-2">
+                <div className="bg-surface rounded-lg border border-[#C0392B]/15 p-2.5 mb-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">החזר כספי</span>
+                    <span className="text-fg-muted">החזר כספי</span>
                     <span className="font-semibold text-[#0F5038]">
-                      ₪{refund!.amount.toLocaleString()} <span className="text-gray-400 font-normal">({refund!.pct}%)</span>
+                      ₪{refund!.amount.toLocaleString()} <span className="text-fg-faint font-normal">({refund!.pct}%)</span>
                     </span>
                   </div>
-                  <div className="text-[11px] text-gray-400 mt-1.5 leading-relaxed">
+                  <div className="text-[11px] text-fg-faint mt-1.5 leading-relaxed">
                     ההחזר יבוצע מיידית דרך Stripe. הזיכוי בחשבון — בדרך כלל 3-5 ימי עסקים, תלוי בבנק.
                   </div>
                 </div>
@@ -273,7 +273,7 @@ function TripCard({
             )}
             <div className="flex gap-2">
               <button type="button" onClick={() => setConfirmCancel(false)}
-                className="px-3 py-1.5 border border-gray-200 rounded-full text-xs text-gray-500 bg-white">
+                className="px-3 py-1.5 border border-border rounded-full text-xs text-fg-muted bg-surface">
                 חזרה
               </button>
               <button type="button" onClick={doCancel} disabled={cancelling}
@@ -332,19 +332,19 @@ export default function MyTripsPage() {
   const currentList = activeTab === "upcoming" ? upcoming : activeTab === "interested" ? interested : past;
 
   return (
-    <div dir="rtl" className="min-h-screen bg-[#f5f5f5]">
+    <div dir="rtl" className="min-h-screen bg-bg">
       <div className="max-w-[480px] mx-auto px-3 py-3 pb-24">
 
         {/* Top bar */}
-        <div className="bg-white rounded-xl px-3 py-2.5 mb-2 flex items-center gap-2">
+        <div className="bg-surface rounded-xl px-3 py-2.5 mb-2 flex items-center gap-2">
           <Link href="/trips" className="text-[15px] font-semibold text-[#1A6B4A] flex-shrink-0">🧭 TrailHub</Link>
-          <span className="text-sm font-medium text-gray-900 flex-1 text-center">הטיולים שלי</span>
+          <span className="text-sm font-medium text-fg flex-1 text-center">הטיולים שלי</span>
           <Link href="/trips" className="text-xs text-[#1A6B4A] flex-shrink-0">גלה טיולים</Link>
           <AvatarMenu />
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-xl mb-2 overflow-hidden flex">
+        <div className="bg-surface rounded-xl mb-2 overflow-hidden flex">
           {tabs.map((tab) => (
             <button
               key={tab.key}
@@ -353,12 +353,12 @@ export default function MyTripsPage() {
               className={`flex-1 py-2.5 text-xs text-center border-b-2 transition-colors ${
                 activeTab === tab.key
                   ? "border-[#1A6B4A] text-[#1A6B4A] font-medium"
-                  : "border-transparent text-gray-500"
+                  : "border-transparent text-fg-muted"
               }`}
             >
               {tab.label}
               {tab.count > 0 && (
-                <span className={`mr-1 text-[10px] ${activeTab === tab.key ? "text-[#1A6B4A]" : "text-gray-400"}`}>
+                <span className={`mr-1 text-[10px] ${activeTab === tab.key ? "text-[#1A6B4A]" : "text-fg-faint"}`}>
                   ({tab.count})
                 </span>
               )}
@@ -368,12 +368,12 @@ export default function MyTripsPage() {
 
         {/* Content */}
         {loading ? (
-          <div className="text-center py-12 text-gray-400 text-sm">טוען...</div>
+          <div className="text-center py-12 text-fg-faint text-sm">טוען...</div>
         ) : activeTab === "selfguided" ? (
           purchases.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-3xl mb-3">🎒</div>
-              <div className="text-gray-500 text-sm">עוד לא רכשת טיולים עצמאיים</div>
+              <div className="text-fg-muted text-sm">עוד לא רכשת טיולים עצמאיים</div>
               <Link href="/trips" className="inline-block mt-3 text-[#1A6B4A] text-sm border border-[#1A6B4A] rounded-full px-4 py-1.5">גלה טיולים עצמאיים</Link>
             </div>
           ) : (
@@ -381,15 +381,15 @@ export default function MyTripsPage() {
               {purchases.map((p) => {
                 const expired = p.accessExpiresAt ? new Date(p.accessExpiresAt) < new Date() : false;
                 return (
-                  <div key={p.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden flex">
+                  <div key={p.id} className="bg-surface rounded-2xl border border-border overflow-hidden flex">
                     <div className="w-24 flex-shrink-0" style={{ minHeight: 90 }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={coverImages(p.trip.images, p.trip.id, { region: p.trip.region, title: p.trip.title })[0]} alt="" className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
                       <div>
-                        <div className="text-sm font-medium text-gray-900 truncate">{p.trip.title}</div>
-                        <div className="text-xs text-gray-400 mt-0.5">📍 {p.trip.region}</div>
+                        <div className="text-sm font-medium text-fg truncate">{p.trip.title}</div>
+                        <div className="text-xs text-fg-faint mt-0.5">📍 {p.trip.region}</div>
                         {(() => { const r = accessRemaining(p.accessExpiresAt); return (
                           <div className="text-[11px] mt-1 font-semibold" style={{ color: r.color }}>{r.text}</div>
                         ); })()}
@@ -409,7 +409,7 @@ export default function MyTripsPage() {
             <div className="text-3xl mb-3">
               {activeTab === "upcoming" ? "🏕" : activeTab === "interested" ? "👀" : "📋"}
             </div>
-            <div className="text-gray-500 text-sm">
+            <div className="text-fg-muted text-sm">
               {activeTab === "upcoming" ? "אין טיולים קרובים" :
                activeTab === "interested" ? "לא מתעניין באף טיול כרגע" :
                "אין היסטוריה עדיין"}

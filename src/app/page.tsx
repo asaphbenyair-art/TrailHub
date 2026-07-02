@@ -45,7 +45,7 @@ export default async function Home() {
             הרשמה
           </Link>
           <Link href="/auth/login"
-            className="w-full text-center rounded-full py-4 text-sm font-medium border border-white/25 text-white bg-white/5 backdrop-blur-sm">
+            className="w-full text-center rounded-full py-4 text-sm font-medium border border-white/25 text-white bg-surface/5 backdrop-blur-sm">
             כניסה
           </Link>
           <Link href="/trips" className="w-full text-center py-2 text-sm text-white/70">

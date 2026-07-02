@@ -184,7 +184,7 @@ export default function TripDetailMap({
   return (
     <div
       ref={containerRef}
-      className="rounded-xl overflow-hidden border border-gray-100"
+      className="rounded-xl overflow-hidden border border-border"
       style={{ height }}
     />
   );

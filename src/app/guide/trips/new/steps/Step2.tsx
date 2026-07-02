@@ -60,16 +60,16 @@ export default function Step2({ data, onChange }: Props) {
 
   return (
     <div className="p-5 flex flex-col gap-4">
-      <div className="text-sm font-medium text-gray-900 border-b border-gray-100 pb-3 mb-1">מסלול</div>
+      <div className="text-sm font-medium text-fg border-b border-border pb-3 mb-1">מסלול</div>
 
       {/* Route type */}
       <div className="flex flex-col gap-2">
-        <label className="text-xs font-medium text-gray-500">סוג מסלול</label>
+        <label className="text-xs font-medium text-fg-muted">סוג מסלול</label>
         <div className="flex gap-2 flex-wrap">
           {ROUTE_TYPES.map((t) => (
             <button key={t.value} type="button" onClick={() => onChange("routeType", t.value)}
               className={`flex-1 min-w-[80px] py-2 px-2 rounded-lg border text-xs transition-colors ${
-                data.routeType === t.value ? "border-[#1A6B4A] bg-[#D6EDE3] text-[#0F5038]" : "border-gray-200 text-gray-500 hover:border-gray-300"
+                data.routeType === t.value ? "border-[#1A6B4A] bg-[#D6EDE3] text-[#0F5038]" : "border-border text-fg-muted hover:border-border"
               }`}>
               {t.label}
             </button>
@@ -79,19 +79,19 @@ export default function Step2({ data, onChange }: Props) {
 
       {/* GPX upload */}
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-medium text-gray-500">קובץ GPX (אופציונלי)</label>
+        <label className="text-xs font-medium text-fg-muted">קובץ GPX (אופציונלי)</label>
         {gpxName ? (
           <div className="flex items-center gap-2 border border-[#1A6B4A] bg-[#D6EDE3] rounded-lg px-3 py-2.5">
             <span className="text-lg">🗺</span>
             <span className="text-sm text-[#0F5038] flex-1 truncate">{gpxName}</span>
-            <button type="button" onClick={clearGpx} className="text-gray-400 hover:text-red-500 text-xs px-1">✕</button>
+            <button type="button" onClick={clearGpx} className="text-fg-faint hover:text-red-500 text-xs px-1">✕</button>
           </div>
         ) : (
           <div onClick={() => gpxRef.current?.click()}
-            className="border border-dashed border-gray-200 rounded-lg p-5 text-center text-gray-400 text-sm cursor-pointer hover:border-[#1A6B4A] hover:bg-gray-50 transition-colors select-none">
+            className="border border-dashed border-border rounded-lg p-5 text-center text-fg-faint text-sm cursor-pointer hover:border-[#1A6B4A] hover:bg-surface-2 transition-colors select-none">
             <div className="text-2xl mb-1">🗺</div>
             <div>לחץ להעלאת קובץ GPX</div>
-            <div className="text-xs text-gray-300 mt-1">המסלול יוצג על המפה אוטומטית ויישמר עם הטיול</div>
+            <div className="text-xs text-fg-faint mt-1">המסלול יוצג על המפה אוטומטית ויישמר עם הטיול</div>
           </div>
         )}
         <input ref={gpxRef} type="file" accept=".gpx,application/gpx+xml" className="hidden" onChange={handleGpxFile} />
@@ -99,7 +99,7 @@ export default function Step2({ data, onChange }: Props) {
 
       {/* Map */}
       <div className="flex flex-col gap-1">
-        {!gpxContent && <p className="text-xs text-gray-400">לחץ על המפה להוספת נקודות עצירה</p>}
+        {!gpxContent && <p className="text-xs text-fg-faint">לחץ על המפה להוספת נקודות עצירה</p>}
         <TripMap
           gpxContent={gpxContent}
           waypoints={mapWaypoints.map((w) => ({ lat: w.lat, lng: w.lng, label: w.name }))}
@@ -111,7 +111,7 @@ export default function Step2({ data, onChange }: Props) {
       {/* Waypoints list — name + description per point */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-medium text-gray-500">
+          <label className="text-xs font-medium text-fg-muted">
             {data.tripType === "SELF_GUIDED" ? "תחנות ניווט" : "נקודות עצירה"} ({mapWaypoints.length})
           </label>
           <button type="button" onClick={addWaypoint}
@@ -120,31 +120,31 @@ export default function Step2({ data, onChange }: Props) {
           </button>
         </div>
         {data.tripType === "SELF_GUIDED" && mapWaypoints.length === 0 && (
-          <p className="text-[11px] text-gray-400">כל תחנה כוללת הוראות ניווט צעד-אחר-צעד, חומר הדרכה שיוקרא בקול, ואזהרת בטיחות — הם מחליפים את המדריך החי.</p>
+          <p className="text-[11px] text-fg-faint">כל תחנה כוללת הוראות ניווט צעד-אחר-צעד, חומר הדרכה שיוקרא בקול, ואזהרת בטיחות — הם מחליפים את המדריך החי.</p>
         )}
         {mapWaypoints.length > 0 && (
           <>
           {mapWaypoints.map((wp, i) => (
-            <div key={i} className="border border-gray-200 rounded-xl p-2.5 flex flex-col gap-1.5">
+            <div key={i} className="border border-border rounded-xl p-2.5 flex flex-col gap-1.5">
               <div className="flex items-center gap-2">
                 <span className="text-[#1A6B4A] font-medium text-xs shrink-0">📍 {i + 1}</span>
                 <input type="text" value={wp.name} onChange={(e) => patchWaypoint(i, { name: e.target.value })}
-                  placeholder="שם הנקודה" className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-[#1A6B4A]" />
-                <button type="button" onClick={() => removeWaypoint(i)} className="text-gray-300 hover:text-red-400 px-1">✕</button>
+                  placeholder="שם הנקודה" className="flex-1 border border-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+                <button type="button" onClick={() => removeWaypoint(i)} className="text-fg-faint hover:text-red-400 px-1">✕</button>
               </div>
               <input type="text" value={wp.description} onChange={(e) => patchWaypoint(i, { description: e.target.value })}
-                placeholder="תיאור קצר (אופציונלי)" className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1A6B4A]" />
+                placeholder="תיאור קצר (אופציונלי)" className="border border-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1A6B4A]" />
               {data.tripType === "SELF_GUIDED" && (
-                <div className="flex flex-col gap-1.5 mt-1 pt-1.5 border-t border-gray-100">
+                <div className="flex flex-col gap-1.5 mt-1 pt-1.5 border-t border-border">
                   <input type="text" value={wp.navInstructions ?? ""} onChange={(e) => patchWaypoint(i, { navInstructions: e.target.value })}
-                    placeholder="🧭 הוראות ניווט (למשל: אחרי 200מ' פנה שמאל בעץ הגדול)" className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1A6B4A]" />
+                    placeholder="🧭 הוראות ניווט (למשל: אחרי 200מ' פנה שמאל בעץ הגדול)" className="border border-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1A6B4A]" />
                   <textarea value={wp.guidance ?? ""} onChange={(e) => patchWaypoint(i, { guidance: e.target.value })} rows={2}
-                    placeholder="📖 חומר הדרכה (יוקרא בקול — מחליף את המדריך)" className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1A6B4A] resize-none" />
+                    placeholder="📖 חומר הדרכה (יוקרא בקול — מחליף את המדריך)" className="border border-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1A6B4A] resize-none" />
                   <input type="text" value={wp.safety ?? ""} onChange={(e) => patchWaypoint(i, { safety: e.target.value })}
-                    placeholder="⚠ אזהרת בטיחות לקטע זה" className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1A6B4A]" />
+                    placeholder="⚠ אזהרת בטיחות לקטע זה" className="border border-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1A6B4A]" />
                 </div>
               )}
-              <div className="mt-1 pt-1.5 border-t border-gray-100">
+              <div className="mt-1 pt-1.5 border-t border-border">
                 <SourceMaterialsEditor label="חומרי מקור לנקודה זו" materials={wp.sources ?? []}
                   onChange={(next) => patchWaypoint(i, { sources: next })} />
               </div>
@@ -157,16 +157,16 @@ export default function Step2({ data, onChange }: Props) {
       {/* Distance + Duration */}
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-500">אורך (ק"מ)</label>
+          <label className="text-xs font-medium text-fg-muted">אורך (ק"מ)</label>
           <input type="number" step="0.1" min="0" value={data.distanceKm}
             onChange={(e) => onChange("distanceKm", e.target.value)} placeholder="12.4"
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" dir="ltr" />
+            className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" dir="ltr" />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-500">משך (שעות)</label>
+          <label className="text-xs font-medium text-fg-muted">משך (שעות)</label>
           <input type="number" step="0.5" min="0" value={data.durationHours}
             onChange={(e) => onChange("durationHours", e.target.value)} placeholder="5"
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" dir="ltr" />
+            className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" dir="ltr" />
         </div>
       </div>
     </div>

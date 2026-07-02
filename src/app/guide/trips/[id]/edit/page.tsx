@@ -248,7 +248,7 @@ export default function EditTripPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-gray-400 text-sm">
+      <div className="min-h-screen flex items-center justify-center text-fg-faint text-sm">
         טוען...
       </div>
     );
@@ -258,15 +258,15 @@ export default function EditTripPage() {
     <div className="min-h-screen p-4 flex items-start justify-center">
       <div className="w-full max-w-[480px]">
         <div className="mb-4 flex items-center gap-3">
-          <button type="button" onClick={() => router.back()} className="text-gray-400 hover:text-gray-600 text-sm">
+          <button type="button" onClick={() => router.back()} className="text-fg-faint hover:text-fg-muted text-sm">
             ← חזרה
           </button>
-          <h1 className="text-lg font-semibold text-gray-900">עריכת טיול</h1>
+          <h1 className="text-lg font-semibold text-fg">עריכת טיול</h1>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+        <div className="bg-surface rounded-2xl border border-border overflow-hidden shadow-sm">
           {/* Step tabs */}
-          <div className="flex border-b border-gray-100 bg-gray-50">
+          <div className="flex border-b border-border bg-surface-2">
             {STEPS.map((s, i) => {
               const n = i + 1;
               const isDone = n < step;
@@ -277,17 +277,17 @@ export default function EditTripPage() {
                   type="button"
                   onClick={() => goTo(n)}
                   className={`flex-1 py-3 flex flex-col items-center gap-1 border-b-2 transition-colors cursor-pointer ${
-                    isActive ? "border-[#1A6B4A] bg-white" : "border-transparent hover:bg-gray-100"
+                    isActive ? "border-[#1A6B4A] bg-surface" : "border-transparent hover:bg-surface-2"
                   }`}
                 >
                   <div
                     className={`w-[22px] h-[22px] rounded-full flex items-center justify-center text-[11px] font-medium ${
-                      isDone ? "bg-[#D6EDE3] text-[#1A6B4A]" : isActive ? "bg-[#1A6B4A] text-white" : "bg-gray-100 text-gray-400"
+                      isDone ? "bg-[#D6EDE3] text-[#1A6B4A]" : isActive ? "bg-[#1A6B4A] text-white" : "bg-surface-2 text-fg-faint"
                     }`}
                   >
                     {isDone ? "✓" : n}
                   </div>
-                  <span className={`text-[10px] ${isActive ? "text-[#1A6B4A] font-medium" : "text-gray-400"}`}>
+                  <span className={`text-[10px] ${isActive ? "text-[#1A6B4A] font-medium" : "text-fg-faint"}`}>
                     {s.label}
                   </span>
                 </button>
@@ -302,7 +302,7 @@ export default function EditTripPage() {
           {!isSelfGuided && step === 5 && <Step5 data={data} onChange={onChange} />}
           {isSelfGuided && step === 4 && <Step5 data={data} onChange={onChange} />}
 
-          <div className="border-t border-gray-100 bg-gray-50">
+          <div className="border-t border-border bg-surface-2">
             {error && (
               <div className="px-5 pt-2 text-xs text-red-500 text-center">{error}</div>
             )}
@@ -310,14 +310,14 @@ export default function EditTripPage() {
               <button
                 type="button"
                 onClick={goPrev}
-                className={`px-4 py-2 text-xs border border-gray-200 rounded-full text-gray-500 hover:bg-gray-100 transition-colors ${
+                className={`px-4 py-2 text-xs border border-border rounded-full text-fg-muted hover:bg-surface-2 transition-colors ${
                   step === 1 ? "invisible" : ""
                 }`}
               >
                 חזור
               </button>
 
-              <span className="text-xs text-gray-400">שלב {step} מתוך {STEPS.length}</span>
+              <span className="text-xs text-fg-faint">שלב {step} מתוך {STEPS.length}</span>
 
               <div className="flex gap-2">
                 <button

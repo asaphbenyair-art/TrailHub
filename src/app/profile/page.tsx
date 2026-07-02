@@ -209,25 +209,25 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-sm text-gray-400" dir="rtl">
+      <div className="min-h-screen flex items-center justify-center text-sm text-fg-faint" dir="rtl">
         טוען...
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] py-8 px-4 pb-24" dir="rtl">
+    <div className="min-h-screen bg-bg py-8 px-4 pb-24" dir="rtl">
       <div className="max-w-lg mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-bold text-gray-900">הפרופיל שלי</h1>
-          <div className="flex items-center gap-2 text-xs text-gray-500">
+          <h1 className="text-xl font-bold text-fg">הפרופיל שלי</h1>
+          <div className="flex items-center gap-2 text-xs text-fg-muted">
             מצב תצוגה
             <ThemeToggle />
           </div>
         </div>
 
         {/* Avatar */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 mb-4 flex items-center gap-4">
+        <div className="bg-surface rounded-2xl border border-border shadow-sm p-5 mb-4 flex items-center gap-4">
           <div className="relative">
             {profile?.image ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -248,8 +248,8 @@ export default function ProfilePage() {
             )}
           </div>
           <div className="flex flex-col gap-1">
-            <span className="font-semibold text-gray-800">{profile?.name ?? "—"}</span>
-            <span className="text-xs text-gray-400">{profile?.email}</span>
+            <span className="font-semibold text-fg">{profile?.name ?? "—"}</span>
+            <span className="text-xs text-fg-faint">{profile?.email}</span>
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
@@ -262,8 +262,8 @@ export default function ProfilePage() {
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-          <div className="flex border-b border-gray-100">
+        <div className="bg-surface rounded-2xl border border-border shadow-sm overflow-hidden">
+          <div className="flex border-b border-border">
             {([["info", "פרטים אישיים"], ["prefs", "העדפות טיולים"], ...(profile?.role === "GUIDE" ? [["guide", "פרופיל מדריך"] as const] : []), ...(profile?.hasPassword ? [["password", "שינוי סיסמה"] as const] : [])] as const).map(([tab, label]) => (
               <button
                 key={tab}
@@ -271,8 +271,8 @@ export default function ProfilePage() {
                 onClick={() => { setActiveTab(tab); setSaveMsg(""); setPwdMsg(""); }}
                 className={`flex-1 py-3 text-xs font-medium border-b-2 transition-colors ${
                   activeTab === tab
-                    ? "border-[#1A6B4A] text-[#1A6B4A] bg-white"
-                    : "border-transparent text-gray-400 hover:text-gray-600"
+                    ? "border-[#1A6B4A] text-[#1A6B4A] bg-surface"
+                    : "border-transparent text-fg-faint hover:text-fg-muted"
                 }`}
               >
                 {label}
@@ -285,22 +285,22 @@ export default function ProfilePage() {
             {activeTab === "info" && (
               <>
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-500">שם מלא</label>
+                  <label className="text-xs font-medium text-fg-muted">שם מלא</label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+                    className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-medium text-gray-500">מגדר</label>
+                    <label className="text-xs font-medium text-fg-muted">מגדר</label>
                     <select
                       value={gender}
                       onChange={(e) => setGender(e.target.value)}
-                      className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] bg-white"
+                      className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] bg-surface"
                     >
                       <option value="">לא צוין</option>
                       <option value="male">זכר</option>
@@ -309,7 +309,7 @@ export default function ProfilePage() {
                     </select>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-medium text-gray-500">שנת לידה</label>
+                    <label className="text-xs font-medium text-fg-muted">שנת לידה</label>
                     <input
                       type="number"
                       value={birthYear}
@@ -317,7 +317,7 @@ export default function ProfilePage() {
                       placeholder="1990"
                       min="1920"
                       max="2010"
-                      className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+                      className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
                       dir="ltr"
                     />
                   </div>
@@ -325,22 +325,22 @@ export default function ProfilePage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-medium text-gray-500">טלפון</label>
+                    <label className="text-xs font-medium text-fg-muted">טלפון</label>
                     <input
                       type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="05X-XXXXXXX"
-                      className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+                      className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
                       dir="ltr"
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-medium text-gray-500">רמת כושר</label>
+                    <label className="text-xs font-medium text-fg-muted">רמת כושר</label>
                     <select
                       value={fitnessLevel}
                       onChange={(e) => setFitnessLevel(e.target.value)}
-                      className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] bg-white"
+                      className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] bg-surface"
                     >
                       {FITNESS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
@@ -348,35 +348,35 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-500">ביוגרפיה קצרה</label>
+                  <label className="text-xs font-medium text-fg-muted">ביוגרפיה קצרה</label>
                   <textarea
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
                     rows={3}
                     placeholder="ספר/י קצת על עצמך..."
-                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] resize-none"
+                    className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] resize-none"
                   />
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-500">סלוגן אישי <span className="text-gray-400">(אופציונלי)</span></label>
+                  <label className="text-xs font-medium text-fg-muted">סלוגן אישי <span className="text-fg-faint">(אופציונלי)</span></label>
                   <input
                     type="text"
                     value={slogan}
                     onChange={(e) => setSlogan(e.target.value)}
                     maxLength={60}
                     placeholder="משפט קצר שמייצג אותך — מוצג לרשומים אחרים בטיול"
-                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+                    className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
                   />
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-500">לוח שנה</label>
-                  <div className="inline-flex bg-gray-100 rounded-full p-0.5 self-start">
+                  <label className="text-xs font-medium text-fg-muted">לוח שנה</label>
+                  <div className="inline-flex bg-surface-2 rounded-full p-0.5 self-start">
                     {([["gregorian", "לוח שנה לועזי"], ["hebrew", "לוח שנה עברי"]] as const).map(([v, label]) => (
                       <button key={v} type="button" onClick={() => setProfileMode(v)}
                         className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                          calMode === v ? "bg-[#1A6B4A] text-white" : "text-gray-500"}`}>
+                          calMode === v ? "bg-[#1A6B4A] text-white" : "text-fg-muted"}`}>
                         {label}
                       </button>
                     ))}
@@ -404,7 +404,7 @@ export default function ProfilePage() {
             {activeTab === "prefs" && (
               <>
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-medium text-gray-500">אזורים מועדפים</label>
+                  <label className="text-xs font-medium text-fg-muted">אזורים מועדפים</label>
                   <div className="flex flex-wrap gap-2">
                     {REGIONS.map((r) => (
                       <button
@@ -414,7 +414,7 @@ export default function ProfilePage() {
                         className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                           prefRegions.includes(r)
                             ? "border-[#1A6B4A] bg-[#D6EDE3] text-[#1A6B4A]"
-                            : "border-gray-200 text-gray-500 hover:border-gray-300"
+                            : "border-border text-fg-muted hover:border-border"
                         }`}
                       >
                         {r}
@@ -424,7 +424,7 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-medium text-gray-500">רמות קושי מועדפות</label>
+                  <label className="text-xs font-medium text-fg-muted">רמות קושי מועדפות</label>
                   <div className="flex flex-wrap gap-2">
                     {DIFFICULTIES.map((d) => (
                       <button
@@ -434,7 +434,7 @@ export default function ProfilePage() {
                         className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                           prefDiffs.includes(d)
                             ? "border-[#1A6B4A] bg-[#D6EDE3] text-[#1A6B4A]"
-                            : "border-gray-200 text-gray-500 hover:border-gray-300"
+                            : "border-border text-fg-muted hover:border-border"
                         }`}
                       >
                         {DIFFICULTY_LABELS[d]}
@@ -443,7 +443,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <p className="text-[11px] text-gray-400 bg-gray-50 rounded-lg p-2.5 leading-relaxed">
+                <p className="text-[11px] text-fg-faint bg-surface-2 rounded-lg p-2.5 leading-relaxed">
                   💡 ההעדפות משמשות כברירת מחדל לפילטרים בחיפוש בלבד — הן לעולם לא חוסמות או מסתירות ממך טיולים אחרים. תמיד תוכל לשנות או לנקות את הפילטרים ולראות את הכל.
                 </p>
 
@@ -468,47 +468,47 @@ export default function ProfilePage() {
             {activeTab === "guide" && (
               <>
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-500">כותרת (למשל: מדריך טיולים מוסמך)</label>
+                  <label className="text-xs font-medium text-fg-muted">כותרת (למשל: מדריך טיולים מוסמך)</label>
                   <input type="text" value={gHeadline} onChange={(e) => setGHeadline(e.target.value)}
-                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+                    className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-500">ביוגרפיה</label>
+                  <label className="text-xs font-medium text-fg-muted">ביוגרפיה</label>
                   <textarea value={gBio} onChange={(e) => setGBio(e.target.value)} rows={3}
-                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] resize-none" />
+                    className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] resize-none" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-medium text-gray-500">שנות ניסיון</label>
+                    <label className="text-xs font-medium text-fg-muted">שנות ניסיון</label>
                     <input type="number" value={gYears} onChange={(e) => setGYears(e.target.value)} dir="ltr"
-                      className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+                      className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-medium text-gray-500">מוסד הכשרה</label>
+                    <label className="text-xs font-medium text-fg-muted">מוסד הכשרה</label>
                     <input type="text" value={gTraining} onChange={(e) => setGTraining(e.target.value)}
-                      className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+                      className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
                   </div>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-500">אזורי התמחות (מופרדים בפסיק)</label>
+                  <label className="text-xs font-medium text-fg-muted">אזורי התמחות (מופרדים בפסיק)</label>
                   <input type="text" value={gRegions} onChange={(e) => setGRegions(e.target.value)} placeholder="גליל, כרמל, ירושלים"
-                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+                    className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-500">תחומי עניין (מופרדים בפסיק)</label>
+                  <label className="text-xs font-medium text-fg-muted">תחומי עניין (מופרדים בפסיק)</label>
                   <input type="text" value={gInterests} onChange={(e) => setGInterests(e.target.value)} placeholder="נחלים, היסטוריה, בוטניקה"
-                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+                    className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-medium text-gray-500">קישור יוטיוב</label>
+                    <label className="text-xs font-medium text-fg-muted">קישור יוטיוב</label>
                     <input type="url" value={gYoutube} onChange={(e) => setGYoutube(e.target.value)} dir="ltr"
-                      className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+                      className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-medium text-gray-500">קישור פודקאסט</label>
+                    <label className="text-xs font-medium text-fg-muted">קישור פודקאסט</label>
                     <input type="url" value={gPodcast} onChange={(e) => setGPodcast(e.target.value)} dir="ltr"
-                      className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+                      className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
                   </div>
                 </div>
                 {saveMsg && <p className={`text-xs text-center ${saveMsg.includes("שגיאה") ? "text-red-500" : "text-[#1A6B4A]"}`}>{saveMsg}</p>}
@@ -523,39 +523,39 @@ export default function ProfilePage() {
             {activeTab === "password" && (
               <>
                 <button type="button" onClick={() => setShowPwd((v) => !v)}
-                  className="self-end text-[11px] text-gray-500 hover:text-[#1A6B4A] flex items-center gap-1">
+                  className="self-end text-[11px] text-fg-muted hover:text-[#1A6B4A] flex items-center gap-1">
                   {showPwd ? "🙈 הסתר סיסמאות" : "👁 הצג סיסמאות"}
                 </button>
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-500">סיסמה נוכחית</label>
+                  <label className="text-xs font-medium text-fg-muted">סיסמה נוכחית</label>
                   <input
                     type={showPwd ? "text" : "password"}
                     value={currentPwd}
                     onChange={(e) => setCurrentPwd(e.target.value)}
                     placeholder="הזן סיסמה נוכחית"
-                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+                    className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
                     dir="ltr"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-500">סיסמה חדשה</label>
+                  <label className="text-xs font-medium text-fg-muted">סיסמה חדשה</label>
                   <input
                     type={showPwd ? "text" : "password"}
                     value={newPwd}
                     onChange={(e) => setNewPwd(e.target.value)}
                     placeholder="לפחות 6 תווים"
-                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+                    className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
                     dir="ltr"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-500">אימות סיסמה חדשה</label>
+                  <label className="text-xs font-medium text-fg-muted">אימות סיסמה חדשה</label>
                   <input
                     type={showPwd ? "text" : "password"}
                     value={confirmPwd}
                     onChange={(e) => setConfirmPwd(e.target.value)}
                     placeholder="חזור על הסיסמה החדשה"
-                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+                    className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
                     dir="ltr"
                   />
                 </div>
@@ -580,8 +580,8 @@ export default function ProfilePage() {
         </div>
 
         {/* Account actions — mode switch + sign out */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-900">חשבון</span>
+        <div className="bg-surface rounded-2xl border border-border shadow-sm p-5 flex items-center justify-between">
+          <span className="text-sm font-medium text-fg">חשבון</span>
           <div className="flex items-center gap-3">
             <ModeSwitch current="hiker" />
             <SignOutButton />

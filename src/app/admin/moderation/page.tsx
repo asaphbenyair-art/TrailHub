@@ -57,21 +57,21 @@ export default function AdminModerationPage() {
     if (res.ok) window.alert("הטיול הוסר מהפרסום");
   }
 
-  if (forbidden) return <div dir="rtl" className="min-h-screen flex items-center justify-center text-gray-500 text-sm">אין לך הרשאת מנהל</div>;
-  if (loading) return <div dir="rtl" className="min-h-screen flex items-center justify-center text-gray-400 text-sm">טוען...</div>;
+  if (forbidden) return <div dir="rtl" className="min-h-screen flex items-center justify-center text-fg-muted text-sm">אין לך הרשאת מנהל</div>;
+  if (loading) return <div dir="rtl" className="min-h-screen flex items-center justify-center text-fg-faint text-sm">טוען...</div>;
 
   return (
-    <div dir="rtl" className="min-h-screen bg-[#f5f5f5] py-4 px-3">
+    <div dir="rtl" className="min-h-screen bg-bg py-4 px-3">
       <div className="max-w-[640px] mx-auto">
         <div className="flex items-center gap-3 mb-4">
-          <Link href="/admin" className="text-gray-400 hover:text-gray-600 text-sm">← אישורים</Link>
-          <h1 className="text-base font-semibold text-gray-900">ניהול פלטפורמה</h1>
+          <Link href="/admin" className="text-fg-faint hover:text-fg-muted text-sm">← אישורים</Link>
+          <h1 className="text-base font-semibold text-fg">ניהול פלטפורמה</h1>
         </div>
 
-        <div className="bg-white rounded-xl overflow-hidden flex shadow-sm mb-3">
+        <div className="bg-surface rounded-xl overflow-hidden flex shadow-sm mb-3">
           {([["complaints", `תלונות (${complaints.filter((c) => c.status === "OPEN").length})`], ["users", `משתמשים (${users.length})`]] as const).map(([k, label]) => (
             <button key={k} type="button" onClick={() => setTab(k)}
-              className={`flex-1 py-2.5 text-xs font-medium border-b-2 transition-colors ${tab === k ? "border-[#1A6B4A] text-[#1A6B4A]" : "border-transparent text-gray-400"}`}>
+              className={`flex-1 py-2.5 text-xs font-medium border-b-2 transition-colors ${tab === k ? "border-[#1A6B4A] text-[#1A6B4A]" : "border-transparent text-fg-faint"}`}>
               {label}
             </button>
           ))}
@@ -79,13 +79,13 @@ export default function AdminModerationPage() {
 
         {tab === "complaints" && (
           <div className="flex flex-col gap-2">
-            {complaints.length === 0 && <div className="text-center py-12 text-gray-400 text-sm">אין תלונות</div>}
+            {complaints.length === 0 && <div className="text-center py-12 text-fg-faint text-sm">אין תלונות</div>}
             {complaints.map((c) => (
-              <div key={c.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+              <div key={c.id} className="bg-surface rounded-2xl border border-border shadow-sm p-4">
                 <div className="flex items-center justify-between mb-1">
-                  <Link href={`/trips/${c.trip.id}`} className="text-sm font-medium text-gray-900 hover:underline">{c.trip.title}</Link>
+                  <Link href={`/trips/${c.trip.id}`} className="text-sm font-medium text-fg hover:underline">{c.trip.title}</Link>
                   <span className={`text-[10px] px-2 py-0.5 rounded-full ${
-                    c.status === "OPEN" ? "bg-[#FEF3C7] text-[#92400E]" : c.status === "RESOLVED" ? "bg-[#D6EDE3] text-[#0F5038]" : "bg-gray-100 text-gray-500"}`}>
+                    c.status === "OPEN" ? "bg-[#FEF3C7] text-[#92400E]" : c.status === "RESOLVED" ? "bg-[#D6EDE3] text-[#0F5038]" : "bg-surface-2 text-fg-muted"}`}>
                     {c.status === "OPEN" ? "פתוח" : c.status === "RESOLVED" ? "טופל" : "נדחה"}
                   </span>
                 </div>
@@ -94,15 +94,15 @@ export default function AdminModerationPage() {
                     ⚠ {c.tripComplaintCount} תלונות על אותו טיול — ייתכן פגם בתוכן
                   </div>
                 )}
-                <div className="text-xs text-gray-600 mb-1">{c.body}</div>
-                <div className="text-[10px] text-gray-400 mb-2">{c.user.name ?? c.user.email} · {c.category}</div>
+                <div className="text-xs text-fg-muted mb-1">{c.body}</div>
+                <div className="text-[10px] text-fg-faint mb-2">{c.user.name ?? c.user.email} · {c.category}</div>
                 <div className="flex gap-2 flex-wrap">
                   {c.status === "OPEN" && (
                     <>
                       <button type="button" onClick={() => setComplaintStatus(c.id, "RESOLVED")}
                         className="text-[11px] text-[#0F5038] border border-[#1A6B4A]/30 rounded-full px-3 py-1 hover:bg-[#D6EDE3]">סמן כטופל</button>
                       <button type="button" onClick={() => setComplaintStatus(c.id, "DISMISSED")}
-                        className="text-[11px] text-gray-500 border border-gray-200 rounded-full px-3 py-1 hover:bg-gray-50">דחה</button>
+                        className="text-[11px] text-fg-muted border border-border rounded-full px-3 py-1 hover:bg-surface-2">דחה</button>
                     </>
                   )}
                   <button type="button" onClick={() => removeTrip(c.trip.id)}
@@ -114,14 +114,14 @@ export default function AdminModerationPage() {
         )}
 
         {tab === "users" && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-surface rounded-2xl border border-border shadow-sm overflow-hidden">
             {users.map((u) => (
-              <div key={u.id} className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-50 last:border-0">
+              <div key={u.id} className="flex items-center gap-3 px-4 py-2.5 border-b border-border last:border-0">
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm text-gray-900">{u.name ?? "—"} <span className="text-[10px] text-gray-400">{u.role}</span></div>
-                  <div className="text-[11px] text-gray-400">{u.email}</div>
+                  <div className="text-sm text-fg">{u.name ?? "—"} <span className="text-[10px] text-fg-faint">{u.role}</span></div>
+                  <div className="text-[11px] text-fg-faint">{u.email}</div>
                 </div>
-                <div className="text-[10px] text-gray-400 text-left">
+                <div className="text-[10px] text-fg-faint text-left">
                   {u.guide ? `${u.guide._count.trips} טיולים · ` : ""}{u._count.registrations} הרשמות
                   {u._count.complaints > 0 ? ` · ${u._count.complaints} תלונות` : ""}
                 </div>

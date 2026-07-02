@@ -113,7 +113,7 @@ export default function AdminPage() {
   }
 
   if (status === "loading" || loading) {
-    return <div dir="rtl" className="min-h-screen bg-[#f5f5f5] flex items-center justify-center text-gray-400 text-sm">טוען...</div>;
+    return <div dir="rtl" className="min-h-screen bg-bg flex items-center justify-center text-fg-faint text-sm">טוען...</div>;
   }
 
   const TABS = [
@@ -122,9 +122,9 @@ export default function AdminPage() {
   ] as const;
 
   return (
-    <div dir="rtl" className="min-h-screen bg-[#f5f5f5]">
+    <div dir="rtl" className="min-h-screen bg-bg">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+      <div className="bg-surface border-b border-border px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link href="/" className="text-[#1A6B4A] text-sm font-bold">🧭 TrailHub</Link>
           <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-semibold">ADMIN</span>
@@ -134,33 +134,33 @@ export default function AdminPage() {
       </div>
 
       {/* Stats bar */}
-      <div className="grid grid-cols-2 gap-px bg-gray-200 border-b border-gray-200">
+      <div className="grid grid-cols-2 gap-px bg-surface-2 border-b border-border">
         {[
           { label: "ממתינים לאישור", val: pendingTrips.length, color: "#92400E", bg: "#FEF9EC" },
           { label: "מדריכים לא מאושרים", val: unverifiedGuides.filter((g) => !g.isVerified).length, color: "#1E40AF", bg: "#EFF6FF" },
         ].map((s) => (
           <div key={s.label} className="py-3 px-4 text-center" style={{ background: s.bg }}>
             <div className="text-2xl font-bold" style={{ color: s.color }}>{s.val}</div>
-            <div className="text-[10px] text-gray-500 mt-0.5">{s.label}</div>
+            <div className="text-[10px] text-fg-muted mt-0.5">{s.label}</div>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200 bg-white px-2">
+      <div className="flex border-b border-border bg-surface px-2">
         {TABS.map((t) => (
           <button
             key={t.key}
             type="button"
             onClick={() => setTab(t.key)}
             className={`flex items-center gap-1.5 px-4 py-3 text-xs font-semibold border-b-2 transition-colors ${
-              tab === t.key ? "border-[#1A6B4A] text-[#1A6B4A]" : "border-transparent text-gray-500 hover:text-gray-700"
+              tab === t.key ? "border-[#1A6B4A] text-[#1A6B4A]" : "border-transparent text-fg-muted hover:text-fg"
             }`}
           >
             {t.label}
             {t.count > 0 && (
               <span className={`rounded-full min-w-[18px] h-4.5 px-1 text-[10px] font-bold flex items-center justify-center ${
-                tab === t.key ? "bg-[#1A6B4A] text-white" : "bg-gray-200 text-gray-600"
+                tab === t.key ? "bg-[#1A6B4A] text-white" : "bg-surface-2 text-fg-muted"
               }`}>
                 {t.count}
               </span>
@@ -175,17 +175,17 @@ export default function AdminPage() {
         {tab === "trips" && (
           <>
             {pendingTrips.length === 0 && (
-              <div className="py-16 text-center text-sm text-gray-400 bg-white rounded-2xl">
+              <div className="py-16 text-center text-sm text-fg-faint bg-surface rounded-2xl">
                 ✓ אין טיולים הממתינים לאישור
               </div>
             )}
             {pendingTrips.map((trip) => {
               const isReviewing = reviewingId === trip.id;
               return (
-                <div key={trip.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                <div key={trip.id} className="bg-surface rounded-2xl border border-border overflow-hidden">
                   <div className="px-4 py-3">
                     <div className="flex items-start justify-between gap-2 mb-1">
-                      <Link href={`/trips/${trip.id}`} className="text-sm font-semibold text-gray-900 hover:underline leading-snug">
+                      <Link href={`/trips/${trip.id}`} className="text-sm font-semibold text-fg hover:underline leading-snug">
                         {trip.title}
                       </Link>
                       <span className="text-xs px-2 py-0.5 rounded-full shrink-0"
@@ -193,7 +193,7 @@ export default function AdminPage() {
                         {STATUS_BADGE[trip.status]?.label}
                       </span>
                     </div>
-                    <div className="flex flex-wrap gap-2 text-[11px] text-gray-500 mb-2">
+                    <div className="flex flex-wrap gap-2 text-[11px] text-fg-muted mb-2">
                       <span>👤 {trip.guide.user.name ?? trip.guide.user.email}</span>
                       {trip.guide.isVerified && <span className="text-[#1A6B4A]">✓ מאושר</span>}
                       <span>📅 {formatDate(trip.date)}</span>
@@ -208,7 +208,7 @@ export default function AdminPage() {
                           ✓ אשר לפרסום
                         </button>
                         <button type="button" onClick={() => setReviewingId(trip.id)}
-                          className="flex-1 py-1.5 bg-red-50 text-red-600 border border-red-200 text-xs rounded-full font-semibold">
+                          className="flex-1 py-1.5 bg-surface-2 text-red-600 border border-red-200 text-xs rounded-full font-semibold">
                           ✕ דחה
                         </button>
                       </div>
@@ -219,7 +219,7 @@ export default function AdminPage() {
                           onChange={(e) => setRejectNote(e.target.value)}
                           placeholder="סיבת הדחייה (תישלח למדריך)..."
                           rows={2}
-                          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs resize-none focus:outline-none focus:border-red-400 mb-2"
+                          className="w-full border border-border rounded-xl px-3 py-2 text-xs resize-none focus:outline-none focus:border-red-400 mb-2"
                         />
                         <div className="flex gap-2">
                           <button type="button" onClick={() => rejectTrip(trip.id)} disabled={saving}
@@ -227,7 +227,7 @@ export default function AdminPage() {
                             {saving ? "..." : "שלח דחייה"}
                           </button>
                           <button type="button" onClick={() => { setReviewingId(null); setRejectNote(""); }}
-                            className="px-4 py-1.5 border border-gray-200 text-gray-500 text-xs rounded-full">
+                            className="px-4 py-1.5 border border-border text-fg-muted text-xs rounded-full">
                             ביטול
                           </button>
                         </div>
@@ -244,15 +244,15 @@ export default function AdminPage() {
         {tab === "guides" && (
           <>
             {unverifiedGuides.length === 0 && (
-              <div className="py-16 text-center text-sm text-gray-400 bg-white rounded-2xl">אין מדריכים</div>
+              <div className="py-16 text-center text-sm text-fg-faint bg-surface rounded-2xl">אין מדריכים</div>
             )}
             {unverifiedGuides.map((guide) => (
-              <div key={guide.id} className="bg-white rounded-2xl border border-gray-100 px-4 py-3">
+              <div key={guide.id} className="bg-surface rounded-2xl border border-border px-4 py-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-sm font-semibold text-gray-900">{guide.user.name ?? "—"}</div>
-                    <div className="text-xs text-gray-500">{guide.user.email}</div>
-                    <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-400">
+                    <div className="text-sm font-semibold text-fg">{guide.user.name ?? "—"}</div>
+                    <div className="text-xs text-fg-muted">{guide.user.email}</div>
+                    <div className="flex items-center gap-2 mt-1 text-[11px] text-fg-faint">
                       <span>{guide._count.trips} טיולים</span>
                     </div>
                   </div>
@@ -262,7 +262,7 @@ export default function AdminPage() {
                     disabled={saving}
                     className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
                       guide.isVerified
-                        ? "bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600"
+                        ? "bg-surface-2 text-fg-muted hover:bg-surface-2 hover:text-red-600"
                         : "bg-[#D6EDE3] text-[#0F5038] hover:bg-[#1A6B4A] hover:text-white"
                     }`}
                   >

@@ -146,10 +146,10 @@ function CompactMonthPanel({
       {/* Month navigation */}
       <div className="flex items-center justify-between mb-2">
         <button type="button" onClick={prevMonth}
-          className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 text-sm">‹</button>
-        <span className="text-sm font-semibold text-gray-800">{MONTH_NAMES[viewMonth]} {viewYear}</span>
+          className="w-7 h-7 rounded-full bg-surface-2 flex items-center justify-center text-fg-muted hover:bg-surface-2 text-sm">‹</button>
+        <span className="text-sm font-semibold text-fg">{MONTH_NAMES[viewMonth]} {viewYear}</span>
         <button type="button" onClick={nextMonth}
-          className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 text-sm">›</button>
+          className="w-7 h-7 rounded-full bg-surface-2 flex items-center justify-center text-fg-muted hover:bg-surface-2 text-sm">›</button>
       </div>
 
       {/* Jump to date */}
@@ -158,7 +158,7 @@ function CompactMonthPanel({
           type="date"
           value={jumpValue}
           onChange={handleJump}
-          className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1A6B4A] bg-white"
+          className="w-full border border-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1A6B4A] bg-surface"
           placeholder="קפוץ לתאריך"
           dir="ltr"
         />
@@ -175,14 +175,14 @@ function CompactMonthPanel({
                 : ""}
           </span>
           <button type="button" onClick={() => onRangeChange({ start: null, end: null })}
-            className="text-gray-400 hover:text-[#1A6B4A] shrink-0">נקה</button>
+            className="text-fg-faint hover:text-[#1A6B4A] shrink-0">נקה</button>
         </div>
       )}
 
       {/* Weekday headers */}
       <div className="grid grid-cols-7 mb-1">
         {WEEKDAY_NAMES.map((n) => (
-          <div key={n} className="text-center text-[9px] text-gray-400 font-semibold py-0.5">{n}</div>
+          <div key={n} className="text-center text-[9px] text-fg-faint font-semibold py-0.5">{n}</div>
         ))}
       </div>
 
@@ -211,14 +211,14 @@ function CompactMonthPanel({
               className={`flex flex-col items-center py-1 transition-colors select-none ${
                 isEndpoint ? "bg-[#1A6B4A] rounded-lg" :
                 inRange ? "bg-[#D6EDE3] rounded-none" :
-                cell.curr ? "hover:bg-gray-100 cursor-pointer rounded-lg" : "cursor-default rounded-lg"
+                cell.curr ? "hover:bg-surface-2 cursor-pointer rounded-lg" : "cursor-default rounded-lg"
               }`}
             >
               <span className={`text-xs leading-none ${
                 isEndpoint ? "text-white font-bold" :
                 inRange ? "text-[#0F5038] font-semibold" :
                 isToday ? "text-[#1A6B4A] font-bold" :
-                cell.curr ? "text-gray-800" : "text-gray-300"
+                cell.curr ? "text-fg" : "text-fg-faint"
               }`}>
                 {cell.day}
               </span>
@@ -241,8 +241,8 @@ function CompactMonthPanel({
       </div>
 
       {/* Legend */}
-      <div className="mt-3 pt-2 border-t border-gray-100 flex flex-col gap-1">
-        <div className="text-[9px] text-gray-400 font-medium mb-0.5">מספר הטיולים ביום</div>
+      <div className="mt-3 pt-2 border-t border-border flex flex-col gap-1">
+        <div className="text-[9px] text-fg-faint font-medium mb-0.5">מספר הטיולים ביום</div>
         {[
           { bg: "#D6EDE3", text: "#0F5038", label: "יש מקומות" },
           { bg: "#FAEEDA", text: "#633806", label: "כמעט מלא" },
@@ -251,7 +251,7 @@ function CompactMonthPanel({
           <div key={item.label} className="flex items-center gap-1.5">
             <span className="w-3.5 h-3.5 rounded-full text-[9px] font-bold flex items-center justify-center"
               style={{ background: item.bg, color: item.text }}>1</span>
-            <span className="text-[9px] text-gray-500">{item.label}</span>
+            <span className="text-[9px] text-fg-muted">{item.label}</span>
           </div>
         ))}
       </div>
@@ -292,7 +292,7 @@ function MonthView({ trips, year, month, onDayClick, selectedDay }: {
     <div>
       <div className="grid grid-cols-7 px-3 mb-1">
         {WEEKDAY_NAMES.map((n) => (
-          <div key={n} className="text-center text-[10px] text-gray-400 font-semibold py-1">{n}</div>
+          <div key={n} className="text-center text-[10px] text-fg-faint font-semibold py-1">{n}</div>
         ))}
       </div>
       <div className="grid grid-cols-7 px-3 gap-y-0.5">
@@ -306,13 +306,13 @@ function MonthView({ trips, year, month, onDayClick, selectedDay }: {
               onClick={() => cell.curr && onDayClick(new Date(year, month, cell.day))}
               className={`flex flex-col items-center pt-1 pb-1 rounded-lg transition-colors ${
                 isSelected ? "bg-[#1A6B4A]" :
-                cell.curr ? "hover:bg-gray-100 cursor-pointer" : "cursor-default"
+                cell.curr ? "hover:bg-surface-2 cursor-pointer" : "cursor-default"
               }`}
             >
               <span className={`w-6 h-6 flex items-center justify-center text-xs rounded-full leading-none ${
                 isSelected ? "text-white font-bold" :
                 isToday ? "bg-[#1A6B4A] text-white font-semibold" :
-                cell.curr ? "text-gray-800" : "text-gray-300"
+                cell.curr ? "text-fg" : "text-fg-faint"
               } ${cell.curr && dayTrips.length ? "font-semibold" : ""}`}>
                 {cell.day}
               </span>
@@ -330,7 +330,7 @@ function MonthView({ trips, year, month, onDayClick, selectedDay }: {
       </div>
       <div className="flex gap-3 px-4 pt-2 pb-1 flex-wrap">
         {Object.entries(DIFF_COLOR).map(([k, v]) => (
-          <div key={k} className="flex items-center gap-1 text-[10px] text-gray-500">
+          <div key={k} className="flex items-center gap-1 text-[10px] text-fg-muted">
             <div className="w-2.5 h-2.5 rounded-full" style={{ background: v.dot }} />
             {DIFF_LABEL[k]}
           </div>
@@ -380,32 +380,32 @@ function WeekView({ trips, weekStart, activeDay, setActiveDay }: {
         })}
       </div>
       <div className="flex flex-col gap-2 px-3">
-        {activeDayTrips.length === 0 && <div className="py-8 text-center text-sm text-gray-400">אין טיולים ביום זה</div>}
+        {activeDayTrips.length === 0 && <div className="py-8 text-center text-sm text-fg-faint">אין טיולים ביום זה</div>}
         {activeDayTrips.map((t) => {
           const isFull = t.status === "FULL" || t.spotsBooked >= t.maxSpots;
           const occ = t.maxSpots > 0 ? t.spotsBooked / t.maxSpots : 0;
           const diff = DIFF_COLOR[t.difficulty];
           return (
             <button key={t.id} type="button" onClick={() => router.push(`/trips/${t.id}`)}
-              className="flex gap-3 bg-white rounded-xl p-3 border border-gray-100 text-right hover:bg-gray-50 transition-colors w-full">
+              className="flex gap-3 bg-surface rounded-xl p-3 border border-border text-right hover:bg-surface-2 transition-colors w-full">
               <div className="flex flex-col items-center shrink-0" style={{ minWidth: 42 }}>
                 <span className="text-xs font-semibold text-[#1A6B4A]">{t.startTime}</span>
-                <div className="flex-1 w-px bg-gray-200 my-1" style={{ minHeight: 20 }} />
-                {t.durationMin > 0 && <span className="text-[10px] text-gray-400">{formatDuration(t.durationMin)}</span>}
+                <div className="flex-1 w-px bg-surface-2 my-1" style={{ minHeight: 20 }} />
+                {t.durationMin > 0 && <span className="text-[10px] text-fg-faint">{formatDuration(t.durationMin)}</span>}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900 mb-1 text-right leading-snug">{t.title}</p>
+                <p className="text-sm font-semibold text-fg mb-1 text-right leading-snug">{t.title}</p>
                 <div className="flex gap-1.5 flex-wrap mb-1.5">
                   {diff && <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: diff.bg, color: diff.color }}>{DIFF_LABEL[t.difficulty]}</span>}
-                  <span className="text-[10px] text-gray-500">📍 {t.region}</span>
+                  <span className="text-[10px] text-fg-muted">📍 {t.region}</span>
                 </div>
-                <div className="h-[3px] bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-[3px] bg-surface-2 rounded-full overflow-hidden">
                   <div className="h-full rounded-full" style={{ width: `${Math.min(occ*100,100)}%`, background: isFull ? "#C0392B" : "#1A6B4A" }} />
                 </div>
-                <p className="text-[10px] text-gray-400 mt-0.5">{t.spotsBooked}/{t.maxSpots} מקומות</p>
+                <p className="text-[10px] text-fg-faint mt-0.5">{t.spotsBooked}/{t.maxSpots} מקומות</p>
               </div>
               <div className="shrink-0 text-left">
-                <p className="text-sm font-semibold text-gray-900">₪{t.price.toLocaleString("he-IL")}</p>
+                <p className="text-sm font-semibold text-fg">₪{t.price.toLocaleString("he-IL")}</p>
               </div>
             </button>
           );
@@ -423,7 +423,7 @@ function DayView({ trips, day, regStatus }: { trips: Trip[]; day: Date; regStatu
 
   return (
     <div className="flex flex-col gap-3 px-3">
-      {dayTrips.length === 0 && <div className="py-12 text-center text-sm text-gray-400">אין טיולים ביום זה</div>}
+      {dayTrips.length === 0 && <div className="py-12 text-center text-sm text-fg-faint">אין טיולים ביום זה</div>}
       {dayTrips.map((t) => {
         const isFull = t.status === "FULL" || t.spotsBooked >= t.maxSpots;
         const occ = t.maxSpots > 0 ? t.spotsBooked / t.maxSpots : 0;
@@ -433,7 +433,7 @@ function DayView({ trips, day, regStatus }: { trips: Trip[]; day: Date; regStatu
         const isRegistered = myStatus === "CONFIRMED";
         const guideName = t.guide?.user?.name;
         return (
-          <div key={t.id} className="bg-white rounded-2xl overflow-hidden border-2" style={{ borderColor: isRegistered ? "#1A6B4A" : "#f0f0f0" }}>
+          <div key={t.id} className="bg-surface rounded-2xl overflow-hidden border-2" style={{ borderColor: isRegistered ? "#1A6B4A" : "#f0f0f0" }}>
             {isRegistered && <div className="text-center py-1 text-[10px] font-semibold text-[#0F5038] bg-[#D6EDE3]">✓ רשום לטיול זה</div>}
             <div className="relative cursor-pointer" style={{ height: 110 }} onClick={() => router.push(`/trips/${t.id}`)}>
               {isFull && !isRegistered && <div className="absolute top-0 left-0 right-0 z-10 text-center py-1 text-[10px] font-semibold text-white bg-[#C0392B]">מלא — אפשר רשימת המתנה</div>}
@@ -446,23 +446,23 @@ function DayView({ trips, day, regStatus }: { trips: Trip[]; day: Date; regStatu
               </div>
               <div className="absolute top-1.5 right-2.5 flex gap-1" style={{ top: isFull ? 28 : 8 }}>
                 {diff && <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: diff.bg, color: diff.color }}>{DIFF_LABEL[t.difficulty]}</span>}
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/90 text-gray-700">📍 {t.region}</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface/90 text-fg">📍 {t.region}</span>
               </div>
             </div>
             <div className="px-3 py-2.5">
-              <div className="flex gap-3 text-[11px] text-gray-500 mb-2 flex-wrap">
+              <div className="flex gap-3 text-[11px] text-fg-muted mb-2 flex-wrap">
                 <span>🕐 {t.startTime}</span>
                 {t.durationMin > 0 && <span>⏱ {formatDuration(t.durationMin)}</span>}
                 {t.distanceKm > 0 && <span>📍 {t.distanceKm} ק"מ</span>}
               </div>
-              <div className="h-[3px] bg-gray-100 rounded-full overflow-hidden mb-1">
+              <div className="h-[3px] bg-surface-2 rounded-full overflow-hidden mb-1">
                 <div className="h-full rounded-full" style={{ width: `${Math.min(occ*100,100)}%`, background: isFull ? "#C0392B" : "#1A6B4A" }} />
               </div>
-              {guideName && <p className="text-[11px] text-gray-500 mb-1">{guideName}{t.guide?.rating > 0 ? ` · ★${t.guide.rating.toFixed(1)}` : ""}</p>}
+              {guideName && <p className="text-[11px] text-fg-muted mb-1">{guideName}{t.guide?.rating > 0 ? ` · ★${t.guide.rating.toFixed(1)}` : ""}</p>}
               <div className="flex justify-between items-center mt-1.5">
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">₪{t.price.toLocaleString("he-IL")} <span className="text-[10px] font-normal text-gray-400">לאדם</span></p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">{t.spotsBooked} מתוך {t.maxSpots} מקומות{isFull ? " — מלא" : ` — נותרו ${spotsLeft}`}</p>
+                  <p className="text-sm font-semibold text-fg">₪{t.price.toLocaleString("he-IL")} <span className="text-[10px] font-normal text-fg-faint">לאדם</span></p>
+                  <p className="text-[10px] text-fg-faint mt-0.5">{t.spotsBooked} מתוך {t.maxSpots} מקומות{isFull ? " — מלא" : ` — נותרו ${spotsLeft}`}</p>
                 </div>
                 {isRegistered ? (
                   <button type="button" onClick={() => router.push("/my-trips")}
@@ -560,11 +560,11 @@ export default function CalendarView({ trips, compact, onDateSelect, range, onRa
 
   return (
     <div className="pb-4">
-      <div className="flex border-b border-gray-200 mb-2 px-3">
+      <div className="flex border-b border-border mb-2 px-3">
         {(["month","week","day"] as CalTab[]).map((tab) => (
           <button key={tab} type="button" onClick={() => setCalTab(tab)}
             className={`px-4 py-2 text-xs font-semibold border-b-2 transition-colors ${
-              calTab === tab ? "border-[#1A6B4A] text-[#1A6B4A]" : "border-transparent text-gray-400 hover:text-gray-600"
+              calTab === tab ? "border-[#1A6B4A] text-[#1A6B4A]" : "border-transparent text-fg-faint hover:text-fg-muted"
             }`}>
             {tab === "month" ? "חודש" : tab === "week" ? "שבוע" : "יום"}
           </button>
@@ -572,10 +572,10 @@ export default function CalendarView({ trips, compact, onDateSelect, range, onRa
       </div>
       <div className="flex items-center justify-between px-4 mb-3">
         <button type="button" onClick={prevPeriod}
-          className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200">‹</button>
-        <span className="text-sm font-semibold text-gray-800">{periodLabel()}</span>
+          className="w-7 h-7 rounded-full bg-surface-2 flex items-center justify-center text-fg-muted hover:bg-surface-2">‹</button>
+        <span className="text-sm font-semibold text-fg">{periodLabel()}</span>
         <button type="button" onClick={nextPeriod}
-          className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200">›</button>
+          className="w-7 h-7 rounded-full bg-surface-2 flex items-center justify-center text-fg-muted hover:bg-surface-2">›</button>
       </div>
       {calTab === "month" && <MonthView trips={trips} year={viewYear} month={viewMonth} onDayClick={handleDayClick} selectedDay={selectedDay} />}
       {calTab === "week" && <WeekView trips={trips} weekStart={weekStart} activeDay={selectedDay} setActiveDay={setSelectedDay} />}

@@ -150,6 +150,7 @@ model User {
   bio                   String?  @db.Text
   slogan                String?  // personal tagline shown on participant cards
   calendarPref          String   @default("gregorian") // 'gregorian' | 'hebrew' date display
+  themePref             String?  // 'dark' | 'light' | null (null → system/default)
   phone                 String?
   fitnessLevel          String?
   preferredRegions      String[]

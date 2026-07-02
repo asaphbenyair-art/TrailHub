@@ -22,16 +22,16 @@ function Row({ label, value }: { label: string; value?: string }) {
   if (!value) return null;
   return (
     <div className="flex justify-between text-sm py-1">
-      <span className="text-gray-500">{label}</span>
-      <span className="text-gray-900 font-medium">{value}</span>
+      <span className="text-fg-muted">{label}</span>
+      <span className="text-fg font-medium">{value}</span>
     </div>
   );
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-gray-50 rounded-lg p-3 mb-3">
-      <div className="text-xs font-medium text-gray-500 mb-2">{title}</div>
+    <div className="bg-surface-2 rounded-lg p-3 mb-3">
+      <div className="text-xs font-medium text-fg-muted mb-2">{title}</div>
       {children}
     </div>
   );
@@ -41,7 +41,7 @@ export default function Step5({ data, onChange }: Props) {
   const isSelfGuided = data.tripType === "SELF_GUIDED";
   return (
     <div className="p-5 flex flex-col gap-4">
-      <div className="text-sm font-medium text-gray-900 border-b border-gray-100 pb-3 mb-1">
+      <div className="text-sm font-medium text-fg border-b border-border pb-3 mb-1">
         סקירה ופרסום
       </div>
 
@@ -68,7 +68,7 @@ export default function Step5({ data, onChange }: Props) {
       </Section>
 
       {/* Source materials (trip-level) */}
-      <div className="flex flex-col gap-2 border-t border-gray-100 pt-3">
+      <div className="flex flex-col gap-2 border-t border-border pt-3">
         <SourceMaterialsEditor
           label="חומרי מקור לטיול (פסוקים, מאמרים, רקע היסטורי)"
           materials={data.sourceMaterials || []}
@@ -80,7 +80,7 @@ export default function Step5({ data, onChange }: Props) {
               <button key={val} type="button"
                 onClick={() => onChange("sourceMaterialsVisibility" as keyof WizardData, val as unknown as string)}
                 className={`flex-1 py-1.5 rounded-lg border text-xs transition-colors ${
-                  data.sourceMaterialsVisibility === val ? "border-[#1A6B4A] bg-[#D6EDE3] text-[#0F5038]" : "border-gray-200 text-gray-500"}`}>
+                  data.sourceMaterialsVisibility === val ? "border-[#1A6B4A] bg-[#D6EDE3] text-[#0F5038]" : "border-border text-fg-muted"}`}>
                 {lbl}
               </button>
             ))}
@@ -89,7 +89,7 @@ export default function Step5({ data, onChange }: Props) {
       </div>
 
       <div className="flex flex-col gap-2">
-        <label className="text-xs font-medium text-gray-500">בחר מצב פרסום</label>
+        <label className="text-xs font-medium text-fg-muted">בחר מצב פרסום</label>
         <div className="flex gap-2">
           {PUBLISH_OPTIONS.map((opt) => {
             const selected = opt.key === "DRAFT"
@@ -101,14 +101,14 @@ export default function Step5({ data, onChange }: Props) {
                 type="button"
                 onClick={() => { onChange("status", opt.status); onChange("visibility", opt.visibility); }}
                 className={`flex-1 py-3 px-2 rounded-lg border text-center transition-colors ${
-                  selected ? "border-[#1A6B4A] bg-[#D6EDE3]" : "border-gray-200 hover:border-gray-300"
+                  selected ? "border-[#1A6B4A] bg-[#D6EDE3]" : "border-border hover:border-border"
                 }`}
               >
                 <span className="text-xl block mb-1">{opt.icon}</span>
-                <div className={`text-xs font-medium ${selected ? "text-[#0F5038]" : "text-gray-700"}`}>
+                <div className={`text-xs font-medium ${selected ? "text-[#0F5038]" : "text-fg"}`}>
                   {opt.label}
                 </div>
-                <div className="text-xs text-gray-400 mt-0.5">{opt.desc}</div>
+                <div className="text-xs text-fg-faint mt-0.5">{opt.desc}</div>
               </button>
             );
           })}

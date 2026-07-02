@@ -462,7 +462,7 @@ export default function TripDetailPage() {
                 : `⏳ ממתין למקום${myRegPos ? ` — מיקום ${myRegPos} בתור` : ""}`}
             </span>
             <button type="button" onClick={cancelRegistration}
-              className="text-xs font-medium text-white border border-white/45 rounded-full px-3.5 py-1.5 hover:bg-white/10">
+              className="text-xs font-medium text-white border border-white/45 rounded-full px-3.5 py-1.5 hover:bg-surface/10">
               {myRegStatus === "WAITLIST" ? "בטל המתנה" : "בטל הרשמה"}
             </button>
           </div>

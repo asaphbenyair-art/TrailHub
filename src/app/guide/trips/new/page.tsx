@@ -169,12 +169,12 @@ export default function NewTripWizard() {
     <div className="min-h-screen p-4 flex items-start justify-center">
       <div className="w-full max-w-[480px]">
         <div className="mb-4">
-          <h1 className="text-lg font-semibold text-gray-900">יצירת טיול חדש</h1>
+          <h1 className="text-lg font-semibold text-fg">יצירת טיול חדש</h1>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+        <div className="bg-surface rounded-2xl border border-border overflow-hidden shadow-sm">
           {/* Step tabs */}
-          <div className="flex border-b border-gray-100 bg-gray-50">
+          <div className="flex border-b border-border bg-surface-2">
             {STEPS.map((s, i) => {
               const n = i + 1;
               const isDone = n < step;
@@ -186,8 +186,8 @@ export default function NewTripWizard() {
                   onClick={() => goTo(n)}
                   className={`flex-1 py-3 flex flex-col items-center gap-1 border-b-2 transition-colors ${
                     isActive
-                      ? "border-[#1A6B4A] bg-white"
-                      : "border-transparent hover:bg-gray-100"
+                      ? "border-[#1A6B4A] bg-surface"
+                      : "border-transparent hover:bg-surface-2"
                   }`}
                 >
                   <div
@@ -196,14 +196,14 @@ export default function NewTripWizard() {
                         ? "bg-[#D6EDE3] text-[#1A6B4A]"
                         : isActive
                         ? "bg-[#1A6B4A] text-white"
-                        : "bg-gray-100 text-gray-400"
+                        : "bg-surface-2 text-fg-faint"
                     }`}
                   >
                     {isDone ? "✓" : n}
                   </div>
                   <span
                     className={`text-[10px] ${
-                      isActive ? "text-[#1A6B4A] font-medium" : "text-gray-400"
+                      isActive ? "text-[#1A6B4A] font-medium" : "text-fg-faint"
                     }`}
                   >
                     {s.label}
@@ -222,11 +222,11 @@ export default function NewTripWizard() {
           {isSelfGuided && step === 4 && <Step5 data={data} onChange={onChange} />}
 
           {/* Footer */}
-          <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-gray-50">
+          <div className="flex items-center justify-between px-5 py-3 border-t border-border bg-surface-2">
             <button
               type="button"
               onClick={goPrev}
-              className={`px-4 py-2 text-xs border border-gray-200 rounded-full text-gray-500 hover:bg-gray-100 transition-colors ${
+              className={`px-4 py-2 text-xs border border-border rounded-full text-fg-muted hover:bg-surface-2 transition-colors ${
                 step === 1 ? "invisible" : ""
               }`}
             >
@@ -237,7 +237,7 @@ export default function NewTripWizard() {
               {error && (
                 <span className="text-xs text-red-500">{error}</span>
               )}
-              <span className="text-xs text-gray-400">שלב {step} מתוך {STEPS.length}</span>
+              <span className="text-xs text-fg-faint">שלב {step} מתוך {STEPS.length}</span>
             </div>
 
             {step < STEPS.length ? (

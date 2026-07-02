@@ -63,12 +63,12 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
 
   return (
     <div className="p-5 flex flex-col gap-4">
-      <div className="text-sm font-medium text-gray-900 border-b border-gray-100 pb-3 mb-1">
+      <div className="text-sm font-medium text-fg border-b border-border pb-3 mb-1">
         פרמטרים
       </div>
 
       <div className="flex flex-col gap-2">
-        <label className="text-xs font-medium text-gray-500">רמת קושי</label>
+        <label className="text-xs font-medium text-fg-muted">רמת קושי</label>
         <div className="flex gap-2">
           {DIFFICULTIES.map((d) => (
             <button
@@ -78,7 +78,7 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
               className={`flex-1 py-2 rounded-lg border text-xs font-medium transition-colors ${
                 data.difficulty === d.value
                   ? d.cls
-                  : "border-gray-200 text-gray-500 hover:border-gray-300"
+                  : "border-border text-fg-muted hover:border-border"
               }`}
             >
               {d.label}
@@ -91,42 +91,42 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
       {selfGuided && (
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-500">מחיר לרכישה (₪)</label>
+            <label className="text-xs font-medium text-fg-muted">מחיר לרכישה (₪)</label>
             <input type="number" min="0" value={data.price} onChange={(e) => onChange("price", e.target.value)}
-              placeholder="0 = חינם" className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" dir="ltr" />
+              placeholder="0 = חינם" className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" dir="ltr" />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-500">חלון גישה (ימים)</label>
+            <label className="text-xs font-medium text-fg-muted">חלון גישה (ימים)</label>
             <input type="number" min="1" value={data.accessWindowDays} onChange={(e) => onChange("accessWindowDays", e.target.value)}
-              placeholder="30" className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" dir="ltr" />
+              placeholder="30" className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" dir="ltr" />
           </div>
-          <p className="col-span-2 text-[11px] text-gray-400">מחיר אחד קבוע לכל הרכישה — תשלום מיידי וסופי, ללא מדיניות ביטולים.</p>
+          <p className="col-span-2 text-[11px] text-fg-faint">מחיר אחד קבוע לכל הרכישה — תשלום מיידי וסופי, ללא מדיניות ביטולים.</p>
         </div>
       )}
 
       {!selfGuided && (
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-500">גיל מינימום</label>
+          <label className="text-xs font-medium text-fg-muted">גיל מינימום</label>
           <input
             type="number"
             min="0"
             value={data.ageMin}
             onChange={(e) => onChange("ageMin", e.target.value)}
             placeholder="למשל: 8"
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+            className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
             dir="ltr"
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-500">גיל מקסימום</label>
+          <label className="text-xs font-medium text-fg-muted">גיל מקסימום</label>
           <input
             type="number"
             min="0"
             value={data.ageMax}
             onChange={(e) => onChange("ageMax", e.target.value)}
             placeholder="ללא הגבלה"
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+            className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
             dir="ltr"
           />
         </div>
@@ -135,13 +135,13 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
 
       {!selfGuided && (
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-medium text-gray-500">רמה גופנית נדרשת</label>
+        <label className="text-xs font-medium text-fg-muted">רמה גופנית נדרשת</label>
         <textarea
           value={data.fitnessLevel}
           onChange={(e) => onChange("fitnessLevel", e.target.value)}
           placeholder="למשל: הליכה של 5 שעות בשטח לא אחיד"
           rows={2}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] resize-none"
+          className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] resize-none"
         />
       </div>
       )}
@@ -149,26 +149,26 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
       {!selfGuided && (
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-500">מקסימום משתתפים</label>
+          <label className="text-xs font-medium text-fg-muted">מקסימום משתתפים</label>
           <input
             type="number"
             min="1"
             value={data.maxSpots}
             onChange={(e) => onChange("maxSpots", e.target.value)}
             placeholder="20"
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+            className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
             dir="ltr"
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-500">מינימום יציאה</label>
+          <label className="text-xs font-medium text-fg-muted">מינימום יציאה</label>
           <input
             type="number"
             min="1"
             value={data.minSpots}
             onChange={(e) => onChange("minSpots", e.target.value)}
             placeholder="5"
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+            className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
             dir="ltr"
           />
         </div>
@@ -176,20 +176,20 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
       )}
 
       <div className="flex flex-col gap-2">
-        <label className="text-xs font-medium text-gray-500">ציוד נדרש</label>
+        <label className="text-xs font-medium text-fg-muted">ציוד נדרש</label>
 
         {selected.length > 0 && (
-          <div className="flex flex-wrap gap-2 p-2 bg-gray-50 border border-gray-100 rounded-lg min-h-[36px]">
+          <div className="flex flex-wrap gap-2 p-2 bg-surface-2 border border-border rounded-lg min-h-[36px]">
             {selected.map((item) => (
               <span
                 key={item}
-                className="inline-flex items-center gap-1 px-2 py-1 bg-white border border-gray-200 rounded-full text-xs"
+                className="inline-flex items-center gap-1 px-2 py-1 bg-surface border border-border rounded-full text-xs"
               >
                 {item}
                 <button
                   type="button"
                   onClick={() => toggleEquipment(item)}
-                  className="text-gray-400 hover:text-red-500 text-xs leading-none"
+                  className="text-fg-faint hover:text-red-500 text-xs leading-none"
                 >
                   ✕
                 </button>
@@ -198,18 +198,18 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
           </div>
         )}
 
-        <div className="border border-gray-100 rounded-lg overflow-hidden">
+        <div className="border border-border rounded-lg overflow-hidden">
           {visibleEquipment.map((item) => (
             <button
               key={item}
               type="button"
               onClick={() => toggleEquipment(item)}
-              className={`w-full flex items-center justify-between px-3 py-2 border-b border-gray-50 text-sm last:border-b-0 hover:bg-gray-50 transition-colors ${
-                selected.includes(item) ? "text-gray-300" : "text-gray-700"
+              className={`w-full flex items-center justify-between px-3 py-2 border-b border-border text-sm last:border-b-0 hover:bg-surface-2 transition-colors ${
+                selected.includes(item) ? "text-fg-faint" : "text-fg"
               }`}
             >
               <span>{item}</span>
-              <span className={selected.includes(item) ? "text-gray-300" : "text-[#1A6B4A]"}>
+              <span className={selected.includes(item) ? "text-fg-faint" : "text-[#1A6B4A]"}>
                 {selected.includes(item) ? "✓" : "＋"}
               </span>
             </button>
@@ -218,7 +218,7 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
             <button
               type="button"
               onClick={() => setShowMoreEq(true)}
-              className="w-full text-center text-[#1A6B4A] text-xs py-2 hover:bg-gray-50"
+              className="w-full text-center text-[#1A6B4A] text-xs py-2 hover:bg-surface-2"
             >
               + הצג עוד ציוד
             </button>
@@ -233,7 +233,7 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
             onChange={(e) => setCustomInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addCustomItem())}
             placeholder="הוסף ציוד ידנית..."
-            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+            className="flex-1 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
           />
           <button
             type="button"
@@ -247,24 +247,24 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
 
       {/* Multi-person registration mode (not for self-guided) */}
       {!selfGuided && (
-      <div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
-        <label className="text-xs font-medium text-gray-500">הרשמת מספר משתתפים</label>
+      <div className="flex flex-col gap-2 border-t border-border pt-4">
+        <label className="text-xs font-medium text-fg-muted">הרשמת מספר משתתפים</label>
         <div className="grid grid-cols-3 gap-2">
           {([["", "אדם בודד"], ["simple", "כמות בלבד"], ["detailed", "פרטים לכל אחד"]] as const).map(([val, lbl]) => (
             <button key={val} type="button" onClick={() => onChange("multiPersonMode" as keyof WizardData, val as unknown as string)}
               className={`py-2 rounded-lg border text-xs transition-colors ${
-                data.multiPersonMode === val ? "border-[#1A6B4A] bg-[#D6EDE3] text-[#0F5038]" : "border-gray-200 text-gray-500"}`}>
+                data.multiPersonMode === val ? "border-[#1A6B4A] bg-[#D6EDE3] text-[#0F5038]" : "border-border text-fg-muted"}`}>
               {lbl}
             </button>
           ))}
         </div>
-        {data.multiPersonMode === "detailed" && <p className="text-[11px] text-gray-400">הנרשם ימלא שם ושדות דינמיים לכל משתתף</p>}
+        {data.multiPersonMode === "detailed" && <p className="text-[11px] text-fg-faint">הנרשם ימלא שם ושדות דינמיים לכל משתתף</p>}
       </div>
       )}
 
       {/* Attribute tags */}
-      <div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
-        <label className="text-xs font-medium text-gray-500">מאפייני הטיול (לסינון בחיפוש)</label>
+      <div className="flex flex-col gap-2 border-t border-border pt-4">
+        <label className="text-xs font-medium text-fg-muted">מאפייני הטיול (לסינון בחיפוש)</label>
         <div className="flex flex-wrap gap-1.5">
           {TRIP_TAGS.filter((t) => !t.selfGuidedOnly || data.tripType === "SELF_GUIDED").map((t) => {
             const on = (data.attributeTags || []).includes(t.value);
@@ -276,7 +276,7 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
                   onChange("attributeTags" as keyof WizardData, next as unknown as string);
                 }}
                 className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                  on ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-gray-200 text-gray-600"}`}>
+                  on ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-border text-fg-muted"}`}>
                 {t.label}
               </button>
             );
@@ -286,9 +286,9 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
 
       {/* Dynamic registration fields (not for self-guided) */}
       {!selfGuided && (
-      <div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
+      <div className="flex flex-col gap-2 border-t border-border pt-4">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-medium text-gray-500">שדות הרשמה מותאמים</label>
+          <label className="text-xs font-medium text-fg-muted">שדות הרשמה מותאמים</label>
           <button
             type="button"
             onClick={addField}
@@ -297,17 +297,17 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
             + הוסף שדה
           </button>
         </div>
-        <p className="text-[11px] text-gray-400">שדות שהנרשם ימלא בעת ההרשמה (למשל: הצהרת בריאות, ניסיון קודם)</p>
+        <p className="text-[11px] text-fg-faint">שדות שהנרשם ימלא בעת ההרשמה (למשל: הצהרת בריאות, ניסיון קודם)</p>
 
         {regFields.map((f, i) => (
-          <div key={f.id} className="border border-gray-200 rounded-xl p-3 flex flex-col gap-2">
+          <div key={f.id} className="border border-border rounded-xl p-3 flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <input
                 type="text"
                 value={f.label}
                 onChange={(e) => patchField(i, { label: e.target.value })}
                 placeholder="שם השדה (למשל: הצהרת בריאות)"
-                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+                className="flex-1 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
               />
               <button type="button" onClick={() => removeField(i)} className="text-xs text-red-400 hover:text-red-600 px-1">הסר</button>
             </div>
@@ -315,13 +315,13 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
               <select
                 value={f.type}
                 onChange={(e) => patchField(i, { type: e.target.value as RegFieldData["type"] })}
-                className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1A6B4A] bg-white"
+                className="border border-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1A6B4A] bg-surface"
               >
                 <option value="text">טקסט חופשי</option>
                 <option value="boolean">כן / לא</option>
                 <option value="select">בחירה מרשימה</option>
               </select>
-              <label className="flex items-center gap-1 text-xs text-gray-600">
+              <label className="flex items-center gap-1 text-xs text-fg-muted">
                 <input type="checkbox" checked={f.required} onChange={(e) => patchField(i, { required: e.target.checked })} />
                 חובה
               </label>
@@ -332,7 +332,7 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
                 value={f.options.join(", ")}
                 onChange={(e) => patchField(i, { options: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
                 placeholder="אפשרויות מופרדות בפסיק: מתחיל, בינוני, מתקדם"
-                className="border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#1A6B4A]"
+                className="border border-border rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#1A6B4A]"
               />
             )}
           </div>
@@ -342,10 +342,10 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
 
       {/* Shared management: second guide + co-managers (not for self-guided) */}
       {!selfGuided && (
-      <div className="flex flex-col gap-3 border-t border-gray-100 pt-4">
-        <label className="text-xs font-medium text-gray-500">צוות הטיול (ניהול משותף)</label>
+      <div className="flex flex-col gap-3 border-t border-border pt-4">
+        <label className="text-xs font-medium text-fg-muted">צוות הטיול (ניהול משותף)</label>
         <div className="flex flex-col gap-1">
-          <label className="text-[11px] text-gray-400">מדריך שני (אופציונלי) — חפש משתמש רשום</label>
+          <label className="text-[11px] text-fg-faint">מדריך שני (אופציונלי) — חפש משתמש רשום</label>
           <UserPicker guidesOnly max={1} placeholder="חפש מדריך לפי שם או אימייל..."
             selected={data.secondGuideEmail ? [data.secondGuideEmail] : []}
             onChange={(emails) => onChange("secondGuideEmail", emails[0] ?? "")} />
@@ -354,7 +354,7 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
               {([["SECONDARY", "משני"], ["EQUAL", "שווה (ללא הבחנה)"]] as const).map(([val, label]) => (
                 <button key={val} type="button" onClick={() => onChange("secondGuideRole", val)}
                   className={`flex-1 py-1.5 rounded-lg border text-xs transition-colors ${
-                    data.secondGuideRole === val ? "border-[#1A6B4A] bg-[#D6EDE3] text-[#0F5038]" : "border-gray-200 text-gray-500"}`}>
+                    data.secondGuideRole === val ? "border-[#1A6B4A] bg-[#D6EDE3] text-[#0F5038]" : "border-border text-fg-muted"}`}>
                   {label}
                 </button>
               ))}
@@ -362,11 +362,11 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
           )}
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-[11px] text-gray-400">מנהלי טיול (גישה מלאה, עד 3) — חפש משתמשים עם תפקיד מנהל טיול</label>
+          <label className="text-[11px] text-fg-faint">מנהלי טיול (גישה מלאה, עד 3) — חפש משתמשים עם תפקיד מנהל טיול</label>
           <UserPicker max={3} managersOnly placeholder="חפש מנהל טיול..."
             selected={data.managerEmails || []}
             onChange={(emails) => onChange("managerEmails" as keyof WizardData, emails as unknown as string)} />
-          <p className="text-[11px] text-gray-400">מנהל טיול רואה ויכול לעשות הכל כמו המדריך, אך אינו מוצג כמדריך בטיול.</p>
+          <p className="text-[11px] text-fg-faint">מנהל טיול רואה ויכול לעשות הכל כמו המדריך, אך אינו מוצג כמדריך בטיול.</p>
         </div>
       </div>
       )}

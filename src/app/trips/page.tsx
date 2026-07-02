@@ -397,15 +397,15 @@ export default function TripsPage() {
     filters.tags.length + (filters.favoriteGuides ? 1 : 0);
 
   return (
-    <div dir="rtl" className="min-h-screen bg-[#f5f5f5]">
+    <div dir="rtl" className="min-h-screen bg-bg">
       <style>{`@keyframes fadeIn{from{opacity:0}to{opacity:1}}`}</style>
 
       {/* Search intent flow */}
       {showIntent && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-end md:items-center justify-center p-4" onClick={() => setShowIntent(false)}>
-          <div className="bg-white rounded-2xl w-full max-w-[420px] p-5" onClick={(e) => e.stopPropagation()}>
-            <div className="text-base font-semibold text-gray-900 mb-1">מה אתה מחפש?</div>
-            <div className="text-xs text-gray-500 mb-4">נתאים לך את החיפוש</div>
+          <div className="bg-surface rounded-2xl w-full max-w-[420px] p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="text-base font-semibold text-fg mb-1">מה אתה מחפש?</div>
+            <div className="text-xs text-fg-muted mb-4">נתאים לך את החיפוש</div>
             <div className="flex flex-col gap-2">
               {([
                 ["kind", "🎯 אני יודע מה אני מחפש", "אסנן לפי קושי, איזור ומאפיינים"],
@@ -413,9 +413,9 @@ export default function TripsPage() {
                 ["browse", "✨ הפתיעו אותי", "מותאם להעדפות שלי (איזור, קושי)"],
               ] as const).map(([key, title, sub]) => (
                 <button key={key} type="button" onClick={() => chooseIntent(key)}
-                  className="text-right border border-gray-200 rounded-xl p-3 hover:border-[#1A6B4A] hover:bg-[#F0FAF5] transition-colors">
-                  <div className="text-sm font-medium text-gray-900">{title}</div>
-                  <div className="text-[11px] text-gray-400 mt-0.5">{sub}</div>
+                  className="text-right border border-border rounded-xl p-3 hover:border-[#1A6B4A] hover:bg-[#F0FAF5] transition-colors">
+                  <div className="text-sm font-medium text-fg">{title}</div>
+                  <div className="text-[11px] text-fg-faint mt-0.5">{sub}</div>
                 </button>
               ))}
             </div>
@@ -425,31 +425,31 @@ export default function TripsPage() {
 
       {/* Top bar */}
       <div className="px-3 py-3">
-        <div className="max-w-5xl mx-auto bg-white rounded-xl px-3 py-2.5 flex items-center gap-2.5">
+        <div className="max-w-5xl mx-auto bg-surface rounded-xl px-3 py-2.5 flex items-center gap-2.5">
           <Link href="/" className="text-[15px] font-semibold text-[#1A6B4A] flex-shrink-0">🧭 TrailHub</Link>
           <div className="flex-1 relative">
-            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-full px-3 py-1.5">
-              <span className="text-gray-400 text-sm">🔍</span>
+            <div className="flex items-center gap-2 bg-surface-2 border border-border rounded-full px-3 py-1.5">
+              <span className="text-fg-faint text-sm">🔍</span>
               <input
                 type="text" value={filters.q}
                 onChange={(e) => handleSearch(e.target.value)}
                 onFocus={() => setSearchFocused(true)}
                 onBlur={() => setTimeout(() => setSearchFocused(false), 120)}
                 placeholder="חפש טיול, מדריך, איזור..."
-                className="flex-1 bg-transparent border-none outline-none text-sm text-gray-800 placeholder:text-gray-400"
+                className="flex-1 bg-transparent border-none outline-none text-sm text-fg placeholder:text-fg-faint"
               />
               {filters.q && (
-                <button type="button" onClick={() => handleSearch("")} className="text-gray-400 hover:text-gray-600 text-xs">✕</button>
+                <button type="button" onClick={() => handleSearch("")} className="text-fg-faint hover:text-fg-muted text-xs">✕</button>
               )}
             </div>
             {/* Autocomplete suggestions */}
             {searchFocused && searchSuggestions.length > 0 && (
-              <div className="absolute top-full mt-1 right-0 left-0 bg-white rounded-xl border border-gray-100 shadow-lg z-50 overflow-hidden">
+              <div className="absolute top-full mt-1 right-0 left-0 bg-surface rounded-xl border border-border shadow-lg z-50 overflow-hidden">
                 {searchSuggestions.map((s) => (
                   <button key={s} type="button"
                     onMouseDown={(e) => { e.preventDefault(); handleSearch(s); setSearchFocused(false); }}
-                    className="w-full text-right px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                    <span className="text-gray-300 text-xs">🔍</span>{s}
+                    className="w-full text-right px-3 py-2 text-sm text-fg hover:bg-surface-2 flex items-center gap-2">
+                    <span className="text-fg-faint text-xs">🔍</span>{s}
                   </button>
                 ))}
               </div>
@@ -468,7 +468,7 @@ export default function TripsPage() {
 
       {/* Category: guided vs self-guided */}
       <div className="max-w-5xl mx-auto px-3 mb-2 flex items-center gap-2 justify-center md:justify-start">
-        <div className="inline-flex bg-white rounded-full border border-gray-200 p-0.5">
+        <div className="inline-flex bg-surface rounded-full border border-border p-0.5">
           {([["guided", "🧭 טיולים מודרכים"], ["self_guided", "🎒 טיולים עצמאיים"], ["guides", "🧑‍🏫 מדריכים"]] as const).map(([v, label]) => (
             <button key={v} type="button"
               onClick={() => {
@@ -478,7 +478,7 @@ export default function TripsPage() {
                 else { setTrips([]); fetchTrips(next); }
               }}
               className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                filters.category === v ? "bg-[#1A6B4A] text-white" : "text-gray-500 hover:text-gray-700"
+                filters.category === v ? "bg-[#1A6B4A] text-white" : "text-fg-muted hover:text-fg"
               }`}>
               {label}
             </button>
@@ -500,33 +500,33 @@ export default function TripsPage() {
             <div className="flex flex-col gap-2 mb-3">
               <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
                 <button type="button" onClick={() => setGuideRegions([])}
-                  className={`shrink-0 text-[11px] rounded-full px-3 py-1.5 border ${guideRegions.length === 0 ? "bg-[#1A6B4A] text-white border-[#1A6B4A]" : "bg-white text-gray-500 border-gray-200"}`}>כל האזורים</button>
+                  className={`shrink-0 text-[11px] rounded-full px-3 py-1.5 border ${guideRegions.length === 0 ? "bg-[#1A6B4A] text-white border-[#1A6B4A]" : "bg-surface text-fg-muted border-border"}`}>כל האזורים</button>
                 {REGIONS.map((r) => (
                   <button key={r} type="button" onClick={() => setGuideRegions((prev) => toggle(prev, r))}
-                    className={`shrink-0 text-[11px] rounded-full px-3 py-1.5 border ${guideRegions.includes(r) ? "bg-[#1A6B4A] text-white border-[#1A6B4A]" : "bg-white text-gray-500 border-gray-200"}`}>{r}</button>
+                    className={`shrink-0 text-[11px] rounded-full px-3 py-1.5 border ${guideRegions.includes(r) ? "bg-[#1A6B4A] text-white border-[#1A6B4A]" : "bg-surface text-fg-muted border-border"}`}>{r}</button>
                 ))}
               </div>
               {allSpecialties.length > 0 && (
                 <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
                   <button type="button" onClick={() => setGuideSpecialties([])}
-                    className={`shrink-0 text-[11px] rounded-full px-3 py-1.5 border ${guideSpecialties.length === 0 ? "bg-[#185FA5] text-white border-[#185FA5]" : "bg-white text-gray-500 border-gray-200"}`}>כל ההתמחויות</button>
+                    className={`shrink-0 text-[11px] rounded-full px-3 py-1.5 border ${guideSpecialties.length === 0 ? "bg-[#185FA5] text-white border-[#185FA5]" : "bg-surface text-fg-muted border-border"}`}>כל ההתמחויות</button>
                   {allSpecialties.map((s) => (
                     <button key={s} type="button" onClick={() => setGuideSpecialties((prev) => toggle(prev, s))}
-                      className={`shrink-0 text-[11px] rounded-full px-3 py-1.5 border ${guideSpecialties.includes(s) ? "bg-[#185FA5] text-white border-[#185FA5]" : "bg-white text-gray-500 border-gray-200"}`}>{s}</button>
+                      className={`shrink-0 text-[11px] rounded-full px-3 py-1.5 border ${guideSpecialties.includes(s) ? "bg-[#185FA5] text-white border-[#185FA5]" : "bg-surface text-fg-muted border-border"}`}>{s}</button>
                   ))}
                 </div>
               )}
             </div>
 
             {!guidesLoaded ? (
-              <div className="text-center py-12 text-gray-400 text-sm">טוען מדריכים…</div>
+              <div className="text-center py-12 text-fg-faint text-sm">טוען מדריכים…</div>
             ) : shown.length === 0 ? (
-              <div className="text-center py-12 text-gray-400 text-sm">לא נמצאו מדריכים</div>
+              <div className="text-center py-12 text-fg-faint text-sm">לא נמצאו מדריכים</div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {shown.map((g) => (
                   <div key={g.id} onClick={() => router.push(`/guides/${g.id}`)}
-                    className="bg-white rounded-2xl border border-gray-100 p-4 flex flex-col items-center text-center cursor-pointer hover:border-[#1A6B4A]/40 transition-colors">
+                    className="bg-surface rounded-2xl border border-border p-4 flex flex-col items-center text-center cursor-pointer hover:border-[#1A6B4A]/40 transition-colors">
                     {g.image ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={g.image} alt="" className="w-16 h-16 rounded-full object-cover mb-2" />
@@ -534,9 +534,9 @@ export default function TripsPage() {
                       <div className="w-16 h-16 rounded-full flex items-center justify-center text-lg font-semibold text-white mb-2"
                         style={{ background: avatarColor(g.name) }}>{initials(g.name)}</div>
                     )}
-                    <div className="text-sm font-semibold text-gray-900 truncate w-full">{g.name ?? "מדריך"}</div>
-                    {g.headline && <div className="text-[11px] text-gray-500 mt-0.5 line-clamp-2">{g.headline}</div>}
-                    <div className="text-[11px] text-gray-400 mt-1.5 flex items-center gap-1">
+                    <div className="text-sm font-semibold text-fg truncate w-full">{g.name ?? "מדריך"}</div>
+                    {g.headline && <div className="text-[11px] text-fg-muted mt-0.5 line-clamp-2">{g.headline}</div>}
+                    <div className="text-[11px] text-fg-faint mt-1.5 flex items-center gap-1">
                       {g.rating > 0 ? <span className="text-amber-500">★ {g.rating.toFixed(1)}</span> : <span className="text-[#1A6B4A]">מדריך חדש</span>}
                       {g.reviewCount > 0 && <span>· {g.reviewCount} ביקורות</span>}
                     </div>
@@ -557,18 +557,18 @@ export default function TripsPage() {
         {/* ── Date-filter side panel (desktop) — guided only; self-guided has no dates ── */}
         {filters.category !== "self_guided" && (
         <aside className="hidden md:block w-[290px] shrink-0 self-start sticky top-4">
-          <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
-            <div className="px-3 pt-3 pb-1 border-b border-gray-100 flex items-center justify-between">
-              <span className="text-sm font-semibold text-gray-800">📅 סינון לפי תאריך</span>
+          <div className="bg-surface rounded-2xl overflow-hidden shadow-sm">
+            <div className="px-3 pt-3 pb-1 border-b border-border flex items-center justify-between">
+              <span className="text-sm font-semibold text-fg">📅 סינון לפי תאריך</span>
               <div className="flex items-center gap-2">
                 {range.start && (
                   <button type="button" onClick={() => setRange({ start: null, end: null })}
-                    className="text-[10px] text-gray-400 hover:text-[#1A6B4A]">נקה</button>
+                    className="text-[10px] text-fg-faint hover:text-[#1A6B4A]">נקה</button>
                 )}
-                <div className="inline-flex bg-gray-100 rounded-full p-0.5" title="לוח שנה: לועזי / עברי (לסשן זה)">
+                <div className="inline-flex bg-surface-2 rounded-full p-0.5" title="לוח שנה: לועזי / עברי (לסשן זה)">
                   {(["gregorian", "hebrew"] as const).map((m) => (
                     <button key={m} type="button" onClick={() => setCalSession(m)}
-                      className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${calMode === m ? "bg-[#1A6B4A] text-white" : "text-gray-400"}`}>
+                      className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${calMode === m ? "bg-[#1A6B4A] text-white" : "text-fg-faint"}`}>
                       {m === "hebrew" ? "ע׳" : "ל׳"}
                     </button>
                   ))}
@@ -598,7 +598,7 @@ export default function TripsPage() {
                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition-colors ${
                     mobileCalOpen || range.start
                       ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]"
-                      : "bg-white border-gray-200 text-gray-600"
+                      : "bg-surface border-border text-fg-muted"
                   }`}
                 >
                   📅 {range.start
@@ -611,7 +611,7 @@ export default function TripsPage() {
               </div>
 
               {mobileCalOpen && (
-                <div className="md:hidden bg-white rounded-2xl overflow-hidden mb-2 shadow-sm">
+                <div className="md:hidden bg-surface rounded-2xl overflow-hidden mb-2 shadow-sm">
                   <CalendarView
                     compact
                     trips={trips}
@@ -631,7 +631,7 @@ export default function TripsPage() {
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs whitespace-nowrap border flex-shrink-0 transition-colors ${
                 panelOpen || activeCount > 0
                   ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]"
-                  : "bg-white border-gray-200 text-gray-600"
+                  : "bg-surface border-border text-fg-muted"
               }`}
             >
               ⚙ פילטרים
@@ -643,12 +643,12 @@ export default function TripsPage() {
               <>
                 <button type="button" onClick={() => setMyTripsOnly((v) => !v)}
                   className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap border flex-shrink-0 transition-colors ${
-                    myTripsOnly ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "bg-white border-gray-200 text-gray-600"}`}>
+                    myTripsOnly ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "bg-surface border-border text-fg-muted"}`}>
                   🎒 הטיולים שלי
                 </button>
                 <button type="button" onClick={() => setFavoritesOnly((v) => !v)}
                   className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap border flex-shrink-0 transition-colors ${
-                    favoritesOnly ? "bg-[#FDE8EC] border-[#E86A87] text-[#B0324D]" : "bg-white border-gray-200 text-gray-600"}`}>
+                    favoritesOnly ? "bg-[#FDE8EC] border-[#E86A87] text-[#B0324D]" : "bg-surface border-border text-fg-muted"}`}>
                   ♥ מועדפים
                 </button>
               </>
@@ -657,12 +657,12 @@ export default function TripsPage() {
               <>
                 <button type="button" onClick={() => setPurchasesOnly((v) => !v)}
                   className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap border flex-shrink-0 transition-colors ${
-                    purchasesOnly ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "bg-white border-gray-200 text-gray-600"}`}>
+                    purchasesOnly ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "bg-surface border-border text-fg-muted"}`}>
                   🎒 הרכישות שלי
                 </button>
                 <button type="button" onClick={() => setFavoritesOnly((v) => !v)}
                   className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap border flex-shrink-0 transition-colors ${
-                    favoritesOnly ? "bg-[#FDE8EC] border-[#E86A87] text-[#B0324D]" : "bg-white border-gray-200 text-gray-600"}`}>
+                    favoritesOnly ? "bg-[#FDE8EC] border-[#E86A87] text-[#B0324D]" : "bg-surface border-border text-fg-muted"}`}>
                   ♥ מועדפים
                 </button>
               </>
@@ -681,7 +681,7 @@ export default function TripsPage() {
             ))}
             {activeCount > 0 && (
               <button type="button" onClick={clearAllFilters}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap bg-white border border-gray-200 text-gray-500 flex-shrink-0">
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap bg-surface border border-border text-fg-muted flex-shrink-0">
                 נקה הכל <span className="font-bold">✕</span>
               </button>
             )}
@@ -689,28 +689,28 @@ export default function TripsPage() {
 
           {/* Filter panel */}
           {panelOpen && (
-            <div className="bg-white rounded-xl p-4 mb-2">
+            <div className="bg-surface rounded-xl p-4 mb-2">
               <div className="mb-4">
-                <div className="text-[11px] text-gray-500 mb-2">איזור בארץ</div>
+                <div className="text-[11px] text-fg-muted mb-2">איזור בארץ</div>
                 <div className="flex flex-wrap gap-1.5">
                   {REGIONS.map((r) => (
                     <button key={r} type="button"
                       onClick={() => updateFilters({ regions: toggle(filters.regions, r) })}
                       className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
-                        filters.regions.includes(r) ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-gray-200 text-gray-600"}`}>
+                        filters.regions.includes(r) ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-border text-fg-muted"}`}>
                       {r}
                     </button>
                   ))}
                 </div>
               </div>
               <div className="mb-4">
-                <div className="text-[11px] text-gray-500 mb-2">רמת קושי</div>
+                <div className="text-[11px] text-fg-muted mb-2">רמת קושי</div>
                 <div className="flex gap-2">
                   {DIFFICULTIES.map((d) => (
                     <button key={d.value} type="button"
                       onClick={() => updateFilters({ difficulties: toggle(filters.difficulties, d.value) })}
                       className={`flex-1 py-1.5 rounded-full text-xs border transition-colors ${
-                        filters.difficulties.includes(d.value) ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-gray-200 text-gray-600"}`}>
+                        filters.difficulties.includes(d.value) ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-border text-fg-muted"}`}>
                       {d.label}
                     </button>
                   ))}
@@ -718,22 +718,22 @@ export default function TripsPage() {
               </div>
               <div className="mb-4">
                 <button type="button" onClick={() => updateFilters({ favoriteGuides: !filters.favoriteGuides })}
-                  className="flex items-center gap-2 text-sm text-gray-700">
+                  className="flex items-center gap-2 text-sm text-fg">
                   <div className={`w-5 h-5 rounded flex items-center justify-center border-[1.5px] transition-colors ${
-                    filters.favoriteGuides ? "bg-[#1A6B4A] border-[#1A6B4A] text-white text-xs" : "border-gray-300"}`}>
+                    filters.favoriteGuides ? "bg-[#1A6B4A] border-[#1A6B4A] text-white text-xs" : "border-border"}`}>
                     {filters.favoriteGuides && "✓"}
                   </div>
                   ❤ רק מדריכים שאני עוקב אחריהם
                 </button>
               </div>
               <div className="mb-4">
-                <div className="text-[11px] text-gray-500 mb-2">מאפיינים</div>
+                <div className="text-[11px] text-fg-muted mb-2">מאפיינים</div>
                 <div className="flex flex-wrap gap-1.5">
                   {TRIP_TAGS.filter((t) => !t.selfGuidedOnly || filters.category === "self_guided").map((t) => (
                     <button key={t.value} type="button"
                       onClick={() => updateFilters({ tags: toggle(filters.tags, t.value) })}
                       className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
-                        filters.tags.includes(t.value) ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-gray-200 text-gray-600"}`}>
+                        filters.tags.includes(t.value) ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-border text-fg-muted"}`}>
                       {t.label}
                     </button>
                   ))}
@@ -741,7 +741,7 @@ export default function TripsPage() {
               </div>
               <div className="flex items-center justify-between">
                 <button type="button" onClick={clearAllFilters}
-                  className="text-xs text-gray-400 hover:text-gray-600">נקה הכל</button>
+                  className="text-xs text-fg-faint hover:text-fg-muted">נקה הכל</button>
                 <button type="button" onClick={() => setPanelOpen(false)}
                   className="px-5 py-2 bg-[#1A6B4A] text-white rounded-full text-xs font-medium hover:bg-[#155a3e] transition-colors">
                   סגור
@@ -752,32 +752,32 @@ export default function TripsPage() {
 
           {/* Results header */}
           <div className="flex items-center justify-between mb-2 px-0.5">
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-fg-muted">
               {loading ? "טוען..." : range.start
                 ? `${displayedTrips.length} טיולים ב-${rangeLabel({ day: "numeric", month: "short" })}`
                 : `${trips.length} טיולים נמצאו`}
             </span>
             <select value={filters.sort}
               onChange={(e) => { const next = { ...filters, sort: e.target.value }; setFilters(next); fetchTrips(next); }}
-              className="bg-white border border-gray-200 rounded-full px-3 py-1.5 text-xs text-gray-600 focus:outline-none cursor-pointer appearance-none">
+              className="bg-surface border border-border rounded-full px-3 py-1.5 text-xs text-fg-muted focus:outline-none cursor-pointer appearance-none">
               {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>↕ {o.label}</option>)}
             </select>
           </div>
 
           {/* Trip cards */}
           <div className="flex flex-col gap-3">
-            {loading && <div className="text-center py-12 text-gray-400 text-sm">טוען טיולים...</div>}
+            {loading && <div className="text-center py-12 text-fg-faint text-sm">טוען טיולים...</div>}
 
             {/* Empty state when a date/range is selected but no trips */}
             {!loading && range.start && displayedTrips.length === 0 && (
               <div className="text-center py-14">
                 <div className="text-3xl mb-3">📅</div>
-                <div className="text-gray-600 text-sm font-medium">
+                <div className="text-fg-muted text-sm font-medium">
                   {range.end && !sameDay(range.start, range.end)
                     ? `אין טיולים בין ${rangeLabel({ weekday: "short", day: "numeric", month: "long" })}`
                     : `אין טיולים ב-${range.start.toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" })}`}
                 </div>
-                <div className="text-gray-400 text-xs mt-1">בחר תאריך אחר ביומן</div>
+                <div className="text-fg-faint text-xs mt-1">בחר תאריך אחר ביומן</div>
                 <button type="button" onClick={() => setRange({ start: null, end: null })}
                   className="mt-4 px-4 py-2 text-xs text-[#1A6B4A] border border-[#1A6B4A] rounded-full hover:bg-[#D6EDE3] transition-colors">
                   הצג כל הטיולים
@@ -789,8 +789,8 @@ export default function TripsPage() {
             {!loading && !range.start && displayedTrips.length === 0 && (
               <div className="text-center py-12">
                 <div className="text-3xl mb-3">🔍</div>
-                <div className="text-gray-500 text-sm">לא נמצאו טיולים</div>
-                <div className="text-gray-400 text-xs mt-1">נסה לשנות את הפילטרים</div>
+                <div className="text-fg-muted text-sm">לא נמצאו טיולים</div>
+                <div className="text-fg-faint text-xs mt-1">נסה לשנות את הפילטרים</div>
               </div>
             )}
 
@@ -805,12 +805,12 @@ export default function TripsPage() {
               const myStatus = isSG ? null : myRegMap[trip.id];
 
               return (
-                <div key={trip.id} className="bg-white rounded-2xl overflow-hidden border border-gray-100 cursor-pointer"
+                <div key={trip.id} className="bg-surface rounded-2xl overflow-hidden border border-border cursor-pointer"
                   onClick={() => router.push(`/trips/${trip.id}`)}>
                   {myStatus && (
                     <div className={`px-3 py-1.5 flex items-center gap-1.5 text-xs font-medium ${
                       myStatus === "CONFIRMED" ? "bg-[#D6EDE3] text-[#0F5038]" :
-                      myStatus === "WAITLIST"  ? "bg-[#FDF3DC] text-[#7A5010]" : "bg-gray-50 text-gray-500"
+                      myStatus === "WAITLIST"  ? "bg-[#FDF3DC] text-[#7A5010]" : "bg-surface-2 text-fg-muted"
                     }`}>
                       <span>{myStatus === "CONFIRMED" ? "✓ רשום לטיול" :
                        myStatus === "WAITLIST"  ? `⏳ ממתין למקום${myRegPos[trip.id] ? ` — מיקום ${myRegPos[trip.id]} בתור` : ""}` : "👀 מתעניין"}</span>
@@ -850,7 +850,7 @@ export default function TripsPage() {
                     {trip.images?.length > 1 && (
                       <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-1 z-10">
                         {trip.images.map((_, i) => (
-                          <div key={i} className="w-1 h-1 rounded-full bg-white/60" />
+                          <div key={i} className="w-1 h-1 rounded-full bg-surface/60" />
                         ))}
                       </div>
                     )}
@@ -926,7 +926,7 @@ export default function TripsPage() {
                     <div className="flex items-end justify-between gap-2 mb-2">
                       <div className="flex flex-wrap" style={{ gap: 0 }}>
                         {meta.map((m, i, arr) => (
-                          <span key={i} className="text-[11px] text-gray-500"
+                          <span key={i} className="text-[11px] text-fg-muted"
                             style={{ paddingLeft: i < arr.length-1 ? 8 : 0, marginLeft: i < arr.length-1 ? 8 : 0, borderLeft: i < arr.length-1 ? "1px solid #eee" : "none", ...(m.color ? { color: m.color, fontWeight: 600 } : {}) }}>
                             {m.t}
                           </span>
@@ -942,11 +942,11 @@ export default function TripsPage() {
                     </div>
                     {!isSG && (
                     <div className="mb-2">
-                      <div className="h-[3px] bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-[3px] bg-surface-2 rounded-full overflow-hidden">
                         <div className="h-full rounded-full transition-all"
                           style={{ width: `${Math.min(occupancy*100,100)}%`, background: isFull ? "#C0392B" : "#1A6B4A" }} />
                       </div>
-                      <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+                      <div className="flex justify-between text-[10px] text-fg-faint mt-1">
                         <span>
                           {trip.spotsBooked} מתוך {trip.maxSpots} רשומים
                           {" · "}
@@ -964,10 +964,10 @@ export default function TripsPage() {
                     )}
                     {/* Once registered, the top banner takes over — hide the whole price/action row */}
                     {!(myStatus === "CONFIRMED" || myStatus === "WAITLIST") && (
-                    <div className="flex items-center justify-between pt-2 border-t border-gray-50">
+                    <div className="flex items-center justify-between pt-2 border-t border-border">
                       <div>
-                        <span className="text-[17px] font-medium text-gray-900">₪{trip.price.toLocaleString("he-IL")}</span>
-                        <span className="text-[11px] text-gray-400 mr-1">{isSG ? "לחבילה" : trip.tripType && trip.tripType !== "DAY_HIKE" ? "למסע" : "לאדם"}</span>
+                        <span className="text-[17px] font-medium text-fg">₪{trip.price.toLocaleString("he-IL")}</span>
+                        <span className="text-[11px] text-fg-faint mr-1">{isSG ? "לחבילה" : trip.tripType && trip.tripType !== "DAY_HIKE" ? "למסע" : "לאדם"}</span>
                       </div>
                       <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
                         {isSG ? (
@@ -996,18 +996,18 @@ export default function TripsPage() {
                           </>
                         ) : myStatus === "PENDING" ? (
                           <>
-                            <span className="px-2.5 py-1.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-600">👀 מתעניין</span>
+                            <span className="px-2.5 py-1.5 rounded-full text-[11px] font-medium bg-surface-2 text-fg-muted">👀 מתעניין</span>
                             {!isFull && (
                               <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)}
                                 className="px-3.5 py-1.5 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">להרשמה</button>
                             )}
                             <button type="button" onClick={() => cancelReg(trip.id)}
-                              className="px-3 py-1.5 border border-gray-200 text-gray-500 rounded-full text-[11px]">הסר</button>
+                              className="px-3 py-1.5 border border-border text-fg-muted rounded-full text-[11px]">הסר</button>
                           </>
                         ) : (
                           <>
                             <button type="button" onClick={() => router.push(`/trips/${trip.id}/register?flow=interest`)}
-                              className="px-3 py-1.5 bg-gray-50 border border-gray-200 text-gray-600 rounded-full text-[11px]">
+                              className="px-3 py-1.5 bg-surface-2 border border-border text-fg-muted rounded-full text-[11px]">
                               מתעניין
                             </button>
                             {!isFull && (

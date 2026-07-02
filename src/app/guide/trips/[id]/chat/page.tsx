@@ -127,22 +127,22 @@ export default function GuideChatPage() {
 
   if (!activeHiker) {
     return (
-      <div dir="rtl" className="min-h-screen bg-[#f5f5f5]">
-        <div className="bg-white border-b border-gray-100 px-4 py-3 flex items-center gap-3">
-          <button type="button" onClick={() => router.back()} className="text-gray-400 hover:text-gray-700">
+      <div dir="rtl" className="min-h-screen bg-bg">
+        <div className="bg-surface border-b border-border px-4 py-3 flex items-center gap-3">
+          <button type="button" onClick={() => router.back()} className="text-fg-faint hover:text-fg">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </button>
           <div>
-            <div className="text-sm font-semibold text-gray-900">הודעות</div>
-            {tripTitle && <div className="text-xs text-gray-400">{tripTitle}</div>}
+            <div className="text-sm font-semibold text-fg">הודעות</div>
+            {tripTitle && <div className="text-xs text-fg-faint">{tripTitle}</div>}
           </div>
         </div>
 
-        <div className="bg-white mt-2">
+        <div className="bg-surface mt-2">
           {threads.length === 0 && (
-            <div className="py-16 text-center text-sm text-gray-400">אין הודעות עדיין</div>
+            <div className="py-16 text-center text-sm text-fg-faint">אין הודעות עדיין</div>
           )}
           {threads.map((thread) => {
             const hiker = getHiker(thread);
@@ -151,7 +151,7 @@ export default function GuideChatPage() {
               <button
                 key={`${thread.fromUserId}-${thread.toUserId}`}
                 type="button"
-                className={`w-full flex items-center gap-3 px-4 py-3.5 border-b border-gray-50 hover:bg-gray-50 transition-colors text-right ${isUnread ? "bg-green-50/40" : ""}`}
+                className={`w-full flex items-center gap-3 px-4 py-3.5 border-b border-border hover:bg-surface-2 transition-colors text-right ${isUnread ? "bg-accent/10" : ""}`}
                 onClick={() => {
                   setActiveHiker({ id: hiker.id, name: hiker.name });
                   loadConversation(hiker.id);
@@ -165,12 +165,12 @@ export default function GuideChatPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <span className={`text-sm ${isUnread ? "font-semibold text-gray-900" : "font-medium text-gray-800"}`}>
+                    <span className={`text-sm ${isUnread ? "font-semibold text-fg" : "font-medium text-fg"}`}>
                       {hiker.name ?? "מטייל"}
                     </span>
-                    <span className="text-[10px] text-gray-400">{relativeTime(thread.createdAt)}</span>
+                    <span className="text-[10px] text-fg-faint">{relativeTime(thread.createdAt)}</span>
                   </div>
-                  <p className="text-xs text-gray-500 truncate mt-0.5">{thread.body}</p>
+                  <p className="text-xs text-fg-muted truncate mt-0.5">{thread.body}</p>
                 </div>
                 {isUnread && <div className="w-2 h-2 rounded-full bg-[#1A6B4A] shrink-0" />}
               </button>
@@ -182,9 +182,9 @@ export default function GuideChatPage() {
   }
 
   return (
-    <div dir="rtl" className="min-h-screen bg-[#f5f5f5] flex flex-col">
-      <div className="bg-white border-b border-gray-100 px-4 py-3 flex items-center gap-3 sticky top-0 z-10">
-        <button type="button" onClick={() => { setActiveHiker(null); setMessages([]); if (pollRef.current) clearInterval(pollRef.current); }} className="text-gray-400 hover:text-gray-700">
+    <div dir="rtl" className="min-h-screen bg-bg flex flex-col">
+      <div className="bg-surface border-b border-border px-4 py-3 flex items-center gap-3 sticky top-0 z-10">
+        <button type="button" onClick={() => { setActiveHiker(null); setMessages([]); if (pollRef.current) clearInterval(pollRef.current); }} className="text-fg-faint hover:text-fg">
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
@@ -196,14 +196,14 @@ export default function GuideChatPage() {
           {initials(activeHiker.name)}
         </div>
         <div>
-          <div className="text-sm font-semibold text-gray-900">{activeHiker.name ?? "מטייל"}</div>
-          <div className="text-xs text-gray-400">{tripTitle}</div>
+          <div className="text-sm font-semibold text-fg">{activeHiker.name ?? "מטייל"}</div>
+          <div className="text-xs text-fg-faint">{tripTitle}</div>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-1 pb-24">
         {messages.length === 0 && (
-          <div className="flex-1 flex items-center justify-center text-sm text-gray-400 py-20">
+          <div className="flex-1 flex items-center justify-center text-sm text-fg-faint py-20">
             אין הודעות עדיין
           </div>
         )}
@@ -215,11 +215,11 @@ export default function GuideChatPage() {
                 className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${
                   isMe
                     ? "bg-[#1A6B4A] text-white rounded-br-sm"
-                    : "bg-white text-gray-800 rounded-bl-sm shadow-sm border border-gray-100"
+                    : "bg-surface text-fg rounded-bl-sm shadow-sm border border-border"
                 }`}
               >
                 <p>{msg.body}</p>
-                <p className={`text-[9px] mt-0.5 text-left ${isMe ? "text-white/60" : "text-gray-400"}`}>
+                <p className={`text-[9px] mt-0.5 text-left ${isMe ? "text-white/60" : "text-fg-faint"}`}>
                   {formatTime(msg.createdAt)}
                 </p>
               </div>
@@ -229,14 +229,14 @@ export default function GuideChatPage() {
         <div ref={bottomRef} />
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-3 flex gap-2 items-end" dir="rtl">
+      <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border px-4 py-3 flex gap-2 items-end" dir="rtl">
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
           placeholder="כתוב הודעה..."
           rows={1}
-          className="flex-1 border border-gray-200 rounded-2xl px-4 py-2.5 text-sm resize-none focus:outline-none focus:border-[#1A6B4A] max-h-24 overflow-y-auto"
+          className="flex-1 border border-border rounded-2xl px-4 py-2.5 text-sm resize-none focus:outline-none focus:border-[#1A6B4A] max-h-24 overflow-y-auto"
         />
         <button
           type="button"

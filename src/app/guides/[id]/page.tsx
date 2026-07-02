@@ -67,8 +67,8 @@ export default function GuideProfilePage() {
     await fetch(`/api/guides/${id}/follow`, { method: next ? "POST" : "DELETE" }).catch(() => setFollowing(!next));
   }
 
-  if (loading) return <div dir="rtl" className="min-h-screen flex items-center justify-center text-gray-400 text-sm">טוען...</div>;
-  if (!data) return <div dir="rtl" className="min-h-screen flex items-center justify-center text-gray-500 text-sm">המדריך לא נמצא</div>;
+  if (loading) return <div dir="rtl" className="min-h-screen flex items-center justify-center text-fg-faint text-sm">טוען...</div>;
+  if (!data) return <div dir="rtl" className="min-h-screen flex items-center justify-center text-fg-muted text-sm">המדריך לא נמצא</div>;
 
   const { guide, upcomingTrips, reviews, histogram, stats } = data;
   const name = guide.user.name;
@@ -77,12 +77,12 @@ export default function GuideProfilePage() {
   const totalReviews = histogram.reduce((a, b) => a + b, 0);
 
   return (
-    <div dir="rtl" className="min-h-screen bg-[#f5f5f5]">
+    <div dir="rtl" className="min-h-screen bg-bg">
       <div className="max-w-[480px] mx-auto px-3 py-3 pb-10">
-        <button type="button" onClick={() => router.back()} className="text-gray-400 hover:text-gray-600 text-sm mb-3">← חזרה</button>
+        <button type="button" onClick={() => router.back()} className="text-fg-faint hover:text-fg-muted text-sm mb-3">← חזרה</button>
 
         {/* Hero */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-3">
+        <div className="bg-surface rounded-2xl border border-border shadow-sm p-5 mb-3">
           <div className="flex items-center gap-4">
             {guide.user.image ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -92,10 +92,10 @@ export default function GuideProfilePage() {
             )}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-lg font-bold text-gray-900">{name ?? "מדריך"}</span>
+                <span className="text-lg font-bold text-fg">{name ?? "מדריך"}</span>
                 {guide.isVerified && <span className="text-[#1A6B4A] text-sm" title="מאומת">✓</span>}
               </div>
-              {guide.headline && <div className="text-xs text-gray-500 mt-0.5">{guide.headline}</div>}
+              {guide.headline && <div className="text-xs text-fg-muted mt-0.5">{guide.headline}</div>}
             </div>
             <button type="button" onClick={toggleFollow}
               className={`text-xs rounded-full px-3 py-1.5 transition-colors ${following ? "bg-[#1A6B4A] text-white" : "border border-[#1A6B4A] text-[#1A6B4A] hover:bg-[#D6EDE3]"}`}>
@@ -118,9 +118,9 @@ export default function GuideProfilePage() {
               { v: stats.totalHikers, l: "מטיילים" },
               { v: stats.tripCount, l: "טיולים" },
             ].map((s, i) => (
-              <div key={i} className="bg-gray-50 rounded-xl p-2.5 text-center">
-                <div className="text-sm font-semibold text-gray-900">{s.v}</div>
-                <div className="text-[10px] text-gray-400 mt-0.5">{s.l}</div>
+              <div key={i} className="bg-surface-2 rounded-xl p-2.5 text-center">
+                <div className="text-sm font-semibold text-fg">{s.v}</div>
+                <div className="text-[10px] text-fg-faint mt-0.5">{s.l}</div>
               </div>
             ))}
           </div>
@@ -128,8 +128,8 @@ export default function GuideProfilePage() {
 
         {/* Bio + tags */}
         {(guide.bio || guide.specialtyRegions.length > 0 || guide.interests.length > 0 || guide.youtubeUrl || guide.podcastUrl) && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-3 flex flex-col gap-3">
-            {guide.bio && <p className="text-sm text-gray-700 leading-relaxed">{guide.bio}</p>}
+          <div className="bg-surface rounded-2xl border border-border shadow-sm p-5 mb-3 flex flex-col gap-3">
+            {guide.bio && <p className="text-sm text-fg leading-relaxed">{guide.bio}</p>}
             {guide.specialtyRegions.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {guide.specialtyRegions.map((r) => (
@@ -140,7 +140,7 @@ export default function GuideProfilePage() {
             {guide.interests.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {guide.interests.map((t) => (
-                  <span key={t} className="text-[11px] px-2 py-1 rounded-full bg-gray-100 text-gray-600">{t}</span>
+                  <span key={t} className="text-[11px] px-2 py-1 rounded-full bg-surface-2 text-fg-muted">{t}</span>
                 ))}
               </div>
             )}
@@ -155,34 +155,34 @@ export default function GuideProfilePage() {
 
         {/* Declared data (clearly marked) */}
         {(guide.yearsActive || guide.trainingInstitution || age) && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-3">
-            <div className="text-xs font-medium text-gray-500 mb-2">פרטים שהמדריך הצהיר עליהם *</div>
-            <div className="flex flex-col gap-1.5 text-sm text-gray-700">
+          <div className="bg-surface rounded-2xl border border-border shadow-sm p-5 mb-3">
+            <div className="text-xs font-medium text-fg-muted mb-2">פרטים שהמדריך הצהיר עליהם *</div>
+            <div className="flex flex-col gap-1.5 text-sm text-fg">
               {guide.yearsActive ? <div>🥾 {guide.yearsActive} שנות ניסיון</div> : null}
               {guide.trainingInstitution && <div>🎓 הכשרה: {guide.trainingInstitution}</div>}
               {age && <div>👤 גיל {age}</div>}
             </div>
-            <div className="text-[10px] text-gray-300 mt-2">* נתונים שהמדריך הצהיר עליהם</div>
+            <div className="text-[10px] text-fg-faint mt-2">* נתונים שהמדריך הצהיר עליהם</div>
           </div>
         )}
 
         {/* Platform data (computed) */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-3">
-          <div className="text-xs font-medium text-gray-500 mb-2">נתוני פלטפורמה</div>
-          <div className="flex flex-col gap-1.5 text-sm text-gray-700">
+        <div className="bg-surface rounded-2xl border border-border shadow-sm p-5 mb-3">
+          <div className="text-xs font-medium text-fg-muted mb-2">נתוני פלטפורמה</div>
+          <div className="flex flex-col gap-1.5 text-sm text-fg">
             <div>🧭 {stats.tripCount} טיולים דרך TrailHub</div>
             <div>❌ {stats.cancelledCount} ביטולים</div>
             <div>📅 חבר מאז {memberSince}</div>
           </div>
-          <div className="text-[10px] text-gray-300 mt-2">נתונים מחושבים אוטומטית</div>
+          <div className="text-[10px] text-fg-faint mt-2">נתונים מחושבים אוטומטית</div>
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="flex border-b border-gray-100">
+        <div className="bg-surface rounded-2xl border border-border shadow-sm overflow-hidden">
+          <div className="flex border-b border-border">
             {([["trips", `טיולים קרובים (${upcomingTrips.length})`], ["reviews", `ביקורות (${guide.reviewCount})`]] as const).map(([k, label]) => (
               <button key={k} type="button" onClick={() => setTab(k)}
-                className={`flex-1 py-3 text-xs font-medium border-b-2 transition-colors ${tab === k ? "border-[#1A6B4A] text-[#1A6B4A]" : "border-transparent text-gray-400"}`}>
+                className={`flex-1 py-3 text-xs font-medium border-b-2 transition-colors ${tab === k ? "border-[#1A6B4A] text-[#1A6B4A]" : "border-transparent text-fg-faint"}`}>
                 {label}
               </button>
             ))}
@@ -191,12 +191,12 @@ export default function GuideProfilePage() {
           <div className="p-4">
             {tab === "trips" && (
               upcomingTrips.length === 0 ? (
-                <div className="text-center py-8 text-gray-400 text-sm">אין טיולים קרובים</div>
+                <div className="text-center py-8 text-fg-faint text-sm">אין טיולים קרובים</div>
               ) : (
                 <div className="flex flex-col gap-2">
                   {upcomingTrips.map((t) => (
                     <button key={t.id} type="button" onClick={() => router.push(`/trips/${t.id}`)}
-                      className="flex gap-3 border border-gray-100 rounded-xl p-2.5 text-right hover:bg-gray-50 transition-colors">
+                      className="flex gap-3 border border-border rounded-xl p-2.5 text-right hover:bg-surface-2 transition-colors">
                       <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0">
                         {t.images?.[0] ? (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -204,11 +204,11 @@ export default function GuideProfilePage() {
                         ) : <div className="w-full h-full" style={{ background: "linear-gradient(160deg,#3d6b35,#1a3d16)" }} />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-gray-900 truncate">{t.title}</div>
-                        <div className="text-[11px] text-gray-500 mt-0.5">
+                        <div className="text-sm font-medium text-fg truncate">{t.title}</div>
+                        <div className="text-[11px] text-fg-muted mt-0.5">
                           📍 {t.region} · {DIFF_LABEL[t.difficulty]} · {new Date(t.date).toLocaleDateString("he-IL", { day: "numeric", month: "short" })}
                         </div>
-                        <div className="text-[11px] text-gray-400 mt-0.5">₪{t.price} · {Math.max(t.maxSpots - t.spotsBooked, 0)} מקומות</div>
+                        <div className="text-[11px] text-fg-faint mt-0.5">₪{t.price} · {Math.max(t.maxSpots - t.spotsBooked, 0)} מקומות</div>
                       </div>
                     </button>
                   ))}
@@ -220,20 +220,20 @@ export default function GuideProfilePage() {
               <div className="flex flex-col gap-3">
                 {/* Histogram */}
                 {totalReviews > 0 && (
-                  <div className="flex items-center gap-4 pb-3 border-b border-gray-50">
+                  <div className="flex items-center gap-4 pb-3 border-b border-border">
                     <div className="text-center">
-                      <div className="text-3xl font-bold text-gray-900">{guide.rating.toFixed(1)}</div>
+                      <div className="text-3xl font-bold text-fg">{guide.rating.toFixed(1)}</div>
                       <div className="text-amber-500 text-xs">{"★".repeat(Math.round(guide.rating))}</div>
-                      <div className="text-[10px] text-gray-400 mt-0.5">{guide.reviewCount} ביקורות</div>
+                      <div className="text-[10px] text-fg-faint mt-0.5">{guide.reviewCount} ביקורות</div>
                     </div>
                     <div className="flex-1 flex flex-col gap-1">
                       {histogram.map((count, i) => {
                         const star = 5 - i;
                         const pct = totalReviews > 0 ? Math.round((count / totalReviews) * 100) : 0;
                         return (
-                          <div key={star} className="flex items-center gap-2 text-[10px] text-gray-400">
+                          <div key={star} className="flex items-center gap-2 text-[10px] text-fg-faint">
                             <span className="w-3">{star}★</span>
-                            <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="flex-1 h-1.5 bg-surface-2 rounded-full overflow-hidden">
                               <div className="h-full bg-amber-400 rounded-full" style={{ width: `${pct}%` }} />
                             </div>
                             <span className="w-7 text-left">{pct}%</span>
@@ -244,15 +244,15 @@ export default function GuideProfilePage() {
                   </div>
                 )}
                 {reviews.length === 0 ? (
-                  <div className="text-center py-8 text-gray-400 text-sm">אין ביקורות עדיין</div>
+                  <div className="text-center py-8 text-fg-faint text-sm">אין ביקורות עדיין</div>
                 ) : reviews.map((r) => (
-                  <div key={r.id} className="border-b border-gray-50 pb-2.5 last:border-0">
+                  <div key={r.id} className="border-b border-border pb-2.5 last:border-0">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-900">{r.user.name ?? "מטייל"}</span>
+                      <span className="text-sm font-medium text-fg">{r.user.name ?? "מטייל"}</span>
                       <span className="text-amber-500 text-xs">{"★".repeat(r.rating)}</span>
                     </div>
-                    <div className="text-[10px] text-gray-400 mb-1">על: {r.trip.title}</div>
-                    {r.comment && <p className="text-xs text-gray-600 leading-relaxed">{r.comment}</p>}
+                    <div className="text-[10px] text-fg-faint mb-1">על: {r.trip.title}</div>
+                    {r.comment && <p className="text-xs text-fg-muted leading-relaxed">{r.comment}</p>}
                   </div>
                 ))}
               </div>
