@@ -10,14 +10,25 @@ const GREEN = "#3d8f5f";
 export function BrandSlogan({
   className = "",
   style,
+  twoLine = false,
 }: {
   className?: string;
   style?: React.CSSProperties;
+  twoLine?: boolean;
 }) {
+  const green = (t: string) => <span style={{ color: GREEN, fontWeight: 700 }}>{t}</span>;
+  if (twoLine) {
+    // Nav: stacked over two lines — "בשבילי נברא העולם" / "אנוכי עפר ואפר".
+    return (
+      <span className={`inline-flex flex-col leading-tight ${className}`} style={{ fontWeight: 300, color: "var(--fg)", ...style }}>
+        <span className="whitespace-nowrap">{green("בשבילי")} נברא העולם</span>
+        <span className="whitespace-nowrap">אנוכי {green("עפר")} ואפר</span>
+      </span>
+    );
+  }
   return (
     <span className={`whitespace-nowrap ${className}`} style={{ fontWeight: 300, color: "var(--fg)", ...style }}>
-      <span style={{ color: GREEN, fontWeight: 700 }}>בשבילי</span> נברא העולם — אנוכי{" "}
-      <span style={{ color: GREEN, fontWeight: 700 }}>עפר</span> ואפר
+      {green("בשבילי")} נברא העולם — אנוכי {green("עפר")} ואפר
     </span>
   );
 }
@@ -67,7 +78,7 @@ export default function Brand({
         <BrandTrail className="max-w-[320px]" />
       </span>
     ) : (
-      <BrandSlogan className="text-[12.5px] sm:text-sm" />
+      <BrandSlogan twoLine className="text-[11px] sm:text-xs" />
     );
 
   if (href === null) return <span className={className}>{content}</span>;
