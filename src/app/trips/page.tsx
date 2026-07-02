@@ -914,12 +914,14 @@ export default function TripsPage() {
                       </div>
                       {!isSG && (
                         <div className="flex items-end gap-3 shrink-0">
-                          {/* Registrants indicator → opens modal */}
-                          <button type="button" onClick={(e) => { e.stopPropagation(); setRegistrantsModal({ id: trip.id, title: trip.title }); }}
-                            className="flex flex-col items-end">
-                            <span className="text-[9px] leading-none mb-1 text-gray-400">משתתפים</span>
-                            <span className="text-[10px] font-semibold text-[#185FA5] underline decoration-dotted underline-offset-2">
-                              👥 {trip.spotsBooked}
+                          {/* Registrants indicator → opens modal (clearly tappable pill) */}
+                          <button type="button"
+                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); setRegistrantsModal({ id: trip.id, title: trip.title }); }}
+                            title="הצג משתתפים"
+                            className="flex flex-col items-end cursor-pointer group">
+                            <span className="text-[9px] leading-none mb-1 text-gray-400 group-hover:text-[#185FA5] transition-colors">משתתפים</span>
+                            <span className="text-[10px] font-semibold inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full border border-[#185FA5]/40 bg-[#EAF1F8] text-[#185FA5] group-hover:bg-[#185FA5] group-hover:text-white group-active:scale-95 transition-all">
+                              👥 {trip.spotsBooked} משתתפים
                             </span>
                           </button>
                           <RideshareIndicator

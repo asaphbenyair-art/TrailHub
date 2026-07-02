@@ -95,8 +95,8 @@ export default function RegistrantsModal({
                 : <div className="text-xs text-gray-400 py-2">אין נרשמים עדיין</div>}
 
               {data && data.waitlist.length > 0 && (
-                <div className="mt-4">
-                  <div className="text-xs font-semibold text-gray-500 mb-1">רשימת המתנה ({data.waitlist.length})</div>
+                <div className="mt-4 pt-4 border-t-2 border-dashed border-gray-200">
+                  <div className="text-xs font-semibold text-[#185FA5] mb-1 flex items-center gap-1">⏰ רשימת המתנה ({data.waitlist.length})</div>
                   {data.waitlist.map((r) => <Row key={r.id} r={r} />)}
                 </div>
               )}
