@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import NotificationBell from "@/components/NotificationBell";
 import CalendarView from "@/components/CalendarView";
-import ModeSwitch from "@/components/ModeSwitch";
+import AvatarMenu from "@/components/AvatarMenu";
 import { TRIP_TAGS } from "@/lib/tripTags";
 import { coverImages } from "@/lib/tripImage";
 import RideshareModal from "@/components/RideshareModal";
@@ -49,6 +49,12 @@ function formatDate(d: string) {
 }
 function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+interface GuideCard {
+  id: string; name: string | null; image: string | null; headline: string | null;
+  specialtyRegions: string[]; rating: number; reviewCount: number;
+  upcomingTrips: number; specialties: string[];
 }
 
 interface Trip {
@@ -114,7 +120,7 @@ function tripDayCount(t: Trip): number {
 interface Filters {
   q: string; regions: string[]; difficulties: string[]; dateFrom: string;
   priceMax: string; priceMin: string; ageMin: string; favoriteGuides: boolean; sort: string;
-  category: "guided" | "self_guided"; tags: string[];
+  category: "guided" | "self_guided" | "guides"; tags: string[];
 }
 function toggle<T>(arr: T[], val: T): T[] {
   return arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val];
@@ -158,6 +164,19 @@ export default function TripsPage() {
   const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set());
   const [purchasesOnly, setPurchasesOnly] = useState(false);
   const [rideDrawer, setRideDrawer] = useState<string | null>(null);
+  const [guides, setGuides] = useState<GuideCard[]>([]);
+  const [guidesLoaded, setGuidesLoaded] = useState(false);
+  const [guideRegion, setGuideRegion] = useState<string | null>(null);
+  const [guideSpecialty, setGuideSpecialty] = useState<string | null>(null);
+
+  const loadGuides = useCallback(async () => {
+    try {
+      const res = await fetch("/api/guides", { cache: "no-store" });
+      const data = await res.json();
+      setGuides(Array.isArray(data) ? data : []);
+    } catch { setGuides([]); }
+    finally { setGuidesLoaded(true); }
+  }, []);
 
   async function toggleFav(tripId: string) {
     if (!session) { router.push("/auth/login"); return; }
@@ -320,7 +339,6 @@ export default function TripsPage() {
   const activeCount = filters.regions.length + filters.difficulties.length +
     (filters.dateFrom ? 1 : 0) + (filters.priceMax ? 1 : 0) + (filters.priceMin ? 1 : 0) +
     (filters.ageMin ? 1 : 0) + (filters.favoriteGuides ? 1 : 0);
-  const userName = session?.user?.name ?? null;
 
   return (
     <div dir="rtl" className="min-h-screen bg-[#f5f5f5]">
@@ -368,14 +386,8 @@ export default function TripsPage() {
           </div>
           {session ? (
             <div className="flex items-center gap-1.5">
-              <ModeSwitch current="hiker" />
               <NotificationBell />
-              <Link href="/profile">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-semibold text-white flex-shrink-0"
-                  style={{ background: avatarColor(userName) }}>
-                  {initials(userName)}
-                </div>
-              </Link>
+              <AvatarMenu />
             </div>
           ) : (
             <Link href="/auth/login" className="text-xs text-[#1A6B4A] border border-[#1A6B4A] rounded-full px-2.5 py-1 flex-shrink-0 whitespace-nowrap">כניסה</Link>
@@ -388,9 +400,14 @@ export default function TripsPage() {
         <button type="button" onClick={() => setShowIntent(true)}
           className="text-[11px] text-gray-400 hover:text-[#1A6B4A] underline shrink-0">שנה מה אני מחפש</button>
         <div className="inline-flex bg-white rounded-full border border-gray-200 p-0.5">
-          {([["guided", "🧭 טיולים מודרכים"], ["self_guided", "🎒 טיולים עצמאיים"]] as const).map(([v, label]) => (
+          {([["guided", "🧭 טיולים מודרכים"], ["self_guided", "🎒 טיולים עצמאיים"], ["guides", "🧑‍🏫 מדריכים"]] as const).map(([v, label]) => (
             <button key={v} type="button"
-              onClick={() => { const next = { ...filters, category: v }; setFilters(next); setTrips([]); setPurchasesOnly(false); setMyTripsOnly(false); fetchTrips(next); }}
+              onClick={() => {
+                const next = { ...filters, category: v };
+                setFilters(next); setPurchasesOnly(false); setMyTripsOnly(false);
+                if (v === "guides") { if (!guidesLoaded) loadGuides(); }
+                else { setTrips([]); fetchTrips(next); }
+              }}
               className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
                 filters.category === v ? "bg-[#1A6B4A] text-white" : "text-gray-500 hover:text-gray-700"
               }`}>
@@ -407,8 +424,72 @@ export default function TripsPage() {
         )}
       </div>
 
+      {/* ── Guides directory (מדריכים tab) ── */}
+      {filters.category === "guides" && (() => {
+        const allSpecialties = [...new Set(guides.flatMap((g) => g.specialties))];
+        const shown = guides.filter((g) =>
+          (!guideRegion || g.specialtyRegions.includes(guideRegion)) &&
+          (!guideSpecialty || g.specialties.includes(guideSpecialty))
+        );
+        return (
+          <div className="max-w-5xl mx-auto px-3 pb-24">
+            {/* Instant filters */}
+            <div className="flex flex-col gap-2 mb-3">
+              <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                <button type="button" onClick={() => setGuideRegion(null)}
+                  className={`shrink-0 text-[11px] rounded-full px-3 py-1.5 border ${!guideRegion ? "bg-[#1A6B4A] text-white border-[#1A6B4A]" : "bg-white text-gray-500 border-gray-200"}`}>כל האזורים</button>
+                {REGIONS.map((r) => (
+                  <button key={r} type="button" onClick={() => setGuideRegion(guideRegion === r ? null : r)}
+                    className={`shrink-0 text-[11px] rounded-full px-3 py-1.5 border ${guideRegion === r ? "bg-[#1A6B4A] text-white border-[#1A6B4A]" : "bg-white text-gray-500 border-gray-200"}`}>{r}</button>
+                ))}
+              </div>
+              {allSpecialties.length > 0 && (
+                <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                  <button type="button" onClick={() => setGuideSpecialty(null)}
+                    className={`shrink-0 text-[11px] rounded-full px-3 py-1.5 border ${!guideSpecialty ? "bg-[#185FA5] text-white border-[#185FA5]" : "bg-white text-gray-500 border-gray-200"}`}>כל ההתמחויות</button>
+                  {allSpecialties.map((s) => (
+                    <button key={s} type="button" onClick={() => setGuideSpecialty(guideSpecialty === s ? null : s)}
+                      className={`shrink-0 text-[11px] rounded-full px-3 py-1.5 border ${guideSpecialty === s ? "bg-[#185FA5] text-white border-[#185FA5]" : "bg-white text-gray-500 border-gray-200"}`}>{s}</button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {!guidesLoaded ? (
+              <div className="text-center py-12 text-gray-400 text-sm">טוען מדריכים…</div>
+            ) : shown.length === 0 ? (
+              <div className="text-center py-12 text-gray-400 text-sm">לא נמצאו מדריכים</div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {shown.map((g) => (
+                  <div key={g.id} onClick={() => router.push(`/guides/${g.id}`)}
+                    className="bg-white rounded-2xl border border-gray-100 p-4 flex flex-col items-center text-center cursor-pointer hover:border-[#1A6B4A]/40 transition-colors">
+                    {g.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={g.image} alt="" className="w-16 h-16 rounded-full object-cover mb-2" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full flex items-center justify-center text-lg font-semibold text-white mb-2"
+                        style={{ background: avatarColor(g.name) }}>{initials(g.name)}</div>
+                    )}
+                    <div className="text-sm font-semibold text-gray-900 truncate w-full">{g.name ?? "מדריך"}</div>
+                    {g.headline && <div className="text-[11px] text-gray-500 mt-0.5 line-clamp-2">{g.headline}</div>}
+                    <div className="text-[11px] text-gray-400 mt-1.5 flex items-center gap-1">
+                      {g.rating > 0 ? <span className="text-amber-500">★ {g.rating.toFixed(1)}</span> : <span className="text-[#1A6B4A]">מדריך חדש</span>}
+                      {g.reviewCount > 0 && <span>· {g.reviewCount} ביקורות</span>}
+                    </div>
+                    <div className="text-[11px] text-[#0F5038] bg-[#D6EDE3] rounded-full px-2 py-0.5 mt-1.5">
+                      {g.upcomingTrips} טיולים קרובים
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       {/* List / Calendar view toggle */}
-      <div className={`max-w-5xl mx-auto px-3 mb-2 flex justify-center md:justify-start ${filters.category === "self_guided" ? "hidden" : ""}`}>
+      <div className={`max-w-5xl mx-auto px-3 mb-2 flex justify-center md:justify-start ${filters.category === "self_guided" || filters.category === "guides" ? "hidden" : ""}`}>
         <div className="inline-flex bg-white rounded-full border border-gray-200 p-0.5">
           {([["list", "📋 רשימה"], ["calendar", "📅 יומן"]] as const).map(([v, label]) => (
             <button key={v} type="button" onClick={() => setView(v)}
@@ -422,7 +503,7 @@ export default function TripsPage() {
       </div>
 
       {/* Calendar full view */}
-      {view === "calendar" && (
+      {view === "calendar" && filters.category !== "guides" && (
         <div className="max-w-5xl mx-auto px-3 pb-8">
           <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
             <CalendarView trips={trips} regStatus={myRegMap} />
@@ -431,7 +512,7 @@ export default function TripsPage() {
       )}
 
       {/* Body (list view) */}
-      <div className={`max-w-5xl mx-auto px-3 pb-24 md:flex md:gap-4 ${view === "calendar" ? "hidden" : ""}`}>
+      <div className={`max-w-5xl mx-auto px-3 pb-24 md:flex md:gap-4 ${view === "calendar" || filters.category === "guides" ? "hidden" : ""}`}>
 
         {/* ── Calendar side panel (desktop, RIGHT side in RTL) ── */}
         <aside className="hidden md:block w-[290px] shrink-0 self-start sticky top-4">

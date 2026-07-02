@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { coverImages } from "@/lib/tripImage";
+import AvatarMenu from "@/components/AvatarMenu";
 
 const DIFF_LABEL: Record<string, string> = { EASY: "קל", MEDIUM: "בינוני", HARD: "קשה", EXTREME: "קיצוני" };
 
@@ -334,6 +335,7 @@ export default function MyTripsPage() {
           <Link href="/trips" className="text-[15px] font-semibold text-[#1A6B4A] flex-shrink-0">🧭 TrailHub</Link>
           <span className="text-sm font-medium text-gray-900 flex-1 text-center">הטיולים שלי</span>
           <Link href="/trips" className="text-xs text-[#1A6B4A] flex-shrink-0">גלה טיולים</Link>
+          <AvatarMenu />
         </div>
 
         {/* Tabs */}

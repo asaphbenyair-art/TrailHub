@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Bell, CalendarDays, SlidersHorizontal, Clock, Sparkles, Heart, ChevronLeft } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import AvatarMenu from "@/components/AvatarMenu";
 import { hikingPhoto } from "@/lib/tripImage";
 
 interface HomeTrip {
@@ -40,13 +41,7 @@ const INTENT_CARDS = [
   { label: "הפתיעו אותי", sub: "לפי ההעדפות שלי", Icon: Sparkles, href: "/trips?intent=surprise" },
 ] as const;
 
-export default function HikerHome({
-  userName,
-  userImage,
-}: {
-  userName: string | null;
-  userImage: string | null;
-}) {
+export default function HikerHome() {
   const router = useRouter();
   const [trips, setTrips] = useState<HomeTrip[]>([]);
   const [regions, setRegions] = useState<string[]>([]);
@@ -182,15 +177,7 @@ export default function HikerHome({
                 </span>
               )}
             </Link>
-            <Link href="/profile" className="w-9 h-9 rounded-full overflow-hidden border border-border flex items-center justify-center text-xs font-semibold"
-              style={{ background: "var(--surface-2)", color: "var(--fg)" }}>
-              {userImage ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={userImage} alt="" className="w-full h-full object-cover" />
-              ) : (
-                (userName ?? "?")[0]
-              )}
-            </Link>
+            <AvatarMenu />
           </div>
         </div>
       </header>

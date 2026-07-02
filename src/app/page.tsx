@@ -21,7 +21,7 @@ export default async function Home() {
 
   // Logged-in hiker → the finalized homepage (hero + intent question)
   if (session?.user) {
-    return <HikerHome userName={session.user.name ?? null} userImage={session.user.image ?? null} />;
+    return <HikerHome />;
   }
 
   // Logged-out → editorial marketing landing

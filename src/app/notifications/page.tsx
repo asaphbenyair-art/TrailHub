@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { FileText, XCircle, MessageCircle, Mail, Bell, ChevronRight, Check } from "lucide-react";
+import AvatarMenu from "@/components/AvatarMenu";
 
 interface Notif {
   id: string;
@@ -62,12 +63,15 @@ export default function NotificationsPage() {
       <div className="max-w-[480px] mx-auto px-4 pt-6">
         <div className="flex items-center justify-between mb-5">
           <h1 className="font-display text-3xl text-fg">התראות</h1>
-          {unread > 0 && (
-            <button type="button" onClick={markAll}
-              className="text-xs text-accent flex items-center gap-1">
-              <Check size={13} /> סמן הכל כנקרא
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {unread > 0 && (
+              <button type="button" onClick={markAll}
+                className="text-xs text-accent flex items-center gap-1">
+                <Check size={13} /> סמן הכל כנקרא
+              </button>
+            )}
+            <AvatarMenu />
+          </div>
         </div>
 
         {loading ? (
