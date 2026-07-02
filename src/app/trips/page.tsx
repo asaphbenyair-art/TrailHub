@@ -220,7 +220,7 @@ export default function TripsPage() {
       if (f.favoriteGuides) p.set("favoriteGuides", "1");
       if (f.category) p.set("category", f.category);
       if (f.tags.length) p.set("tags", f.tags.join(","));
-      const res = await fetch(`/api/trips?${p.toString()}`);
+      const res = await fetch(`/api/trips?${p.toString()}`, { cache: "no-store" });
       let data: Trip[] = await res.json();
       if (!Array.isArray(data)) data = [];
       if (f.sort === "price_asc") data = [...data].sort((a, b) => a.price - b.price);
@@ -234,7 +234,7 @@ export default function TripsPage() {
   useEffect(() => { fetchTrips(EMPTY_FILTERS); }, [fetchTrips]);
   useEffect(() => {
     if (!session) return;
-    fetch("/api/my-trips")
+    fetch("/api/my-trips", { cache: "no-store" })
       .then((r) => r.json())
       .then((regs: Array<{ status: string; trip: { id: string } }>) => {
         if (!Array.isArray(regs)) return;
