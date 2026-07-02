@@ -39,11 +39,22 @@ export async function GET(
     orderBy: { createdAt: "desc" },
   });
 
-  const looking = !!(await prisma.rideshareRequest.findUnique({
-    where: { tripId_userId: { tripId: id, userId: session.user.id! } },
+  // Ride seekers ("אני מחפש טרמפ") — with a general area from their preferences.
+  const requests = await prisma.rideshareRequest.findMany({
+    where: { tripId: id },
+    include: { user: { select: { id: true, name: true, image: true, preferredRegions: true } } },
+    orderBy: { createdAt: "desc" },
+  });
+  const seekers = requests.map((r) => ({
+    id: r.id,
+    userId: r.userId,
+    name: r.user.name,
+    image: r.user.image,
+    area: r.user.preferredRegions?.[0] ?? null,
   }));
+  const looking = seekers.some((s) => s.userId === session.user!.id);
 
-  return NextResponse.json({ offers, meId: session.user.id, looking });
+  return NextResponse.json({ offers, seekers, meId: session.user.id, looking });
 }
 
 // POST → create a ride offer

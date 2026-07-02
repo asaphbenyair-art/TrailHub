@@ -9,8 +9,8 @@ import CalendarView from "@/components/CalendarView";
 import ModeSwitch from "@/components/ModeSwitch";
 import { TRIP_TAGS } from "@/lib/tripTags";
 import { coverImages } from "@/lib/tripImage";
-import RideshareBoard from "@/components/RideshareBoard";
-import { Car, Lock, UserSearch, X } from "lucide-react";
+import RideshareModal from "@/components/RideshareModal";
+import { Car, Lock, UserSearch } from "lucide-react";
 
 const REGIONS = ["גליל עליון","גליל תחתון","כרמל","ירושלים","שפלה","נגב","ערבה","גולן","עמק יזרעאל"];
 const DIFFICULTIES = [
@@ -870,26 +870,18 @@ export default function TripsPage() {
         </main>
       </div>
 
-      {/* Rideshare bottom drawer — full board content, in-context (not a new page) */}
-      {rideDrawer && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setRideDrawer(null)}>
-          <div className="absolute inset-0 bg-black/50" />
-          <div dir="rtl" className="relative w-full max-w-[480px] bg-white rounded-t-3xl max-h-[82vh] overflow-y-auto shadow-2xl"
-            onClick={(e) => e.stopPropagation()}>
-            <div className="sticky top-0 bg-white px-4 py-3 border-b border-gray-100 flex items-center justify-between z-10">
-              <span className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
-                <Car size={16} className="text-[#1A6B4A]" /> לוח הטרמפים
-              </span>
-              <button type="button" onClick={() => setRideDrawer(null)} className="text-gray-400 hover:text-gray-600">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="p-4">
-              <RideshareBoard tripId={rideDrawer} />
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Rideshare modal — tabs + cards + footer, in-context (not a new page) */}
+      {rideDrawer && (() => {
+        const rt = trips.find((t) => t.id === rideDrawer);
+        return (
+          <RideshareModal
+            tripId={rideDrawer}
+            tripTitle={rt?.title ?? "טיול"}
+            tripDate={rt?.date ?? null}
+            onClose={() => setRideDrawer(null)}
+          />
+        );
+      })()}
     </div>
   );
 }
