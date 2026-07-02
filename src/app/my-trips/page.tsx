@@ -6,6 +6,7 @@ import Link from "next/link";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { coverImages } from "@/lib/tripImage";
 import AvatarMenu from "@/components/AvatarMenu";
+import { useDateFmt } from "@/components/CalendarModeProvider";
 
 const DIFF_LABEL: Record<string, string> = { EASY: "קל", MEDIUM: "בינוני", HARD: "קשה", EXTREME: "קיצוני" };
 
@@ -64,12 +65,6 @@ interface Registration {
   trip: RegistrationTrip;
 }
 
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString("he-IL", { weekday: "short", day: "numeric", month: "short" });
-}
-function formatDateLong(d: string) {
-  return new Date(d).toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" });
-}
 // Remaining access time for a purchased self-guided trip (green >7d, amber 2-7d, red <2d, muted expired).
 function accessRemaining(iso: string | null | undefined): { text: string; color: string } {
   if (!iso) return { text: "🔓 גישה פעילה", color: "#1A6B4A" };
@@ -96,6 +91,7 @@ function TripCard({
   reg: Registration;
   onCancel: (id: string) => void;
 }) {
+  const dfmt = useDateFmt();
   const { trip, status } = reg;
   const router = useRouter();
   const isPast = new Date(trip.date) < now;
@@ -144,7 +140,7 @@ function TripCard({
           </div>
           <div className="text-sm font-medium text-gray-900 leading-snug mb-1 truncate">{trip.title}</div>
           <div className="flex flex-col gap-0.5 text-xs text-gray-500">
-            <span>📅 {isPast ? formatDateLong(trip.date) : formatDate(trip.date)} · {trip.startTime}</span>
+            <span>📅 {isPast ? dfmt(trip.date, { long: true, weekday: true, greg: { weekday: "long", day: "numeric", month: "long" } }) : dfmt(trip.date, { greg: { weekday: "short", day: "numeric", month: "short" } })} · {trip.startTime}</span>
             <span>👤 {guideName}</span>
             {trip.meetingPoint && <span>📍 {trip.meetingPoint}</span>}
           </div>
@@ -173,7 +169,7 @@ function TripCard({
       {showAlert && (
         <div className="flex items-center gap-2 px-3 py-2 bg-[#FDF3DC] border-t border-[#EF9F27]">
           <span className="text-xs text-[#633806] flex-1">
-            ⏰ החיוב יתבצע ב-{formatDate(trip.date)} — עוד {daysUntil} ימים
+            ⏰ החיוב יתבצע ב-{dfmt(trip.date, { greg: { weekday: "short", day: "numeric", month: "short" } })} — עוד {daysUntil} ימים
           </span>
           <button type="button" onClick={() => setConfirmCancel(true)}
             className="text-[11px] text-[#854F0B] font-medium underline">

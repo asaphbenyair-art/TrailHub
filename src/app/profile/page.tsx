@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import ThemeToggle from "@/components/ThemeToggle";
+import { useCalendarMode } from "@/components/CalendarModeProvider";
 import ModeSwitch from "@/components/ModeSwitch";
 import { SignOutButton } from "@/components/SignOutButton";
 
@@ -62,6 +63,7 @@ export default function ProfilePage() {
   const [birthYear, setBirthYear] = useState("");
   const [bio, setBio] = useState("");
   const [slogan, setSlogan] = useState("");
+  const { mode: calMode, setProfileMode } = useCalendarMode();
   const [phone, setPhone] = useState("");
   const [fitnessLevel, setFitnessLevel] = useState("");
 
@@ -366,6 +368,19 @@ export default function ProfilePage() {
                     placeholder="משפט קצר שמייצג אותך — מוצג לרשומים אחרים בטיול"
                     className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
                   />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-500">לוח שנה</label>
+                  <div className="inline-flex bg-gray-100 rounded-full p-0.5 self-start">
+                    {([["gregorian", "לוח שנה לועזי"], ["hebrew", "לוח שנה עברי"]] as const).map(([v, label]) => (
+                      <button key={v} type="button" onClick={() => setProfileMode(v)}
+                        className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                          calMode === v ? "bg-[#1A6B4A] text-white" : "text-gray-500"}`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {saveMsg && (

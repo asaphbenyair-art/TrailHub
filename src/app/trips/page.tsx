@@ -11,6 +11,7 @@ import { TRIP_TAGS } from "@/lib/tripTags";
 import { coverImages } from "@/lib/tripImage";
 import RideshareModal from "@/components/RideshareModal";
 import RegistrantsModal from "@/components/RegistrantsModal";
+import { useCalendarMode, useDateFmt } from "@/components/CalendarModeProvider";
 import { Car, Lock, UserSearch } from "lucide-react";
 
 const REGIONS = ["גליל עליון","גליל תחתון","כרמל","ירושלים","שפלה","נגב","ערבה","גולן","עמק יזרעאל"];
@@ -44,9 +45,6 @@ function avatarColor(name: string | null) {
 function initials(name: string | null) {
   if (!name) return "?";
   return name.split(" ").map((n) => n[0]).join("").slice(0, 2);
-}
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString("he-IL", { weekday: "short", day: "numeric", month: "short" });
 }
 function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
@@ -207,6 +205,8 @@ export default function TripsPage() {
   const [showIntent, setShowIntent] = useState(false);
   const [prefs, setPrefs] = useState<{ regions: string[]; difficulties: string[] }>({ regions: [], difficulties: [] });
   const [searchFocused, setSearchFocused] = useState(false);
+  const { mode: calMode, setSessionMode: setCalSession } = useCalendarMode();
+  const dfmt = useDateFmt();
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Search intent flow — ask once, remember choice
@@ -558,12 +558,22 @@ export default function TripsPage() {
         {filters.category !== "self_guided" && (
         <aside className="hidden md:block w-[290px] shrink-0 self-start sticky top-4">
           <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
-            <div className="px-3 pt-3 pb-1 border-b border-gray-100">
+            <div className="px-3 pt-3 pb-1 border-b border-gray-100 flex items-center justify-between">
               <span className="text-sm font-semibold text-gray-800">📅 סינון לפי תאריך</span>
-              {range.start && (
-                <button type="button" onClick={() => setRange({ start: null, end: null })}
-                  className="float-left text-[10px] text-gray-400 hover:text-[#1A6B4A] mt-0.5">נקה</button>
-              )}
+              <div className="flex items-center gap-2">
+                {range.start && (
+                  <button type="button" onClick={() => setRange({ start: null, end: null })}
+                    className="text-[10px] text-gray-400 hover:text-[#1A6B4A]">נקה</button>
+                )}
+                <div className="inline-flex bg-gray-100 rounded-full p-0.5" title="לוח שנה: לועזי / עברי (לסשן זה)">
+                  {(["gregorian", "hebrew"] as const).map((m) => (
+                    <button key={m} type="button" onClick={() => setCalSession(m)}
+                      className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${calMode === m ? "bg-[#1A6B4A] text-white" : "text-gray-400"}`}>
+                      {m === "hebrew" ? "ע׳" : "ל׳"}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
             <CalendarView
               compact
@@ -901,12 +911,12 @@ export default function TripsPage() {
                         ]
                       : isJourney
                       ? [
-                          { t: `📅 ${formatDate(trip.date)}${trip.endDate ? `–${formatDate(trip.endDate)}` : ""}` },
+                          { t: `📅 ${dfmt(trip.date, { greg: { weekday: "short", day: "numeric", month: "short" } })}${trip.endDate ? `–${dfmt(trip.endDate, { greg: { day: "numeric", month: "short" } })}` : ""}` },
                           ...(nDays > 1 ? [{ t: `🌙 ${nDays - 1} לילות` }] : []),
                           ...(trip.distanceKm > 0 ? [{ t: `📍 ${trip.distanceKm} ק"מ סה"כ` }] : []),
                         ]
                       : [
-                          { t: `📅 ${formatDate(trip.date)}` },
+                          { t: `📅 ${dfmt(trip.date, { greg: { weekday: "short", day: "numeric", month: "short" } })}` },
                           { t: `🕖 ${trip.startTime}` },
                           ...(trip.distanceKm > 0 ? [{ t: `📍 ${trip.distanceKm} ק"מ` }] : []),
                           ...(trip.durationMin > 0 ? [{ t: `⏱ ${Math.round(trip.durationMin / 60)} שע'` }] : []),

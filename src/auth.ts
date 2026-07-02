@@ -52,16 +52,29 @@ const providers = [
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
+  // Trust the deployment host so the OAuth callback + session cookie resolve
+  // correctly behind proxies (Vercel) — otherwise the callback can drop the new
+  // session and the app "keeps the previous session" after Google login.
+  trustHost: true,
   pages: {
     signIn: "/auth/login",
     error: "/auth/error",
   },
   providers,
   callbacks: {
-    async jwt({ token, user }) {
+    // Persist the trailhub_last_user hint + ensure fresh OAuth logins take over.
+    async signIn() {
+      return true;
+    },
+    async jwt({ token, user, trigger }) {
+      // On a fresh sign-in (OAuth or credentials), always refresh id/role from
+      // the signing-in user so the new account replaces any previous session.
       if (user) {
         token.id = user.id;
         token.role = (user as { role?: string }).role ?? "USER";
+      }
+      if (trigger === "signIn" && user?.id) {
+        token.id = user.id;
       }
       // For OAuth sign-ins the adapter user may not carry role onto the token
       // on every pass — backfill it from the DB so guides/admins keep access.

@@ -17,6 +17,7 @@ export async function GET() {
       birthYear: true,
       bio: true,
       slogan: true,
+      calendarPref: true,
       phone: true,
       fitnessLevel: true,
       preferredRegions: true,
@@ -39,7 +40,7 @@ export async function PATCH(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { name, gender, birthYear, bio, slogan, phone, fitnessLevel, preferredRegions, preferredDifficulties, preferredTripLengthKm, preferredDays, image } = body;
+    const { name, gender, birthYear, bio, slogan, calendarPref, phone, fitnessLevel, preferredRegions, preferredDifficulties, preferredTripLengthKm, preferredDays, image } = body;
 
     const updated = await prisma.user.update({
       where: { id: session.user.id! },
@@ -49,6 +50,7 @@ export async function PATCH(req: NextRequest) {
         ...(birthYear !== undefined && { birthYear: birthYear ? Number(birthYear) : null }),
         ...(bio !== undefined && { bio: bio || null }),
         ...(slogan !== undefined && { slogan: slogan || null }),
+        ...(calendarPref !== undefined && { calendarPref: calendarPref === "hebrew" ? "hebrew" : "gregorian" }),
         ...(phone !== undefined && { phone: phone || null }),
         ...(fitnessLevel !== undefined && { fitnessLevel: fitnessLevel || null }),
         ...(preferredRegions !== undefined && { preferredRegions }),
@@ -59,7 +61,7 @@ export async function PATCH(req: NextRequest) {
       },
       select: {
         id: true, name: true, email: true, image: true,
-        gender: true, birthYear: true, bio: true, slogan: true, phone: true, fitnessLevel: true,
+        gender: true, birthYear: true, bio: true, slogan: true, calendarPref: true, phone: true, fitnessLevel: true,
         preferredRegions: true, preferredDifficulties: true,
         preferredTripLengthKm: true, preferredDays: true,
       },

@@ -149,6 +149,7 @@ model User {
   birthYear             Int?
   bio                   String?  @db.Text
   slogan                String?  // personal tagline shown on participant cards
+  calendarPref          String   @default("gregorian") // 'gregorian' | 'hebrew' date display
   phone                 String?
   fitnessLevel          String?
   preferredRegions      String[]

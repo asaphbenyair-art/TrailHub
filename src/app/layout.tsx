@@ -3,6 +3,7 @@ import { Playfair_Display, Inter } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import BottomNav from "@/components/BottomNav";
+import { CalendarModeProvider } from "@/components/CalendarModeProvider";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -37,8 +38,10 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning className="min-h-full flex flex-col bg-bg text-fg antialiased">
         <Providers>
-          {children}
-          <BottomNav />
+          <CalendarModeProvider>
+            {children}
+            <BottomNav />
+          </CalendarModeProvider>
         </Providers>
       </body>
     </html>

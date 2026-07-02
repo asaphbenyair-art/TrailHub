@@ -8,6 +8,7 @@ import RideshareBoard from "@/components/RideshareBoard";
 import { TAG_LABEL } from "@/lib/tripTags";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { coverImages } from "@/lib/tripImage";
+import { useDateFmt } from "@/components/CalendarModeProvider";
 import {
   ArrowRight, Heart, Share2, Bell, Star, UserPlus, Check, MapPin, Navigation,
   Clock, Mountain, Users, Calendar, Backpack, Copy, BookOpen, MessageCircle,
@@ -32,12 +33,6 @@ function avatarColor(name: string | null) {
 function initials(name: string | null) {
   if (!name) return "?";
   return name.split(" ").map((n) => n[0]).join("").slice(0, 2);
-}
-function formatDateLong(d: string) {
-  return new Date(d).toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" });
-}
-function formatDateShort(d: string) {
-  return new Date(d).toLocaleDateString("he-IL", { weekday: "short", day: "numeric", month: "short" });
 }
 function formatDuration(min: number) {
   if (!min) return "—";
@@ -268,6 +263,7 @@ function RegistrantsSection({ tripId }: { tripId: string }) {
 
 export default function TripDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const dfmt = useDateFmt();
   const router = useRouter();
   const { data: session } = useSession();
   const [trip, setTrip] = useState<Trip | null>(null);
@@ -614,7 +610,7 @@ export default function TripDetailPage() {
             <div className="flex items-center gap-3 rounded-2xl p-3.5 border border-border bg-surface">
               <Calendar size={18} style={{ color: "var(--accent)" }} />
               <div>
-                <div className="text-sm font-medium text-fg">{formatDateLong(trip.date)}</div>
+                <div className="text-sm font-medium text-fg">{dfmt(trip.date, { long: true, weekday: true, greg: { weekday: "long", day: "numeric", month: "long" } })}</div>
                 <div className="text-xs text-fg-faint mt-0.5">יציאה בשעה {trip.startTime}</div>
               </div>
             </div>
@@ -944,7 +940,7 @@ export default function TripDetailPage() {
                 ₪{trip.price.toLocaleString("he-IL")}
                 <span className="text-xs font-normal text-fg-faint mr-1">{isSelfGuided ? "רכישה חד-פעמית" : "לאדם"}</span>
               </div>
-              <div className="text-xs text-fg-faint">{isSelfGuided ? `גישה ל-${trip.accessWindowDays ?? 30} ימים` : formatDateShort(trip.date)}</div>
+              <div className="text-xs text-fg-faint">{isSelfGuided ? `גישה ל-${trip.accessWindowDays ?? 30} ימים` : dfmt(trip.date, { greg: { weekday: "short", day: "numeric", month: "short" } })}</div>
             </div>
             <div className="flex gap-2">
               {isSelfGuided ? (
