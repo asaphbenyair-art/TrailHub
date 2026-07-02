@@ -161,6 +161,7 @@ export async function POST(req: NextRequest) {
             type: "NEW_TRIP_FROM_GUIDE" as const,
             title: "טיול חדש ממדריך שאתה עוקב אחריו",
             body: `טיול חדש: "${trip.title}"`,
+            link: `/trips/${trip.id}`,
           })),
         });
       }

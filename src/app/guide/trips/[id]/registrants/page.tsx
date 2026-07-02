@@ -39,6 +39,13 @@ export default function RegistrantsPage() {
   const [regs, setRegs] = useState<Registrant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  interface Broadcast { id: string; body: string; createdAt: string; sender: { name: string | null } }
+  const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
+
+  function loadBroadcasts() {
+    fetch(`/api/trips/${id}/broadcasts`).then((r) => (r.ok ? r.json() : []))
+      .then((d) => { if (Array.isArray(d)) setBroadcasts(d); }).catch(() => {});
+  }
 
   useEffect(() => {
     fetch(`/api/guide/trips/${id}/registrants`)
@@ -50,6 +57,7 @@ export default function RegistrantsPage() {
       })
       .catch(() => setError("שגיאה בטעינה"))
       .finally(() => setLoading(false));
+    loadBroadcasts();
   }, [id]);
 
   const active = regs.filter((r) => r.status !== "CANCELLED");
@@ -64,6 +72,7 @@ export default function RegistrantsPage() {
     });
     const d = await res.json().catch(() => ({}));
     window.alert(res.ok ? `ההודעה נשלחה ל-${d.sent ?? 0} נרשמים` : (d.error ?? "שגיאה"));
+    if (res.ok) loadBroadcasts();
   }
 
   async function generateCompCode() {
@@ -103,6 +112,21 @@ export default function RegistrantsPage() {
               {conditional.map((r) => (
                 <div key={r.id} className="text-xs text-[#633806]">
                   <span className="font-medium">{r.user.name ?? "מטייל"}</span> — {r.autoRegister ? "יירשם אוטומטית אם" : "התראה אם"}: {(r.conditions ?? []).join(" וגם ")}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Broadcast history */}
+        {broadcasts.length > 0 && (
+          <div className="bg-surface border border-border rounded-2xl p-4 mb-3">
+            <div className="text-xs font-semibold text-fg-muted mb-2">📢 הודעות ששלחתי ({broadcasts.length})</div>
+            <div className="flex flex-col gap-2">
+              {broadcasts.map((b) => (
+                <div key={b.id} className="border-b border-border last:border-0 pb-2 last:pb-0">
+                  <div className="text-[10px] text-fg-faint mb-0.5">{new Date(b.createdAt).toLocaleString("he-IL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</div>
+                  <p className="text-xs text-fg-muted whitespace-pre-wrap">{b.body}</p>
                 </div>
               ))}
             </div>

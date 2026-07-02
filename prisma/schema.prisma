@@ -168,6 +168,7 @@ model User {
   notifications        Notification[]
   questions            TripQuestion[]
   questionReplies      TripQuestionReply[]
+  broadcasts           Broadcast[]
   sentMessages         ChatMessage[] @relation("SentMessages")
   receivedMessages     ChatMessage[] @relation("ReceivedMessages")
   follows              GuideFollow[]
@@ -321,6 +322,7 @@ model Trip {
   favorites     FavoriteTrip[]
   notifications Notification[]
   questions     TripQuestion[]
+  broadcasts    Broadcast[]
   chatMessages  ChatMessage[]
   days          TripDay[]
   coupons       Coupon[]
@@ -473,6 +475,20 @@ model TripQuestion {
   trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   replies TripQuestionReply[]
+
+  @@index([tripId])
+}
+
+// Guide broadcast/announcement history (persisted, shown on the trip page).
+model Broadcast {
+  id        String   @id @default(cuid())
+  tripId    String
+  senderId  String
+  body      String   @db.Text
+  createdAt DateTime @default(now())
+
+  trip   Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([tripId])
 }

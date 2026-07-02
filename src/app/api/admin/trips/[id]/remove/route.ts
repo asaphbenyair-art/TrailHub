@@ -31,6 +31,7 @@ export async function POST(
         data: purchases.map((p) => ({
           userId: p.userId, tripId: id, type: "TRIP_CANCELLED" as const,
           title: "תוכן הוסר", body: `הטיול העצמאי "${trip.title}" נמצא בעייתי והוסר. הגישה לתוכן בוטלה.`,
+          link: `/my-trips`,
         })),
       });
     }
@@ -41,6 +42,7 @@ export async function POST(
         data: regs.map((r) => ({
           userId: r.userId, tripId: id, type: "TRIP_CANCELLED" as const,
           title: "טיול הוסר", body: `הטיול "${trip.title}" הוסר מהפלטפורמה ע"י מנהל.`,
+          link: `/my-trips`,
         })),
       });
     }

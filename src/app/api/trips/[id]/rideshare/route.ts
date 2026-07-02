@@ -102,6 +102,7 @@ export async function POST(
         type: "RIDESHARE_UPDATE" as const,
         title: "טרמפ חדש פורסם",
         body: `טרמפ חדש מ${cleanCity} פורסם לטיול שסימנת שאתה מחפש אליו טרמפ.`,
+        link: `/trips/${id}#rideshare`,
       })),
     });
   }

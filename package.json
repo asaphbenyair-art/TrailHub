@@ -17,6 +17,7 @@
     "@hebcal/core": "^6.6.0",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "@supabase/supabase-js": "^2.110.0",
     "@types/leaflet": "^1.9.21",
     "bcryptjs": "^3.0.3",
     "leaflet": "^1.9.4",

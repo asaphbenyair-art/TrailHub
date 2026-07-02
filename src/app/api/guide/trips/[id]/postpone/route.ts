@@ -29,6 +29,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       data: registrants.map((r) => ({
         userId: r.userId, tripId: id, type: "TRIP_UPDATED" as const,
         title: "הטיול נדחה", body: `הטיול "${trip.title}" נדחה. תוכל להישאר ולהמתין לתאריך חדש, או לבטל ולקבל החזר מלא.`,
+        link: `/trips/${id}`,
       })),
     });
   }

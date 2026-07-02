@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
       userId: trip.guide.userId, tripId,
       type: "TRIP_UPDATED", title: "תלונה על הטיול",
       body: `התקבלה תלונה על "${trip.title}". המנהלים יבדקו.`,
+      link: `/trips/${tripId}`,
     },
   });
 

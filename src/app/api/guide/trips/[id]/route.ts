@@ -164,6 +164,7 @@ export async function PUT(
         type: notifType,
         title: notifTitle,
         body: notifBody,
+        link: `/trips/${id}`,
       })),
     });
   }

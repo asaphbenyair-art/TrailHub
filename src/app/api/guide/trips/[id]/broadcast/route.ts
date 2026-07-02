@@ -20,6 +20,11 @@ export async function POST(
 
   const trip = await prisma.trip.findUnique({ where: { id }, select: { title: true } });
 
+  // Persist the broadcast to history.
+  await prisma.broadcast.create({
+    data: { tripId: id, senderId: session.user.id!, body: message.trim() },
+  });
+
   const registrants = await prisma.registration.findMany({
     where: { tripId: id, status: { in: ["CONFIRMED", "PENDING", "WAITLIST", "CONDITIONAL", "INTERESTED"] } },
     select: { userId: true },
@@ -33,6 +38,7 @@ export async function POST(
         type: "TRIP_UPDATED" as const,
         title: `הודעה מהמדריך · ${trip?.title ?? "טיול"}`,
         body: message.trim(),
+        link: `/trips/${id}#announcements`,
       })),
     });
   }

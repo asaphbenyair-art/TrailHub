@@ -362,6 +362,8 @@ export default function TripDetailPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [qaBody, setQaBody] = useState("");
   const [qaLoading, setQaLoading] = useState(false);
+  interface Announcement { id: string; body: string; createdAt: string; sender: { name: string | null } }
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [replyBody, setReplyBody] = useState<Record<string, string>>({});
   const [replyBusy, setReplyBusy] = useState<string | null>(null);
   const meId = (session?.user as { id?: string })?.id;
@@ -387,6 +389,22 @@ export default function TripDetailPage() {
       .then((data) => { if (Array.isArray(data)) setQuestions(data); }).catch(() => {});
   }
   useEffect(() => { loadQuestions(); }, [id]);
+
+  // Guide announcements (broadcasts) — visible to registrants; deep-link target.
+  useEffect(() => {
+    if (!session) return;
+    fetch(`/api/trips/${id}/broadcasts`).then((r) => (r.ok ? r.json() : []))
+      .then((d) => { if (Array.isArray(d)) setAnnouncements(d); }).catch(() => {});
+  }, [session, id, myRegStatus]);
+
+  // Scroll to a deep-linked section (#announcements / #rideshare / #qa-<id>).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hash = window.location.hash?.slice(1);
+    if (!hash) return;
+    const el = document.getElementById(hash);
+    if (el) el.scrollIntoView({ behavior: "smooth" });
+  }, [announcements.length, trip, questions.length]);
 
   async function submitReply(qid: string) {
     const text = (replyBody[qid] ?? "").trim();
@@ -785,6 +803,24 @@ export default function TripDetailPage() {
           {/* ── Journey timeline (if multi-day) ── */}
           {trip.days && trip.days.length > 0 && <JourneyTimeline days={trip.days} />}
 
+          {/* ── Announcements from the guide (broadcast history) ── */}
+          {announcements.length > 0 && (
+            <div id="announcements" style={{ scrollMarginTop: 80 }}>
+              <Heading icon={Bell}>הודעות מהמדריך</Heading>
+              <div className="flex flex-col gap-2 mb-3">
+                {announcements.map((a) => (
+                  <div key={a.id} className="rounded-2xl p-3.5 border border-border bg-surface">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-medium text-accent">{a.sender.name ?? "המדריך"}</span>
+                      <span className="text-[10px] text-fg-faint">{new Date(a.createdAt).toLocaleString("he-IL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                    </div>
+                    <p className="text-sm text-fg-muted whitespace-pre-wrap leading-relaxed">{a.body}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* ── 14. Q&A (official first) ── */}
           {!isSelfGuided && (
             <div>
@@ -919,7 +955,9 @@ export default function TripDetailPage() {
             </div>
           )}
 
-          {session && !isSelfGuided && <RideshareBoard tripId={trip.id} />}
+          {session && !isSelfGuided && (
+            <div id="rideshare" style={{ scrollMarginTop: 80 }}><RideshareBoard tripId={trip.id} /></div>
+          )}
 
           {/* ── 17. Cancellation policy ── */}
           {cancellationLines.length > 0 && (

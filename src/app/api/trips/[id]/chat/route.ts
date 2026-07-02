@@ -167,6 +167,7 @@ export async function POST(
       type: "NEW_MESSAGE",
       title: "הודעה חדשה",
       body: `בטיול "${trip.title}": ${body.trim().slice(0, 60)}`,
+      link: `/trips/${tripId}/chat`,
     },
   });
 

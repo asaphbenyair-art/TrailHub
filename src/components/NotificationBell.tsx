@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useLiveNotifications } from "@/hooks/useLiveNotifications";
 
 interface Notification {
   id: string;
@@ -17,6 +19,8 @@ interface Notification {
 
 export default function NotificationBell() {
   const router = useRouter();
+  const { data: session } = useSession();
+  const meId = (session?.user as { id?: string })?.id;
   const [notifs, setNotifs] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -33,6 +37,9 @@ export default function NotificationBell() {
   useEffect(() => {
     fetchNotifs();
   }, []);
+
+  // Live updates: Supabase Realtime when configured, else polling + on focus.
+  useLiveNotifications(meId, fetchNotifs);
 
   // Close on outside click
   useEffect(() => {

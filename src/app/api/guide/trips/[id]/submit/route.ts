@@ -42,6 +42,7 @@ export async function POST(
         type: "TRIP_UPDATED" as const,
         title: "טיול ממתין לאישור",
         body: `"${trip.title}" של ${guide.id} נשלח לבדיקה.`,
+        link: `/admin`,
       })),
     });
   }

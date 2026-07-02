@@ -61,6 +61,7 @@ export async function PATCH(req: NextRequest) {
         body: action === "approve"
           ? `הטיול "${trip.title}" אושר ועלה לאוויר.`
           : `הטיול "${trip.title}" נדחה. ${note ? `סיבה: ${note}` : ""}`,
+        link: action === "approve" ? `/trips/${tripId}` : `/guide/dashboard`,
       },
     });
   }

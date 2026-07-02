@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { FileText, XCircle, MessageCircle, Mail, Bell, ChevronRight, Check } from "lucide-react";
 import AvatarMenu from "@/components/AvatarMenu";
+import { useLiveNotifications } from "@/hooks/useLiveNotifications";
 
 interface Notif {
   id: string;
@@ -34,18 +35,26 @@ function relTime(iso: string) {
 
 export default function NotificationsPage() {
   const router = useRouter();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
+  const meId = (session?.user as { id?: string })?.id;
   const [notifs, setNotifs] = useState<Notif[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (status === "unauthenticated") { router.replace("/auth/login?callbackUrl=/notifications"); return; }
-    if (status !== "authenticated") return;
+  function loadNotifs() {
     fetch("/api/notifications")
       .then((r) => (r.ok ? r.json() : []))
       .then((n) => setNotifs(Array.isArray(n) ? n : []))
       .finally(() => setLoading(false));
+  }
+
+  useEffect(() => {
+    if (status === "unauthenticated") { router.replace("/auth/login?callbackUrl=/notifications"); return; }
+    if (status !== "authenticated") return;
+    loadNotifs();
   }, [status, router]);
+
+  // Live updates without refresh (Supabase Realtime + polling fallback).
+  useLiveNotifications(meId, loadNotifs);
 
   const unread = notifs.filter((n) => !n.read).length;
 
