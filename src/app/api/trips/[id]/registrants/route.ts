@@ -26,14 +26,17 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const regs = await prisma.registration.findMany({
     where: { tripId: id, status: { in: ["CONFIRMED", "WAITLIST"] } },
-    include: { user: { select: { name: true } } },
+    include: { user: { select: { name: true, image: true, gender: true, slogan: true } } },
     orderBy: { createdAt: "asc" },
   });
 
-  // Privacy: hide phone/email always; hide name for anonymous registrants.
+  // Privacy: hide phone/email always; hide identifying details for anonymous.
   const shape = (r: (typeof regs)[number]) => ({
     id: r.id,
     name: r.anonymous ? null : r.user.name,
+    image: r.anonymous ? null : r.user.image,
+    gender: r.anonymous ? null : r.user.gender,
+    slogan: r.anonymous ? null : r.user.slogan,
     anonymous: r.anonymous,
     participantCount: r.participantCount,
     createdAt: r.createdAt,

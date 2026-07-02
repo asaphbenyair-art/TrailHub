@@ -74,10 +74,10 @@ function formatDateLong(d: string) {
 function accessRemaining(iso: string | null | undefined): { text: string; color: string } {
   if (!iso) return { text: "🔓 גישה פעילה", color: "#1A6B4A" };
   const days = Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000);
-  if (days <= 0) return { text: "⏳ הגישה הסתיימה", color: "#9ca3af" };
-  const text = days === 1 ? "⏳ זמין עוד יום אחד" : `⏳ זמין עוד ${days} ימים`;
-  const color = days > 7 ? "#1A6B4A" : days >= 2 ? "#B45309" : "#C0392B";
-  return { text, color };
+  if (days <= 0) return { text: "⏳ פג תוקף", color: "#9ca3af" };
+  if (days < 2) return { text: "⏳ פג תוקף בעוד יומיים", color: "#C0392B" };
+  const color = days > 7 ? "#1A6B4A" : "#B45309";
+  return { text: `⏳ זמין עוד ${days} ימים`, color };
 }
 
 const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }> = {

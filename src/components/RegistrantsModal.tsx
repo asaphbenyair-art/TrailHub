@@ -3,7 +3,16 @@
 import { useEffect, useState } from "react";
 import { X, Users } from "lucide-react";
 
-interface Registrant { id: string; name: string | null; anonymous: boolean; participantCount: number; createdAt: string }
+interface Registrant {
+  id: string; name: string | null; image: string | null; gender: string | null;
+  slogan: string | null; anonymous: boolean; participantCount: number; createdAt: string;
+}
+
+function genderIcon(gender: string | null) {
+  if (gender === "male" || gender === "זכר" || gender === "m") return "♂";
+  if (gender === "female" || gender === "נקבה" || gender === "f") return "♀";
+  return null;
+}
 
 const AVATAR_COLORS = ["#854F0B", "#3B6D11", "#185FA5", "#6B3B87", "#1A6B4A"];
 function avatarColor(name: string | null) {
@@ -18,15 +27,25 @@ function initials(name: string | null) {
 }
 
 function Row({ r }: { r: Registrant }) {
+  const g = genderIcon(r.gender);
   return (
-    <div className="flex items-center gap-2.5 py-2 border-b border-gray-50 last:border-b-0">
-      <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-medium text-white shrink-0"
-        style={{ background: r.anonymous ? "#9ca3af" : avatarColor(r.name) }}>
-        {r.anonymous ? "?" : initials(r.name)}
+    <div className="flex items-center gap-2.5 py-2.5 border-b border-gray-50 last:border-b-0">
+      {r.image && !r.anonymous ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={r.image} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
+      ) : (
+        <div className="w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-medium text-white shrink-0"
+          style={{ background: r.anonymous ? "#9ca3af" : avatarColor(r.name) }}>
+          {r.anonymous ? "?" : initials(r.name)}
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <div className="text-sm text-gray-900 flex items-center gap-1">
+          <span className="truncate">{r.anonymous ? "משתתף אנונימי" : (r.name ?? "מטייל")}{r.participantCount > 1 ? ` +${r.participantCount - 1}` : ""}</span>
+          {g && <span className={g === "♂" ? "text-[#185FA5]" : "text-[#B0324D]"}>{g}</span>}
+        </div>
+        {r.slogan && <div className="text-[11px] text-gray-400 truncate">{r.slogan}</div>}
       </div>
-      <span className="text-sm text-gray-900 flex-1">
-        {r.anonymous ? "משתתף אנונימי" : (r.name ?? "מטייל")}{r.participantCount > 1 ? ` +${r.participantCount - 1}` : ""}
-      </span>
       <span className="text-[10px] text-gray-400 shrink-0">
         {new Date(r.createdAt).toLocaleDateString("he-IL", { day: "numeric", month: "short" })}
       </span>

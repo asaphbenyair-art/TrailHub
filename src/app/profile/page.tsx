@@ -28,6 +28,7 @@ interface UserProfile {
   gender: string | null;
   birthYear: number | null;
   bio: string | null;
+  slogan: string | null;
   phone: string | null;
   fitnessLevel: string | null;
   preferredRegions: string[];
@@ -60,6 +61,7 @@ export default function ProfilePage() {
   const [gender, setGender] = useState("");
   const [birthYear, setBirthYear] = useState("");
   const [bio, setBio] = useState("");
+  const [slogan, setSlogan] = useState("");
   const [phone, setPhone] = useState("");
   const [fitnessLevel, setFitnessLevel] = useState("");
 
@@ -89,6 +91,7 @@ export default function ProfilePage() {
         setGender(data.gender ?? "");
         setBirthYear(data.birthYear ? String(data.birthYear) : "");
         setBio(data.bio ?? "");
+        setSlogan(data.slogan ?? "");
         setPhone(data.phone ?? "");
         setFitnessLevel(data.fitnessLevel ?? "");
         setPrefRegions(data.preferredRegions ?? []);
@@ -136,7 +139,7 @@ export default function ProfilePage() {
     const res = await fetch("/api/profile", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, gender, birthYear: birthYear ? Number(birthYear) : null, bio, phone, fitnessLevel }),
+      body: JSON.stringify({ name, gender, birthYear: birthYear ? Number(birthYear) : null, bio, slogan, phone, fitnessLevel }),
     });
     setSaving(false);
     if (res.ok) { setSaveMsg("השינויים נשמרו ✓"); setTimeout(() => router.back(), 800); }
@@ -350,6 +353,18 @@ export default function ProfilePage() {
                     rows={3}
                     placeholder="ספר/י קצת על עצמך..."
                     className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] resize-none"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-500">סלוגן אישי <span className="text-gray-400">(אופציונלי)</span></label>
+                  <input
+                    type="text"
+                    value={slogan}
+                    onChange={(e) => setSlogan(e.target.value)}
+                    maxLength={60}
+                    placeholder="משפט קצר שמייצג אותך — מוצג לרשומים אחרים בטיול"
+                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
                   />
                 </div>
 

@@ -1170,3 +1170,208 @@ Rotates by visit number (1→2→3→4→1→2...):
 - Lucide icons, active tab shows accent color label
 - No labels on inactive tabs
 
+
+---
+
+## Additional Bug Fixes — Round 3
+
+### Password Reset
+- Add "Forgot password" / "שכחתי סיסמה" link on the login screen. Sends a password reset email to the user. Required — currently missing entirely.
+
+### Trip Card — Tag Overlap
+- Region and difficulty tags currently overlap with the trip name on the card (both positioned top-right). Fix the layout so tags and trip name don't collide — tags should be positioned separately (e.g. top-left, or below the title).
+
+---
+
+## Pre-Production Checklist
+
+### MUST DO before going live:
+- **Full database reset** — wipe all test data (trips, users, registrations, reviews, seed data) before launch.
+- Replace all 8 test guide accounts (real names from teva.org.il) with fictional guides or real guides who have given explicit permission.
+- Replace Unsplash test images with licensed or owned photos.
+- Switch Stripe from test mode to live mode.
+- Publish Google OAuth consent screen (remove "Testing" restriction).
+- Replace all seed/test data with real content.
+
+---
+
+## Rideshare Board — Trip Card Integration
+
+### Rideshare indicator on trip card
+Add a rideshare indicator to the bottom stats row of every trip card (date, km, hours row), positioned on the right side. It shows a label "טרמפים" above and icons below, both right-aligned (`align-items: flex-end`).
+
+### 5 states (right side of stats row):
+
+**State 1 — Not registered/interested (locked):**
+- Label: "טרמפים" in muted color
+- Icons: car icon + small lock icon, both muted, opacity 0.5
+- Not clickable. Tooltip on hover: "הירשם לטיול כדי לגשת ללוח הטרמפים"
+
+**State 2 — Registered, no rides yet:**
+- Label: "טרמפים" in muted color
+- Icons: car icon + text "אין עדיין", muted
+- Clickable → opens rideshare drawer
+
+**State 3 — Registered, only seekers (no offers):**
+- Label: "טרמפים" in accent/blue color
+- Icons: person-search icon + "X מחפשים", blue
+- Clickable → opens rideshare drawer
+
+**State 4 — Registered, rides available:**
+- Label: "טרמפים" in success/green color
+- Icons: car icon + "X מקומות", green
+- Clickable → opens rideshare drawer
+
+**State 5 — Registered, both rides and seekers:**
+- Label: "טרמפים" in green
+- Two separate small badges side by side: green car + count, blue person-search + count
+- Clickable → opens rideshare drawer
+
+### Rideshare drawer
+- Opens as a bottom sheet/drawer, NOT a new page
+- User stays in the context of the trip card/page
+- Shows the full rideshare board content inside the drawer
+
+---
+
+## Rideshare Modal — Full Spec
+
+### Trigger
+Clicking the rideshare indicator on any trip card opens a modal overlay (not a new page). Closing the modal returns the user to exactly where they were.
+
+### Modal Header
+- Single line: "לוח טרמפים — [trip name] · [date]" — all same font size and weight, trip name and date in muted color after the dash
+- Close button (X) on the left
+
+### Tabs (two tabs)
+- Tab 1: "טרמפים מוצעים (N)" — default active
+- Tab 2: "מחפשים (N)"
+
+### Tab 1 — Offered rides
+Each ride card shows:
+- Avatar (initials) + name + phone number
+- Seats badge (green): "N מקומות"
+- Details row: departure point (pin icon) + direction (arrows icon) + cost sharing (coin icon) if applicable
+- Two separate action buttons:
+  - "תפוס מקום" — claims a spot (green background)
+  - "פתח צ'אט" — opens private chat with the driver (neutral background + message icon)
+
+### Tab 2 — Ride seekers
+Each seeker card shows:
+- Avatar (initials) + name + general area
+- "פתח צ'אט" button (blue/accent) — opens private chat
+
+### Modal Footer (always visible)
+Two buttons:
+- "הצע טרמפ" (green) — opens form to post a new ride offer
+- "אני מחפש טרמפ" (blue) — marks user as looking for a ride + sends notification to them when new ride is posted
+
+---
+
+## Guides Directory — New Feature
+
+### Location
+Third tab in the search/discovery screen, alongside "טיולים מודרכים" and "עצמאיים".
+Tab label: "מדריכים"
+
+### Guide Card (in the directory list)
+Each card shows:
+- Profile photo (or initials avatar if none)
+- Name
+- Specialty/region (e.g. "מומחה נגב ומדבר")
+- Star rating + number of reviews
+- Number of active upcoming trips
+- Clicking the card → goes to the guide's full profile page
+
+### Filters
+- Filter by region (same regions as trip search)
+- Filter by specialty/tag (e.g. geology, archaeology, birdwatching, desert, etc.)
+- Filters apply instantly, no "show results" button
+
+### Guide Profile Page (already exists via trip page link — no change needed)
+- Full profile: photo, bio, rating, all upcoming trips
+- Already accessible by tapping a guide's name on any trip page
+
+---
+
+## Bug Fixes & Feature Additions — Round 4
+
+### Notifications — Deep Links
+- Every notification must be tappable and lead directly to the relevant content. Example: "המדריך ענה לשאלתך" → taps directly to that Q&A answer on the trip page. No notification should be a dead end.
+
+### Coupon/Comp Code — Apply After Registration
+- A hiker who already completed registration and payment should be able to apply a coupon code retroactively. Add an "הזן קוד הנחה" field in the trip detail page (post-registration view) or in "My Trips" for that specific trip. If valid, apply a partial refund via Stripe.
+
+### Registrant List — Visible to Fellow Registrants
+- A hiker who is registered or interested in a trip can see a list of other registrants (not just the count).
+- **Privacy choice at registration:** During registration flow, hiker chooses: "הירשם גלוי" (name visible to other registrants) or "הירשם אנונימי" (shows as "משתתף אנונימי" in the list).
+- The list shows: avatar/initials + name (or "אנונימי") + registration date.
+- Waitlist members are shown separately.
+
+### Post-Registration Trip Card — Fix Button States
+- After registering for a trip, the "להרשמה" and "מתעניין" buttons must be hidden/disabled entirely.
+- Replace with: "רשום לטיול ✓" status label + "בטל הרשמה" button always visible alongside it.
+- "בטל הרשמה" must be accessible at all times from the trip card and trip detail page — not buried.
+
+### Search — Separate Quick Filter Chips
+Two separate quick filter chips in the guided trips search list:
+- "הטיולים שלי" — shows trips the hiker is registered for OR interested in
+- "מועדפים" — shows trips the hiker has hearted (favorited), regardless of registration status
+These are two distinct filters, not combined into one.
+
+### Self-Guided Trips — Separate Quick Filter Chips
+Same as guided trips: two separate quick filter chips in the self-guided trips list:
+- "הרכישות שלי" — shows only trips the hiker has purchased
+- "מועדפים" — shows trips the hiker has hearted, regardless of purchase status
+
+### Self-Guided Trip Card — Access Window Indicator (Post-Purchase)
+On a purchased self-guided trip card, show the remaining access time prominently:
+- "זמין עוד X ימים" — green if plenty of time (>7 days)
+- "זמין עוד X ימים" — amber/warning if expiring soon (2-7 days)  
+- "פג תוקף בעוד יומיים" — red if <2 days remaining
+- "פג תוקף" — grey/muted if already expired
+This replaces the trip date field (which is irrelevant for self-guided trips).
+
+### Search — Autocomplete (Decision Changed)
+- Previous decision (no autocomplete) is overridden.
+- Search field now shows live autocomplete suggestions as the user types.
+- Suggestions come from real data: trip names, guide names, and regions that exist in the system.
+- Selecting a suggestion executes the search immediately.
+
+---
+
+## Updates — Search Flow & Notifications & Participant Cards
+
+### Search Intent Flow — Simplified
+- Remove "שנה מה אני מחפש" button entirely — no value.
+- Merge options 1 and 2 into one: "אני יודע מה אני מחפש" → opens search with filters prominent.
+- Option 3 "מה יש בקרוב?" → list sorted chronologically from today forward, no other filters pre-applied.
+- Option 4 "הפתיעו אותי" → must actually work: show trips based on user's saved preferences (region, difficulty). Fix the current broken state.
+
+### Notifications — Mark as Read Without Entering
+- Add a "mark as read" action on each notification (e.g. swipe or long-press or a small checkmark button) that marks it read without navigating to the linked content.
+- Marking as read does NOT delete the notification.
+
+### Participant Cards — What to Show
+Each participant card in the registrant list modal shows:
+- Profile photo (or initials avatar if none)
+- Gender icon next to the name (♂/♀ or equivalent Lucide icon)
+- Name (or "אנונימי" if registered anonymously)
+- Personal slogan/tagline — a short free-text field the user writes once in their profile settings, visible to fellow registrants. User can update it anytime.
+
+### User Profile — New Field
+- Add "סלוגן אישי" (personal tagline) field to the profile settings page. Short free text, optional. Displayed on participant cards when the user appears in a trip's registrant list.
+
+---
+
+## Search Filters — Updates
+
+### Date filter
+- Change from "מתאריך" (single date) to a date RANGE picker (from date → to date).
+- User selects a start and end date, results show trips departing within that range.
+
+### Price filter
+- Remove entirely. No price filter.
+
+### Age filter ("מתאים לגיל")
+- Remove entirely. Current implementation is confusing and low value.

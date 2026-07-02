@@ -117,7 +117,14 @@ export default function NotificationsPage() {
                       </span>
                     )}
                   </div>
-                  {!n.read && <div className="w-2 h-2 rounded-full bg-accent mt-1.5 shrink-0" />}
+                  {!n.read && (
+                    <button type="button" title="סמן כנקרא"
+                      onClick={(e) => { e.stopPropagation(); markOne(n.id); }}
+                      className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center border border-border self-start"
+                      style={{ color: "var(--accent)" }}>
+                      <Check size={13} />
+                    </button>
+                  )}
                 </div>
               );
             })}

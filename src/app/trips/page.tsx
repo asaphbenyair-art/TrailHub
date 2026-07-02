@@ -56,10 +56,10 @@ function sameDay(a: Date, b: Date) {
 function accessRemaining(iso: string | null | undefined): { text: string; color: string } {
   if (!iso) return { text: "🔓 גישה פעילה", color: "#1A6B4A" };
   const days = Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000);
-  if (days <= 0) return { text: "⏳ הגישה הסתיימה", color: "#9ca3af" };
-  const text = days === 1 ? "⏳ זמין עוד יום אחד" : `⏳ זמין עוד ${days} ימים`;
-  const color = days > 7 ? "#1A6B4A" : days >= 2 ? "#B45309" : "#C0392B";
-  return { text, color };
+  if (days <= 0) return { text: "⏳ פג תוקף", color: "#9ca3af" };
+  if (days < 2) return { text: "⏳ פג תוקף בעוד יומיים", color: "#C0392B" };
+  const color = days > 7 ? "#1A6B4A" : "#B45309";
+  return { text: `⏳ זמין עוד ${days} ימים`, color };
 }
 
 interface GuideCard {
@@ -137,13 +137,6 @@ function toggle<T>(arr: T[], val: T): T[] {
   return arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val];
 }
 const EMPTY_FILTERS: Filters = { q: "", regions: [], difficulties: [], dateFrom: "", priceMax: "", priceMin: "", ageMin: "", favoriteGuides: false, sort: "date", category: "guided", tags: [] };
-const AGE_OPTIONS = [
-  { value: "", label: "כל הגילאים" },
-  { value: "6", label: "מתאים לעד 6" },
-  { value: "8", label: "מתאים לעד 8" },
-  { value: "12", label: "מתאים לעד 12" },
-];
-
 // ── Sliding image hero for cards with multiple images ─────────────
 function TripCardHero({ images, title }: { images: string[]; title: string }) {
   const [idx, setIdx] = useState(0);
@@ -190,8 +183,8 @@ export default function TripsPage() {
   const [registrantsModal, setRegistrantsModal] = useState<{ id: string; title: string } | null>(null);
   const [guides, setGuides] = useState<GuideCard[]>([]);
   const [guidesLoaded, setGuidesLoaded] = useState(false);
-  const [guideRegion, setGuideRegion] = useState<string | null>(null);
-  const [guideSpecialty, setGuideSpecialty] = useState<string | null>(null);
+  const [guideRegions, setGuideRegions] = useState<string[]>([]);
+  const [guideSpecialties, setGuideSpecialties] = useState<string[]>([]);
 
   const loadGuides = useCallback(async () => {
     try {
@@ -211,6 +204,8 @@ export default function TripsPage() {
   const [range, setRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
   const [mobileCalOpen, setMobileCalOpen] = useState(false);
   const [showIntent, setShowIntent] = useState(false);
+  const [prefs, setPrefs] = useState<{ regions: string[]; difficulties: string[] }>({ regions: [], difficulties: [] });
+  const [searchFocused, setSearchFocused] = useState(false);
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Search intent flow — ask once, remember choice
@@ -236,17 +231,20 @@ export default function TripsPage() {
     }).catch(() => {});
   }, [session]);
 
-  function chooseIntent(opt: "when" | "kind" | "soon" | "browse") {
+  function chooseIntent(opt: "kind" | "soon" | "browse") {
     if (typeof window !== "undefined") localStorage.setItem("trailhub_intent", opt);
     setShowIntent(false);
-    if (opt === "when") {
-      setMobileCalOpen(true); // open the date filter (calendar is a filter, not a view)
-    } else if (opt === "kind") {
-      setPanelOpen(true);
+    if (opt === "kind") {
+      setPanelOpen(true); // I know what I want → filters prominent
     } else if (opt === "soon") {
-      const next = { ...filters, sort: "date" }; setFilters(next); fetchTrips(next);
+      // What's coming up → chronological from today, no pre-filters
+      const next = { ...filters, sort: "date", regions: [], difficulties: [], tags: [] };
+      setFilters(next); fetchTrips(next);
+    } else {
+      // Surprise me → based on saved preferences (region + difficulty)
+      const next = { ...filters, regions: prefs.regions, difficulties: prefs.difficulties, sort: "date" };
+      setFilters(next); fetchTrips(next);
     }
-    // browse — preferences already seed filters; just show the list
   }
 
   const fetchTrips = useCallback(async (f: Filters) => {
@@ -312,6 +310,7 @@ export default function TripsPage() {
       .then((p: { preferredRegions?: string[]; preferredDifficulties?: string[] }) => {
         const regions = p.preferredRegions ?? [];
         const difficulties = p.preferredDifficulties ?? [];
+        setPrefs({ regions, difficulties });
         if (regions.length === 0 && difficulties.length === 0) return;
         setFilters((f) => {
           // Don't override if the user already started filtering
@@ -346,6 +345,16 @@ export default function TripsPage() {
   function handleSearch(value: string) {
     updateFilters({ q: value }, true);
   }
+  // Live autocomplete suggestions from real data: trip names, guide names, regions.
+  const searchQ = filters.q.trim();
+  const searchSuggestions = searchQ.length >= 1 ? (() => {
+    const ql = searchQ.toLowerCase();
+    const set = new Set<string>();
+    for (const t of trips) if (t.title.toLowerCase().includes(ql)) set.add(t.title);
+    for (const t of trips) { const g = t.guide?.user?.name; if (g && g.toLowerCase().includes(ql)) set.add(g); }
+    for (const r of REGIONS) if (r.includes(searchQ)) set.add(r);
+    return [...set].filter((s) => s.toLowerCase() !== ql).slice(0, 8);
+  })() : [];
   function handleRangeChange(r: { start: Date | null; end: Date | null }) {
     setRange(r);
     // Close the mobile panel only once a full selection is made (or cleared)
@@ -377,8 +386,7 @@ export default function TripsPage() {
   }
 
   const activeCount = filters.regions.length + filters.difficulties.length +
-    (filters.dateFrom ? 1 : 0) + (filters.priceMax ? 1 : 0) + (filters.priceMin ? 1 : 0) +
-    (filters.ageMin ? 1 : 0) + (filters.favoriteGuides ? 1 : 0);
+    filters.tags.length + (filters.favoriteGuides ? 1 : 0);
 
   return (
     <div dir="rtl" className="min-h-screen bg-[#f5f5f5]">
@@ -392,10 +400,9 @@ export default function TripsPage() {
             <div className="text-xs text-gray-500 mb-4">נתאים לך את החיפוש</div>
             <div className="flex flex-col gap-2">
               {([
-                ["when", "🗓 אני יודע מתי אני פנוי", "אבחר תאריך ואראה מה יוצא"],
-                ["kind", "🎯 מחפש סוג טיול מסוים", "אסנן לפי קושי, איזור ומאפיינים"],
-                ["soon", "⏱ מה קורה בקרוב", "הקרובים ביותר, ללא סינון"],
-                ["browse", "✨ סתם מדפדף, הפתע אותי", "מותאם להעדפות שלי"],
+                ["kind", "🎯 אני יודע מה אני מחפש", "אסנן לפי קושי, איזור ומאפיינים"],
+                ["soon", "⏱ מה יש בקרוב?", "לפי סדר כרונולוגי מהיום"],
+                ["browse", "✨ הפתיעו אותי", "מותאם להעדפות שלי (איזור, קושי)"],
               ] as const).map(([key, title, sub]) => (
                 <button key={key} type="button" onClick={() => chooseIntent(key)}
                   className="text-right border border-gray-200 rounded-xl p-3 hover:border-[#1A6B4A] hover:bg-[#F0FAF5] transition-colors">
@@ -412,16 +419,32 @@ export default function TripsPage() {
       <div className="px-3 py-3">
         <div className="max-w-5xl mx-auto bg-white rounded-xl px-3 py-2.5 flex items-center gap-2.5">
           <Link href="/" className="text-[15px] font-semibold text-[#1A6B4A] flex-shrink-0">🧭 TrailHub</Link>
-          <div className="flex-1 flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-full px-3 py-1.5">
-            <span className="text-gray-400 text-sm">🔍</span>
-            <input
-              type="text" value={filters.q}
-              onChange={(e) => handleSearch(e.target.value)}
-              placeholder="חפש טיול, מדריך, איזור..."
-              className="flex-1 bg-transparent border-none outline-none text-sm text-gray-800 placeholder:text-gray-400"
-            />
-            {filters.q && (
-              <button type="button" onClick={() => handleSearch("")} className="text-gray-400 hover:text-gray-600 text-xs">✕</button>
+          <div className="flex-1 relative">
+            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-full px-3 py-1.5">
+              <span className="text-gray-400 text-sm">🔍</span>
+              <input
+                type="text" value={filters.q}
+                onChange={(e) => handleSearch(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setTimeout(() => setSearchFocused(false), 120)}
+                placeholder="חפש טיול, מדריך, איזור..."
+                className="flex-1 bg-transparent border-none outline-none text-sm text-gray-800 placeholder:text-gray-400"
+              />
+              {filters.q && (
+                <button type="button" onClick={() => handleSearch("")} className="text-gray-400 hover:text-gray-600 text-xs">✕</button>
+              )}
+            </div>
+            {/* Autocomplete suggestions */}
+            {searchFocused && searchSuggestions.length > 0 && (
+              <div className="absolute top-full mt-1 right-0 left-0 bg-white rounded-xl border border-gray-100 shadow-lg z-50 overflow-hidden">
+                {searchSuggestions.map((s) => (
+                  <button key={s} type="button"
+                    onMouseDown={(e) => { e.preventDefault(); handleSearch(s); setSearchFocused(false); }}
+                    className="w-full text-right px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                    <span className="text-gray-300 text-xs">🔍</span>{s}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
           {session ? (
@@ -437,8 +460,6 @@ export default function TripsPage() {
 
       {/* Category: guided vs self-guided */}
       <div className="max-w-5xl mx-auto px-3 mb-2 flex items-center gap-2 justify-center md:justify-start">
-        <button type="button" onClick={() => setShowIntent(true)}
-          className="text-[11px] text-gray-400 hover:text-[#1A6B4A] underline shrink-0">שנה מה אני מחפש</button>
         <div className="inline-flex bg-white rounded-full border border-gray-200 p-0.5">
           {([["guided", "🧭 טיולים מודרכים"], ["self_guided", "🎒 טיולים עצמאיים"], ["guides", "🧑‍🏫 מדריכים"]] as const).map(([v, label]) => (
             <button key={v} type="button"
@@ -460,29 +481,30 @@ export default function TripsPage() {
       {/* ── Guides directory (מדריכים tab) ── */}
       {filters.category === "guides" && (() => {
         const allSpecialties = [...new Set(guides.flatMap((g) => g.specialties))];
+        // Multi-select: a guide matches if it intersects ANY selected region / specialty
         const shown = guides.filter((g) =>
-          (!guideRegion || g.specialtyRegions.includes(guideRegion)) &&
-          (!guideSpecialty || g.specialties.includes(guideSpecialty))
+          (guideRegions.length === 0 || guideRegions.some((r) => g.specialtyRegions.includes(r))) &&
+          (guideSpecialties.length === 0 || guideSpecialties.some((s) => g.specialties.includes(s)))
         );
         return (
           <div className="max-w-5xl mx-auto px-3 pb-24">
             {/* Instant filters */}
             <div className="flex flex-col gap-2 mb-3">
               <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
-                <button type="button" onClick={() => setGuideRegion(null)}
-                  className={`shrink-0 text-[11px] rounded-full px-3 py-1.5 border ${!guideRegion ? "bg-[#1A6B4A] text-white border-[#1A6B4A]" : "bg-white text-gray-500 border-gray-200"}`}>כל האזורים</button>
+                <button type="button" onClick={() => setGuideRegions([])}
+                  className={`shrink-0 text-[11px] rounded-full px-3 py-1.5 border ${guideRegions.length === 0 ? "bg-[#1A6B4A] text-white border-[#1A6B4A]" : "bg-white text-gray-500 border-gray-200"}`}>כל האזורים</button>
                 {REGIONS.map((r) => (
-                  <button key={r} type="button" onClick={() => setGuideRegion(guideRegion === r ? null : r)}
-                    className={`shrink-0 text-[11px] rounded-full px-3 py-1.5 border ${guideRegion === r ? "bg-[#1A6B4A] text-white border-[#1A6B4A]" : "bg-white text-gray-500 border-gray-200"}`}>{r}</button>
+                  <button key={r} type="button" onClick={() => setGuideRegions((prev) => toggle(prev, r))}
+                    className={`shrink-0 text-[11px] rounded-full px-3 py-1.5 border ${guideRegions.includes(r) ? "bg-[#1A6B4A] text-white border-[#1A6B4A]" : "bg-white text-gray-500 border-gray-200"}`}>{r}</button>
                 ))}
               </div>
               {allSpecialties.length > 0 && (
                 <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
-                  <button type="button" onClick={() => setGuideSpecialty(null)}
-                    className={`shrink-0 text-[11px] rounded-full px-3 py-1.5 border ${!guideSpecialty ? "bg-[#185FA5] text-white border-[#185FA5]" : "bg-white text-gray-500 border-gray-200"}`}>כל ההתמחויות</button>
+                  <button type="button" onClick={() => setGuideSpecialties([])}
+                    className={`shrink-0 text-[11px] rounded-full px-3 py-1.5 border ${guideSpecialties.length === 0 ? "bg-[#185FA5] text-white border-[#185FA5]" : "bg-white text-gray-500 border-gray-200"}`}>כל ההתמחויות</button>
                   {allSpecialties.map((s) => (
-                    <button key={s} type="button" onClick={() => setGuideSpecialty(guideSpecialty === s ? null : s)}
-                      className={`shrink-0 text-[11px] rounded-full px-3 py-1.5 border ${guideSpecialty === s ? "bg-[#185FA5] text-white border-[#185FA5]" : "bg-white text-gray-500 border-gray-200"}`}>{s}</button>
+                    <button key={s} type="button" onClick={() => setGuideSpecialties((prev) => toggle(prev, s))}
+                      className={`shrink-0 text-[11px] rounded-full px-3 py-1.5 border ${guideSpecialties.includes(s) ? "bg-[#185FA5] text-white border-[#185FA5]" : "bg-white text-gray-500 border-gray-200"}`}>{s}</button>
                   ))}
                 </div>
               )}
@@ -639,18 +661,6 @@ export default function TripsPage() {
                 🏔 {DIFF_LABEL[d]} <span className="font-bold">✕</span>
               </button>
             ))}
-            {filters.dateFrom && (
-              <button type="button" onClick={() => clearFilter("dateFrom")}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap bg-[#D6EDE3] border border-[#1A6B4A] text-[#0F5038] flex-shrink-0">
-                📅 {new Date(filters.dateFrom).toLocaleDateString("he-IL",{day:"numeric",month:"short"})} <span className="font-bold">✕</span>
-              </button>
-            )}
-            {filters.priceMax && (
-              <button type="button" onClick={() => clearFilter("priceMax")}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap bg-[#D6EDE3] border border-[#1A6B4A] text-[#0F5038] flex-shrink-0">
-                💰 עד ₪{filters.priceMax} <span className="font-bold">✕</span>
-              </button>
-            )}
             {activeCount > 0 && (
               <button type="button" onClick={clearAllFilters}
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap bg-white border border-gray-200 text-gray-500 flex-shrink-0">
@@ -662,12 +672,6 @@ export default function TripsPage() {
           {/* Filter panel */}
           {panelOpen && (
             <div className="bg-white rounded-xl p-4 mb-2">
-              <div className="mb-4">
-                <div className="text-[11px] text-gray-500 mb-2">תאריך מ-</div>
-                <input type="date" value={filters.dateFrom}
-                  onChange={(e) => updateFilters({ dateFrom: e.target.value }, true)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
-              </div>
               <div className="mb-4">
                 <div className="text-[11px] text-gray-500 mb-2">איזור בארץ</div>
                 <div className="flex flex-wrap gap-1.5">
@@ -690,32 +694,6 @@ export default function TripsPage() {
                       className={`flex-1 py-1.5 rounded-full text-xs border transition-colors ${
                         filters.difficulties.includes(d.value) ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-gray-200 text-gray-600"}`}>
                       {d.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="mb-4">
-                <div className="text-[11px] text-gray-500 mb-2">טווח מחירים (₪)</div>
-                <div className="grid grid-cols-2 gap-2">
-                  <input type="number" value={filters.priceMin}
-                    onChange={(e) => updateFilters({ priceMin: e.target.value }, true)}
-                    placeholder="מינימום"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" dir="ltr" />
-                  <input type="number" value={filters.priceMax}
-                    onChange={(e) => updateFilters({ priceMax: e.target.value }, true)}
-                    placeholder="מקסימום"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" dir="ltr" />
-                </div>
-              </div>
-              <div className="mb-4">
-                <div className="text-[11px] text-gray-500 mb-2">מתאים לגיל</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {AGE_OPTIONS.map((a) => (
-                    <button key={a.value} type="button"
-                      onClick={() => updateFilters({ ageMin: a.value })}
-                      className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
-                        filters.ageMin === a.value ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-gray-200 text-gray-600"}`}>
-                      {a.label}
                     </button>
                   ))}
                 </div>

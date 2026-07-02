@@ -147,6 +147,7 @@ model User {
   gender                String?
   birthYear             Int?
   bio                   String?  @db.Text
+  slogan                String?  // personal tagline shown on participant cards
   phone                 String?
   fitnessLevel          String?
   preferredRegions      String[]

@@ -127,7 +127,13 @@ export default function NotificationBell() {
                       <span className="text-[10px] text-[#1A6B4A] mt-1 inline-block">פתח ←</span>
                     )}
                   </div>
-                  {!n.read && <div className="w-2 h-2 rounded-full bg-[#1A6B4A] mt-1.5 shrink-0" />}
+                  {!n.read && (
+                    <button type="button" title="סמן כנקרא"
+                      onClick={(e) => { e.stopPropagation(); markRead(n.id); }}
+                      className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center border border-gray-200 text-[#1A6B4A] hover:bg-[#D6EDE3] self-start text-xs">
+                      ✓
+                    </button>
+                  )}
                 </div>
               ))
             )}
