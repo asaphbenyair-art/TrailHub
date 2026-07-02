@@ -7,7 +7,7 @@ import { googleCalendarUrl } from "@/lib/calendar";
 import { coverImages } from "@/lib/tripImage";
 import { useDateFmt } from "@/components/CalendarModeProvider";
 import {
-  ArrowRight, Check, ChevronDown, Lock, CalendarPlus, Search, CreditCard, Backpack, Bell,
+  ArrowRight, Check, ChevronDown, Lock, CalendarPlus, Search, CreditCard, Backpack, Bell, FileText,
 } from "lucide-react";
 
 interface RegField { id: string; label: string; type: "text" | "boolean" | "select"; required: boolean; options: string[] }
@@ -16,6 +16,7 @@ interface Trip {
   id: string; title: string; region: string; difficulty: string; status: string;
   date: string; startTime: string; price: number; maxSpots: number; spotsBooked: number;
   images: string[]; cancellationPolicy: string | null; registrationFields: RegField[] | null;
+  healthDeclarationUrl: string | null;
   multiPersonMode: string | null; tripType: string | null; accessWindowDays: number | null;
   guide: { user: { name: string | null } };
 }
@@ -110,6 +111,7 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: (alertHours:
   const fields = trip.registrationFields ?? [];
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [signed, setSigned] = useState(false);
+  const [healthText, setHealthText] = useState("");
   const [alertHours, setAlertHours] = useState("24");
   const [anonymous, setAnonymous] = useState(false);
   const [compCode, setCompCode] = useState("");
@@ -141,6 +143,7 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: (alertHours:
     if (isDetailed) {
       for (let i = 0; i < count; i++) if (!(names[i] ?? "").trim()) { setError(`נא להזין שם משתתף ${i + 1}`); return; }
     }
+    if (trip.healthDeclarationUrl && !healthText.trim()) { setError("נא לחתום על הצהרת הבריאות"); return; }
     if (!signed) { setError("נא לאשר את מדיניות הביטולים"); return; }
     setSaving(true); setError("");
     try {
@@ -148,6 +151,7 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: (alertHours:
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           tripId: trip.id, type: "REGISTER", fieldAnswers: answers, signedPolicy: signed,
+          healthDeclaration: trip.healthDeclarationUrl ? healthText.trim() : undefined,
           alertThresholdHours: Number(alertHours) || 24, compCode: compCode.trim() || undefined,
           anonymous,
           participantCount: count,
@@ -203,6 +207,21 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: (alertHours:
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Health declaration — view/download the PDF + sign a confirmation */}
+      {trip.healthDeclarationUrl && (
+        <div className="p-4 border-b border-border flex flex-col gap-2">
+          <div className="text-sm font-medium text-fg">הצהרת בריאות</div>
+          <a href={trip.healthDeclarationUrl} target="_blank" rel="noreferrer"
+            className="inline-flex items-center gap-2 text-xs text-accent border border-border rounded-lg px-3 py-2 hover:bg-surface-2 w-fit">
+            <FileText size={14} /> צפה / הורד את הצהרת הבריאות (PDF)
+          </a>
+          <label className="text-xs text-fg-muted mt-1">אני חותם על כך ש… <span className="text-danger">*</span></label>
+          <textarea value={healthText} onChange={(e) => setHealthText(e.target.value)} rows={2}
+            placeholder="קראתי את הצהרת הבריאות ואני מאשר/ת שאין לי מגבלה רפואית להשתתפות…"
+            className={`${input} resize-none`} />
         </div>
       )}
 

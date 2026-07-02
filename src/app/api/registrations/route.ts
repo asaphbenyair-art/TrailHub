@@ -8,12 +8,13 @@ export async function POST(req: NextRequest) {
   if (!session?.user) return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
 
   const body = await req.json();
-  const { tripId, type, notes, fieldAnswers, signedPolicy, alertThresholdHours, interestThreshold, conditions, autoRegister, compCode, participantCount, participantsDetail, anonymous } = body as {
+  const { tripId, type, notes, fieldAnswers, signedPolicy, healthDeclaration, alertThresholdHours, interestThreshold, conditions, autoRegister, compCode, participantCount, participantsDetail, anonymous } = body as {
     tripId: string;
     type: "REGISTER" | "INTEREST" | "WAITLIST";
     notes?: string;
     fieldAnswers?: Record<string, string>;
     signedPolicy?: boolean;
+    healthDeclaration?: string;
     alertThresholdHours?: number;
     interestThreshold?: number;
     conditions?: string[];
@@ -29,6 +30,11 @@ export async function POST(req: NextRequest) {
 
   const trip = await prisma.trip.findUnique({ where: { id: tripId } });
   if (!trip) return NextResponse.json({ error: "טיול לא נמצא" }, { status: 404 });
+
+  // Health declaration is mandatory to register when the guide attached one.
+  if (type === "REGISTER" && trip.healthDeclarationUrl && !healthDeclaration?.trim()) {
+    return NextResponse.json({ error: "נא לחתום על הצהרת הבריאות" }, { status: 400 });
+  }
 
   const userId = session.user.id!;
 
@@ -87,6 +93,7 @@ export async function POST(req: NextRequest) {
     ...(Array.isArray(participantsDetail) && participantsDetail.length > 0 && { participantsDetail }),
     ...(fieldAnswers && Object.keys(fieldAnswers).length > 0 && { fieldAnswers }),
     ...(signedPolicy !== undefined && { signedPolicy: !!signedPolicy }),
+    ...(healthDeclaration !== undefined && { healthDeclaration: healthDeclaration || null }),
     ...(alertThresholdHours !== undefined && { alertThresholdHours: Number(alertThresholdHours) || null }),
     ...(interestThreshold !== undefined && { interestThreshold: Number(interestThreshold) || null }),
     ...(cleanConditions.length > 0 && { conditions: cleanConditions }),

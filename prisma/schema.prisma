@@ -306,6 +306,7 @@ model Trip {
   postponeReason    String?  @db.Text
 
   meetingPoint    String?
+  healthDeclarationUrl String? // guide-uploaded health-declaration PDF
   waypoints       String? @db.Text
   whatToBring     String?
   cancellationPolicy String? @db.Text
@@ -385,6 +386,7 @@ model Registration {
   // Dynamic registration field answers + signed policy
   fieldAnswers Json?
   signedPolicy Boolean @default(false)
+  healthDeclaration String? @db.Text // hiker's signed "אני חותם על כך ש..." confirmation
 
   // Interest / conditional interest
   interestThreshold Int?

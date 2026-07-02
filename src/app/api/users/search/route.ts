@@ -11,12 +11,14 @@ export async function GET(req: NextRequest) {
   const params = new URL(req.url).searchParams;
   const q = (params.get("q") ?? "").trim();
   const role = params.get("role"); // e.g. TRIP_MANAGER → restrict to that role only
+  const guidesOnly = params.get("guides") === "1"; // restrict to users who have a guide profile
   if (q.length < 2) return NextResponse.json([]);
 
   const users = await prisma.user.findMany({
     where: {
       id: { not: session.user.id! },
       ...(role ? { role: role as "USER" | "GUIDE" | "TRIP_MANAGER" | "ADMIN" } : {}),
+      ...(guidesOnly ? { guide: { isNot: null } } : {}),
       OR: [
         { name: { contains: q, mode: "insensitive" } },
         { email: { contains: q, mode: "insensitive" } },

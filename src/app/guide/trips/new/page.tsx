@@ -123,6 +123,7 @@ export default function NewTripWizard() {
       distanceKm: data.distanceKm || "0",
       durationMin: String(Math.round((parseFloat(data.durationHours) || 0) * 60)),
       whatToBring: allEquipment || null,
+      healthDeclarationUrl: isSelfGuided ? null : (data.healthDeclarationUrl || null),
       // Self-guided is a content product — no cancellation policy, no dynamic reg fields, no team/capacity
       cancellationPolicy: isSelfGuided ? null : cancellationPolicy,
       status: data.status === "PREVIEW" ? "DRAFT" : data.status,

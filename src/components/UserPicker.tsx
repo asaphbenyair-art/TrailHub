@@ -31,10 +31,12 @@ export default function UserPicker({
     if (query.trim().length < 2) { setResults([]); return; }
     timer.current = setTimeout(async () => {
       try {
-        const roleParam = managersOnly ? "&role=TRIP_MANAGER" : "";
-        const r = await fetch(`/api/users/search?q=${encodeURIComponent(query.trim())}${roleParam}`);
+        const sp = new URLSearchParams({ q: query.trim() });
+        if (managersOnly) sp.set("role", "TRIP_MANAGER"); // server-side: only מנהל טיול users
+        if (guidesOnly) sp.set("guides", "1");            // server-side: only users with a guide profile
+        const r = await fetch(`/api/users/search?${sp.toString()}`);
         const data: FoundUser[] = r.ok ? await r.json() : [];
-        setResults(guidesOnly ? data.filter((u) => u.isGuide) : data);
+        setResults(data);
         setOpen(true);
       } catch { setResults([]); }
     }, 250);

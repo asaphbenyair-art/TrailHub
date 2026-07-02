@@ -61,6 +61,23 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
     updateFields(regFields.filter((_, idx) => idx !== i));
   }
 
+  const healthRef = useRef<HTMLInputElement>(null);
+  const [uploadingHealth, setUploadingHealth] = useState(false);
+  async function uploadHealthPdf(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingHealth(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: form });
+      if (res.ok) { const { url } = await res.json(); onChange("healthDeclarationUrl" as keyof WizardData, url); }
+    } finally {
+      setUploadingHealth(false);
+      if (healthRef.current) healthRef.current.value = "";
+    }
+  }
+
   return (
     <div className="p-5 flex flex-col gap-4">
       <div className="text-sm font-medium text-fg border-b border-border pb-3 mb-1">
@@ -283,6 +300,27 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
           })}
         </div>
       </div>
+
+      {/* Health declaration (PDF) — hiker views it and signs a confirmation at registration */}
+      {!selfGuided && (
+      <div className="flex flex-col gap-2 border-t border-border pt-4">
+        <label className="text-xs font-medium text-fg-muted">הצהרת בריאות (PDF)</label>
+        <p className="text-[11px] text-fg-faint">מסמך שהנרשם יצפה בו, יוכל להוריד, ויאשר בעת ההרשמה</p>
+        {data.healthDeclarationUrl ? (
+          <div className="bg-surface-2 rounded-lg px-3 py-2 flex items-center gap-2 text-xs">
+            <span>📄</span>
+            <a href={data.healthDeclarationUrl} target="_blank" rel="noreferrer" className="flex-1 truncate text-fg underline hover:text-[#1A6B4A]">צפה בהצהרת הבריאות</a>
+            <button type="button" onClick={() => onChange("healthDeclarationUrl" as keyof WizardData, "")} className="text-fg-faint hover:text-red-400" aria-label="מחק">✕</button>
+          </div>
+        ) : (
+          <button type="button" onClick={() => healthRef.current?.click()} disabled={uploadingHealth}
+            className="text-xs text-[#1A6B4A] border border-dashed border-[#1A6B4A]/40 rounded-lg py-1.5 hover:bg-[#F0FAF5] disabled:opacity-60">
+            {uploadingHealth ? "מעלה..." : "📄 העלה הצהרת בריאות (PDF)"}
+          </button>
+        )}
+        <input ref={healthRef} type="file" accept="application/pdf" className="hidden" onChange={uploadHealthPdf} />
+      </div>
+      )}
 
       {/* Dynamic registration fields (not for self-guided) */}
       {!selfGuided && (

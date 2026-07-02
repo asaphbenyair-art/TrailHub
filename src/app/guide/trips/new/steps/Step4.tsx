@@ -95,17 +95,18 @@ export default function Step4({ data, onChange }: Props) {
           <p className="text-xs text-fg-faint">לחץ להוספת מחיר מופחת (ילדים, סטודנטים, חיילים...)</p>
         )}
 
-        {/* Preset chips */}
-        {data.priceTiers.length === 0 && (
+        {/* Preset chips — stay visible after selecting, so multiple groups can be
+            added; already-added presets are hidden. */}
+        {PRICE_TIER_PRESETS.some((label) => !data.priceTiers.some((t) => t.label === label)) && (
           <div className="flex flex-wrap gap-1">
-            {PRICE_TIER_PRESETS.map((label) => (
+            {PRICE_TIER_PRESETS.filter((label) => !data.priceTiers.some((t) => t.label === label)).map((label) => (
               <button
                 key={label}
                 type="button"
                 onClick={() => onChange("priceTiers", [...data.priceTiers, { label, price: "" }])}
                 className="text-xs border border-border rounded-full px-2.5 py-1 text-fg-muted hover:border-[#1A6B4A] hover:text-[#1A6B4A] transition-colors"
               >
-                {label}
+                + {label}
               </button>
             ))}
           </div>

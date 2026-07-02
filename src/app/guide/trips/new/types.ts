@@ -87,6 +87,7 @@ export interface WizardData {
   equipmentList: string[];
   whatToBring: string;
   registrationFields: RegFieldData[];
+  healthDeclarationUrl: string; // uploaded health-declaration PDF url
 
   // Step 4
   price: string;
@@ -142,6 +143,7 @@ export const DEFAULT_WIZARD_DATA: WizardData = {
   equipmentList: [],
   whatToBring: "",
   registrationFields: [],
+  healthDeclarationUrl: "",
   price: "",
   individualDayPrice: "",
   priceTiers: [],

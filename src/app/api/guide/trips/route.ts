@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
   const {
     title, description, region, date, endDate, startTime,
     meetingPoint, waypoints, difficulty, maxSpots, price,
-    distanceKm, durationMin, whatToBring,
+    distanceKm, durationMin, whatToBring, healthDeclarationUrl,
     cancellationPolicy, status, images,
     tripType, priceTiers, tripDays, coupons,
     visibility, registrationFields, routeType,
@@ -86,6 +86,7 @@ export async function POST(req: NextRequest) {
         distanceKm: parseFloat(distanceKm) || 0,
         durationMin: parseInt(durationMin) || 0,
         whatToBring: whatToBring || null,
+        healthDeclarationUrl: healthDeclarationUrl || null,
         cancellationPolicy: cancellationPolicy || null,
         status: status || "DRAFT",
         visibility: visibility === "PRIVATE" ? "PRIVATE" : "PUBLIC",
