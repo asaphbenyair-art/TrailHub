@@ -1548,3 +1548,86 @@ Each participant card must show:
 - After Google authentication completes, the app currently ignores the result and continues with the previous session.
 - Fix: Google sign-in must create or log into the correct account and redirect the user to the app as that Google user.
 - Ensure NextAuth Google provider is correctly configured and the session is updated after OAuth callback.
+
+---
+
+## Bug Fixes & Features — Round 5
+
+### 1. Slogan & Branding
+- Replace "TrailHub" with the new slogan throughout the app
+- Slogan: "בשבילי נברא העולם — דרך. אחרת. לטייל"
+- The word "שביל" inside "בשבילי" is bold and in green (#3d8f5f), same font size as the rest
+- Dark/light mode toggle moves from avatar dropdown to the top bar near the logo
+
+### 2. Dark Mode Toggle Location
+- Remove dark/light toggle from avatar dropdown menu
+- Add it to the top navigation bar near the logo/branding area (sun/moon icon)
+
+### 3. Hebrew Calendar — Fix
+- When "ע" is selected in the date filter panel toggle:
+  - Calendar grid shows Hebrew date numbers (e.g. "ט״ו", "ט״ז")
+  - Month header shows Hebrew month name (e.g. "תמוז תשפ״ו")
+  - Use `@hebcal/core` for conversion
+
+### 4. Guide Default Mode on Login
+- When a guide logs in, default landing is the guide dashboard (not hiker view)
+- When a מטייל logs in, default is hiker home/search
+- When a מנהל טיול logs in, default is trip manager dashboard
+
+### 5. Trip Status Order
+- Correct order (right to left): טיוטא → פרסום פרטי → ציבורי
+- Apply everywhere: status tabs, toggle, trip creation wizard
+
+### 6. Registrant List — Guide Dashboard
+- In the guide's trip management page, clicking "נרשמים" opens a modal (same pattern as hiker-facing modal)
+- Header: "משתתפים — [trip name]"
+- Each card: profile photo/avatar + gender icon + name (or "אנונימי") + personal slogan
+- Waitlist shown separately below divider
+
+### 7. Q&A — Threaded Conversation
+- After guide answers a question, hiker can reply in the same thread (not open new question)
+- Guide can also continue replying in the same thread
+- Show full conversation: question → answer → follow-up → reply etc.
+- Visual thread/indent to distinguish replies
+
+### 8. Broadcast — History
+- Save every broadcast to DB with: content, timestamp, sender, trip ID
+- In guide's trip management page, show "הודעות ששלחתי" section with full history
+- Hikers see broadcast in notifications with full content
+
+### 9. Broadcast Notification — Deep Link Fix
+- Tapping a broadcast notification must navigate to the trip page and scroll to announcements section
+- Currently does nothing — fix deep link
+
+### 10. Notifications — Real-Time
+- Notifications must update in real-time without page refresh
+- Use Supabase Realtime to subscribe to new notifications for current user
+- Update bell badge count and notification list automatically
+
+### 11. Notifications — Deep Links (Full Audit)
+Every notification must navigate to exact relevant location:
+- "המדריך ענה לשאלתך" → trip page, specific Q&A thread
+- "הודעה מהמדריך" → trip page, announcements section
+- "נרשמת לטיול בהצלחה" → trip page
+- "מקום התפנה ברשימת המתנה" → trip page, registration section
+- "טרמפ חדש נוסף לטיול" → rideshare modal for that trip
+- "מישהו תפס מקום בטרמפ שלך" → rideshare modal, your ride entry
+- "הטרמפ שלך בוטל" → rideshare modal for that trip
+- "שאלה חדשה בטיול שלך" (guide) → guide dashboard, Q&A section
+- "נרשם משתתף חדש" (guide) → guide dashboard, registrant list
+Audit ALL notification creation points and ensure link field is populated correctly.
+
+### 12. Ride Cancellation — Notification Bug
+- When a ride is cancelled, notification is sent once per trip registrant instead of once per person who claimed a spot on that specific ride
+- Fix: send notification ONLY to people who had claimed a spot on the cancelled ride
+
+### 13. Own Ride Highlight in Rideshare Modal
+- In rideshare modal, highlight the current user's own ride offer with "הטרמפ שלי" badge or distinct styling
+- Same for seekers tab if user marked themselves as seeking
+
+### 14. Coupon — Show Updated Price
+- After valid coupon code is entered and applied:
+  - Show original price with strikethrough
+  - Show new discounted price in green
+  - Show discount amount/percentage
+- If code invalid: show "קוד לא תקין" error message

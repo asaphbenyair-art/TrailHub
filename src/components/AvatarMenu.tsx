@@ -93,12 +93,6 @@ export default function AvatarMenu() {
                 {target === "guide" ? "עבור למצב מדריך" : "עבור למצב מטייל"}
               </button>
             )}
-            <button type="button" onClick={() => toggleTheme()}
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-fg hover:bg-surface-2 text-right">
-              {theme === "light"
-                ? <><Moon size={16} className="text-[#185FA5]" /> מצב כהה</>
-                : <><Sun size={16} className="text-[#E8A020]" /> מצב בהיר</>}
-            </button>
             <button type="button" onClick={() => { setOpen(false); router.push("/profile"); }}
               className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-fg hover:bg-surface-2 text-right">
               <Settings size={16} className="text-fg-faint" /> הגדרות

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { BrandSlogan } from "@/components/Brand";
 import Link from "next/link";
 
 export default function ForgotPasswordPage() {
@@ -24,7 +25,7 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex items-center justify-center p-4" dir="rtl">
       <div className="w-full max-w-[420px]">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-semibold text-[#1A6B4A] mb-1">TrailHub</h1>
+          <BrandSlogan className="font-display text-lg text-[#1A6B4A] block mb-1" />
           <p className="text-fg-muted text-sm">איפוס סיסמה</p>
         </div>
 

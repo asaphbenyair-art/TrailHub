@@ -3,18 +3,27 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import HikerHome from "./HikerHome";
+import { BrandSlogan } from "@/components/Brand";
 
 export default async function Home() {
   const session = await auth();
   const role = (session?.user as { role?: string })?.role;
 
-  // Restore the user's last active mode on login
+  // Role-based default landing (honouring the last active mode when set):
+  //  - מנהל טיול (TRIP_MANAGER) → the trip-manager dashboard
+  //  - guide → guide dashboard by default (unless they last switched to hiker)
+  //  - מטייל → hiker home
   if (session?.user) {
     const me = await prisma.user.findUnique({
       where: { id: session.user.id! },
-      select: { activeMode: true },
+      select: { activeMode: true, guide: { select: { id: true } } },
     });
-    if (me?.activeMode === "guide" && (role === "GUIDE" || role === "ADMIN")) {
+    if (role === "TRIP_MANAGER") {
+      redirect("/manager");
+    }
+    const isGuide = !!me?.guide || role === "GUIDE" || role === "ADMIN";
+    const mode = me?.activeMode ?? (isGuide ? "guide" : "hiker");
+    if (mode === "guide" && isGuide) {
       redirect("/guide/dashboard");
     }
   }
@@ -31,7 +40,7 @@ export default async function Home() {
       <div className="absolute inset-0" style={{ background: "radial-gradient(120% 80% at 70% 0%, rgba(61,143,95,0.25), transparent 60%)" }} />
 
       <div className="relative max-w-[480px] mx-auto w-full px-6 pb-14 pt-24">
-        <div className="font-display text-2xl tracking-[0.22em] text-white/90 mb-10">TRAILHUB</div>
+        <BrandSlogan className="font-display text-xl leading-snug text-white/90 mb-10 block" />
         <h1 className="font-display text-white text-[42px] leading-[1.08] mb-4">
           הטיול הבא שלך<br />מתחיל כאן.
         </h1>

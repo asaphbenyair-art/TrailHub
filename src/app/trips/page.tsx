@@ -7,6 +7,8 @@ import Link from "next/link";
 import NotificationBell from "@/components/NotificationBell";
 import CalendarView from "@/components/CalendarView";
 import AvatarMenu from "@/components/AvatarMenu";
+import Brand from "@/components/Brand";
+import ThemeToggle from "@/components/ThemeToggle";
 import { TRIP_TAGS } from "@/lib/tripTags";
 import { coverImages } from "@/lib/tripImage";
 import RideshareModal from "@/components/RideshareModal";
@@ -426,7 +428,8 @@ export default function TripsPage() {
       {/* Top bar */}
       <div className="px-3 py-3">
         <div className="max-w-5xl mx-auto bg-surface rounded-xl px-3 py-2.5 flex items-center gap-2.5">
-          <Link href="/" className="text-[15px] font-semibold text-[#1A6B4A] flex-shrink-0">🧭 TrailHub</Link>
+          <Brand />
+          <ThemeToggle className="flex-shrink-0" />
           <div className="flex-1 relative">
             <div className="flex items-center gap-2 bg-surface-2 border border-border rounded-full px-3 py-1.5">
               <span className="text-fg-faint text-sm">🔍</span>

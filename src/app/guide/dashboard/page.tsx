@@ -8,6 +8,8 @@ import ModeSwitch from "@/components/ModeSwitch";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { coverImages } from "@/lib/tripImage";
 import { useDateFmt } from "@/components/CalendarModeProvider";
+import Brand from "@/components/Brand";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const DIFF_BADGE: Record<string, { bg: string; color: string; label: string }> = {
   EASY: { bg: "#EAF3DE", color: "#27500A", label: "קל" },
@@ -153,6 +155,8 @@ export default function GuideDashboard() {
         {/* Header */}
         <div className="bg-surface rounded-xl p-4 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-3">
+            <Brand href="/guide/dashboard" />
+            <ThemeToggle className="flex-shrink-0" />
             <Link href="/trips" className="text-[#1A6B4A] text-sm font-medium flex items-center gap-1 hover:underline">
               🧭 גלה טיולים
             </Link>

@@ -331,7 +331,7 @@ export default function TripDetailPage() {
 
   async function handleShare() {
     const url = typeof window !== "undefined" ? window.location.href : "";
-    const title = trip?.title ?? "TrailHub";
+    const title = trip?.title ?? "בשבילי";
     if (typeof navigator !== "undefined" && navigator.share) {
       try { await navigator.share({ title, url }); return; } catch { /* cancelled */ }
     }

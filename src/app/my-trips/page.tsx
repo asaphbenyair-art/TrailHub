@@ -6,6 +6,8 @@ import Link from "next/link";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { coverImages } from "@/lib/tripImage";
 import AvatarMenu from "@/components/AvatarMenu";
+import Brand from "@/components/Brand";
+import ThemeToggle from "@/components/ThemeToggle";
 import { useDateFmt } from "@/components/CalendarModeProvider";
 
 const DIFF_LABEL: Record<string, string> = { EASY: "קל", MEDIUM: "בינוני", HARD: "קשה", EXTREME: "קיצוני" };
@@ -337,9 +339,9 @@ export default function MyTripsPage() {
 
         {/* Top bar */}
         <div className="bg-surface rounded-xl px-3 py-2.5 mb-2 flex items-center gap-2">
-          <Link href="/trips" className="text-[15px] font-semibold text-[#1A6B4A] flex-shrink-0">🧭 TrailHub</Link>
+          <Brand href="/trips" />
+          <ThemeToggle className="flex-shrink-0" />
           <span className="text-sm font-medium text-fg flex-1 text-center">הטיולים שלי</span>
-          <Link href="/trips" className="text-xs text-[#1A6B4A] flex-shrink-0">גלה טיולים</Link>
           <AvatarMenu />
         </div>
 

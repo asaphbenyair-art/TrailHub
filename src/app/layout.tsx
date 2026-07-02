@@ -20,7 +20,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "TrailHub — טיולים מודרכים",
+  title: "בשבילי — דרך. אחרת. לטייל",
   description: "מצא והירשם לטיולים מודרכים בישראל",
 };
 

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Bell, CalendarDays, SlidersHorizontal, Clock, Sparkles, Heart, ChevronLeft } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import AvatarMenu from "@/components/AvatarMenu";
+import Brand from "@/components/Brand";
 import { hikingPhoto } from "@/lib/tripImage";
 
 interface HomeTrip {
@@ -103,7 +104,7 @@ export default function HikerHome() {
       // Phase 1: manually-curated announcement (admin-authored in later phase).
       return {
         category, eyebrow: "חדש באפליקציה",
-        title: "טיולים עצמאיים הגיעו ל-TrailHub",
+        title: "טיולים עצמאיים הגיעו לבשבילי",
         subtitle: "חבילות תוכן מלאות לניווט עצמי — צאו מתי שמתחשק לכם, בקצב שלכם.",
         image: hikingPhoto("new-in-app"),
         cta: { label: "קרא עוד", href: "/trips?category=self_guided" },
@@ -166,7 +167,7 @@ export default function HikerHome() {
       {/* ── Top bar ── */}
       <header className="sticky top-0 z-30 bg-bg/80 backdrop-blur-xl border-b border-border">
         <div className="max-w-[480px] mx-auto px-4 h-14 flex items-center justify-between">
-          <span className="font-display text-xl tracking-[0.18em] text-fg">TRAILHUB</span>
+          <Brand href={null} />
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <Link href="/notifications" className="relative w-9 h-9 flex items-center justify-center rounded-full border border-border" style={{ color: "var(--fg-muted)" }}>

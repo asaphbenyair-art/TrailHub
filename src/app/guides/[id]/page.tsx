@@ -170,7 +170,7 @@ export default function GuideProfilePage() {
         <div className="bg-surface rounded-2xl border border-border shadow-sm p-5 mb-3">
           <div className="text-xs font-medium text-fg-muted mb-2">נתוני פלטפורמה</div>
           <div className="flex flex-col gap-1.5 text-sm text-fg">
-            <div>🧭 {stats.tripCount} טיולים דרך TrailHub</div>
+            <div>🧭 {stats.tripCount} טיולים דרך בשבילי</div>
             <div>❌ {stats.cancelledCount} ביטולים</div>
             <div>📅 חבר מאז {memberSince}</div>
           </div>
