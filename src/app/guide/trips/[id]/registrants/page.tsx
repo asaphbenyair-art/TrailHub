@@ -17,6 +17,7 @@ interface Registrant {
   interestThreshold: number | null;
   autoRegister: boolean;
   createdAt: string;
+  participantsDetail: Array<{ name?: string; age?: string; gender?: string; fitness?: string; special?: string; tier?: string }> | null;
   user: { id: string; name: string | null; email: string; image: string | null };
 }
 
@@ -163,6 +164,21 @@ export default function RegistrantsPage() {
 
                 {r.notes && (
                   <div className="text-xs text-fg-muted bg-surface-2 rounded-lg px-3 py-2 mb-2">{r.notes}</div>
+                )}
+
+                {/* Multi-participant group details */}
+                {Array.isArray(r.participantsDetail) && r.participantsDetail.length > 0 && (
+                  <div className="border-t border-border pt-2 mt-1 mb-2 flex flex-col gap-1">
+                    <div className="text-[10px] font-semibold text-fg-muted">משתתפים בקבוצה ({r.participantsDetail.length})</div>
+                    {r.participantsDetail.map((p, i) => (
+                      <div key={i} className="text-[11px] text-fg-muted">
+                        {i + 1}. {p.name || "—"}
+                        {[p.age && `גיל ${p.age}`, p.gender, p.fitness && `כושר ${p.fitness}`, p.tier, p.special && `⚠ ${p.special}`].filter(Boolean).length > 0 && (
+                          <span className="text-fg-faint"> · {[p.age && `גיל ${p.age}`, p.gender, p.fitness && `כושר ${p.fitness}`, p.tier, p.special && `⚠ ${p.special}`].filter(Boolean).join(" · ")}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
 
                 {fields.length > 0 && r.fieldAnswers && Object.keys(r.fieldAnswers).length > 0 && (

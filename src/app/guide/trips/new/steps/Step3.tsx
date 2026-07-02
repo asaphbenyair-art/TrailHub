@@ -267,7 +267,7 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
       <div className="flex flex-col gap-2 border-t border-border pt-4">
         <label className="text-xs font-medium text-fg-muted">הרשמת מספר משתתפים</label>
         <div className="grid grid-cols-3 gap-2">
-          {([["", "אדם בודד"], ["simple", "כמות בלבד"], ["detailed", "פרטים לכל אחד"]] as const).map(([val, lbl]) => (
+          {([["", "אדם בודד"], ["simple", "כמות בלבד"], ["detailed", "פרטים לכל משתתף"]] as const).map(([val, lbl]) => (
             <button key={val} type="button" onClick={() => onChange("multiPersonMode" as keyof WizardData, val as unknown as string)}
               className={`py-2 rounded-lg border text-xs transition-colors ${
                 data.multiPersonMode === val ? "border-[#1A6B4A] bg-[#D6EDE3] text-[#0F5038]" : "border-border text-fg-muted"}`}>
@@ -275,7 +275,7 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
             </button>
           ))}
         </div>
-        {data.multiPersonMode === "detailed" && <p className="text-[11px] text-fg-faint">הנרשם ימלא שם ושדות דינמיים לכל משתתף</p>}
+        {data.multiPersonMode === "detailed" && <p className="text-[11px] text-fg-faint">הנרשם ימלא שם, גיל, מין, כושר וצרכים מיוחדים לכל משתתף (או יבחר משתמש קיים)</p>}
       </div>
       )}
 

@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     autoRegister?: boolean;
     compCode?: string;
     participantCount?: number;
-    participantsDetail?: { name: string }[];
+    participantsDetail?: { name?: string; tier?: string; age?: string; gender?: string; fitness?: string; special?: string; userEmail?: string }[];
     anonymous?: boolean;
   };
   const count = Math.max(1, Number(participantCount) || 1);
@@ -87,7 +87,14 @@ export async function POST(req: NextRequest) {
   }
 
   const cleanConditions = Array.isArray(conditions) ? conditions.filter((c) => c && c.trim()) : [];
-  const totalPrice = trip.price * count;
+  // Total: sum of each participant's chosen price category when tiers exist; else flat.
+  const tiers = Array.isArray(trip.priceTiers) ? (trip.priceTiers as { label: string; price: number | string }[]) : [];
+  const totalPrice = (Array.isArray(participantsDetail) && participantsDetail.length > 0 && tiers.length > 0)
+    ? participantsDetail.reduce((sum, p) => {
+        const t = p.tier ? tiers.find((x) => x.label === p.tier) : null;
+        return sum + (t ? Number(t.price) || 0 : trip.price);
+      }, 0)
+    : trip.price * count;
   const extraData = {
     participantCount: count,
     ...(Array.isArray(participantsDetail) && participantsDetail.length > 0 && { participantsDetail }),

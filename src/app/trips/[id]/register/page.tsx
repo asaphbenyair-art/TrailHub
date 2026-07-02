@@ -17,8 +17,51 @@ interface Trip {
   date: string; startTime: string; price: number; maxSpots: number; spotsBooked: number;
   images: string[]; cancellationPolicy: string | null; registrationFields: RegField[] | null;
   healthDeclarationUrl: string | null;
+  priceTiers: { label: string; price: string | number }[] | null;
   multiPersonMode: string | null; tripType: string | null; accessWindowDays: number | null;
   guide: { user: { name: string | null } };
+}
+
+interface Participant {
+  name: string; age: string; gender: string; fitness: string; special: string;
+  tier: string;        // price-category label ("" = base price)
+  userEmail?: string;  // set when an existing platform user is picked
+}
+
+// Compact autocomplete to attach an existing platform user to a participant slot.
+function ExistingUserSearch({ onPick }: { onPick: (u: { name: string; email: string }) => void }) {
+  const [q, setQ] = useState("");
+  const [res, setRes] = useState<{ id: string; name: string | null; email: string }[]>([]);
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (q.trim().length < 2) { setRes([]); return; }
+    const t = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/users/search?q=${encodeURIComponent(q.trim())}`);
+        setRes(r.ok ? await r.json() : []); setOpen(true);
+      } catch { setRes([]); }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [q]);
+  return (
+    <div className="relative">
+      <input type="text" value={q} onChange={(e) => setQ(e.target.value)}
+        placeholder="או בחר משתמש קיים (שם / אימייל)…"
+        className="w-full rounded-lg px-3 py-2 text-xs bg-surface-2 border border-border text-fg placeholder:text-fg-faint focus:outline-none focus:border-accent" />
+      {open && res.length > 0 && (
+        <div className="absolute z-20 mt-1 w-full bg-surface border border-border rounded-lg shadow-lg overflow-hidden">
+          {res.map((u) => (
+            <button key={u.id} type="button"
+              onClick={() => { onPick({ name: u.name ?? u.email, email: u.email }); setQ(""); setRes([]); setOpen(false); }}
+              className="w-full text-right px-3 py-2 text-xs hover:bg-surface-2 flex justify-between gap-2">
+              <span className="text-fg">{u.name ?? u.email}</span>
+              <span className="text-[10px] text-fg-faint">{u.email}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 const FULL_GREG = { weekday: "long", day: "numeric", month: "long" } as const;
@@ -120,20 +163,36 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: (alertHours:
   const isDetailed = trip.multiPersonMode === "detailed";
   const spotsLeft = Math.max(trip.maxSpots - trip.spotsBooked, 1);
   const [count, setCount] = useState(1);
-  const [names, setNames] = useState<string[]>([""]);
+  const emptyPart = (): Participant => ({ name: "", age: "", gender: "", fitness: "", special: "", tier: "" });
+  const [participants, setParticipants] = useState<Participant[]>([emptyPart()]);
+
+  // Price categories: base price + guide-defined tiers (ילדים / סטודנטים / גמלאים…)
+  const priceTiers = trip.priceTiers ?? [];
+  const hasTiers = priceTiers.length > 0;
+  const categories = [
+    { label: "מחיר רגיל", value: "", price: trip.price },
+    ...priceTiers.map((t) => ({ label: t.label, value: t.label, price: Number(t.price) || 0 })),
+  ];
+  const tierPrice = (tier: string) => categories.find((c) => c.value === tier)?.price ?? trip.price;
 
   const policy = trip.cancellationPolicy ? trip.cancellationPolicy.split("\n").filter(Boolean)
     : ["עד 72 שעות לפני — החזר 100%", "עד 24 שעות לפני — החזר 50%", "פחות מ-24 שעות — ללא החזר"];
 
-  // Platform fee is NOT added to the hiker price — they pay exactly the guide's price.
-  const total = trip.price * count;
+  // Total = sum of each participant's chosen category (one combined payment).
+  // Platform fee is NOT added — the hiker pays exactly the guide's price.
+  const total = (isMulti || hasTiers)
+    ? participants.slice(0, count).reduce((s, p) => s + tierPrice(p.tier), 0)
+    : trip.price * count;
   const input = "rounded-lg px-3 py-2 text-sm bg-surface-2 border border-border text-fg placeholder:text-fg-faint focus:outline-none focus:border-accent";
 
   function setAnswer(id: string, val: string) { setAnswers((a) => ({ ...a, [id]: val })); }
+  function patchPart(i: number, patch: Partial<Participant>) {
+    setParticipants((prev) => prev.map((p, j) => (j === i ? { ...p, ...patch } : p)));
+  }
   function changeCount(n: number) {
     const c = Math.max(1, Math.min(n, spotsLeft));
     setCount(c);
-    setNames((prev) => Array.from({ length: c }, (_, i) => prev[i] ?? ""));
+    setParticipants((prev) => Array.from({ length: c }, (_, i) => prev[i] ?? emptyPart()));
   }
 
   async function confirm() {
@@ -141,7 +200,7 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: (alertHours:
       if (f.required && !(answers[f.id] ?? "").trim()) { setError(`נא למלא: ${f.label}`); return; }
     }
     if (isDetailed) {
-      for (let i = 0; i < count; i++) if (!(names[i] ?? "").trim()) { setError(`נא להזין שם משתתף ${i + 1}`); return; }
+      for (let i = 0; i < count; i++) if (!(participants[i]?.name ?? "").trim()) { setError(`נא להזין שם משתתף ${i + 1}`); return; }
     }
     if (trip.healthDeclarationUrl && !healthText.trim()) { setError("נא לחתום על הצהרת הבריאות"); return; }
     if (!signed) { setError("נא לאשר את מדיניות הביטולים"); return; }
@@ -155,7 +214,13 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: (alertHours:
           alertThresholdHours: Number(alertHours) || 24, compCode: compCode.trim() || undefined,
           anonymous,
           participantCount: count,
-          participantsDetail: isDetailed ? names.slice(0, count).map((n) => ({ name: n.trim() })) : undefined,
+          participantsDetail: (isMulti || hasTiers)
+            ? participants.slice(0, count).map((p) => ({
+                name: p.name.trim(), age: p.age || undefined, gender: p.gender || undefined,
+                fitness: p.fitness || undefined, special: p.special || undefined,
+                tier: p.tier || undefined, userEmail: p.userEmail,
+              }))
+            : undefined,
         }),
       });
       if (!res.ok) { const d = await res.json(); setError(d.error ?? "שגיאה בהרשמה"); setSaving(false); return; }
@@ -189,24 +254,71 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: (alertHours:
         </button>
       </div>
 
-      {/* Multi-person */}
-      {isMulti && (
-        <div className="p-4 border-b border-border">
-          <div className="text-sm font-medium text-fg mb-2">כמה משתתפים?</div>
-          <div className="flex items-center gap-3">
-            <button type="button" onClick={() => changeCount(count - 1)} className="w-8 h-8 rounded-full border border-border text-lg text-fg">−</button>
-            <span className="text-lg font-semibold w-8 text-center text-fg">{count}</span>
-            <button type="button" onClick={() => changeCount(count + 1)} className="w-8 h-8 rounded-full border border-border text-lg text-fg">+</button>
-            <span className="text-[11px] text-fg-faint mr-2">עד {spotsLeft} מקומות פנויים</span>
-          </div>
+      {/* Multi-person + per-participant price category */}
+      {(isMulti || hasTiers) && (
+        <div className="p-4 border-b border-border flex flex-col gap-3">
+          {isMulti && (
+            <>
+              <div className="text-sm font-medium text-fg">כמה משתתפים?</div>
+              <div className="flex items-center gap-3">
+                <button type="button" onClick={() => changeCount(count - 1)} className="w-8 h-8 rounded-full border border-border text-lg text-fg">−</button>
+                <span className="text-lg font-semibold w-8 text-center text-fg">{count}</span>
+                <button type="button" onClick={() => changeCount(count + 1)} className="w-8 h-8 rounded-full border border-border text-lg text-fg">+</button>
+                <span className="text-[11px] text-fg-faint mr-2">עד {spotsLeft} מקומות פנויים</span>
+              </div>
+            </>
+          )}
+
+          {/* Detailed: full form per participant */}
           {isDetailed && (
-            <div className="flex flex-col gap-1.5 mt-3">
+            <div className="flex flex-col gap-2.5">
+              {Array.from({ length: count }).map((_, i) => {
+                const p = participants[i] ?? emptyPart();
+                return (
+                  <div key={i} className="border border-border rounded-xl p-3 flex flex-col gap-2">
+                    <div className="text-xs font-medium text-fg-muted">משתתף {i + 1}</div>
+                    <input type="text" value={p.name} onChange={(e) => patchPart(i, { name: e.target.value })} placeholder="שם מלא" className={input} />
+                    <ExistingUserSearch onPick={(u) => patchPart(i, { name: u.name, userEmail: u.email })} />
+                    <div className="grid grid-cols-2 gap-2">
+                      <input type="number" min="0" value={p.age} onChange={(e) => patchPart(i, { age: e.target.value })} placeholder="גיל" className={input} dir="ltr" />
+                      <select value={p.gender} onChange={(e) => patchPart(i, { gender: e.target.value })} className={`${input} bg-surface-2`}>
+                        <option value="">מין</option><option value="זכר">זכר</option><option value="נקבה">נקבה</option><option value="אחר">אחר</option>
+                      </select>
+                      <select value={p.fitness} onChange={(e) => patchPart(i, { fitness: e.target.value })} className={`${input} bg-surface-2`}>
+                        <option value="">כושר גופני</option><option value="נמוך">נמוך</option><option value="בינוני">בינוני</option><option value="גבוה">גבוה</option><option value="מצוין">מצוין</option>
+                      </select>
+                      <input type="text" value={p.special} onChange={(e) => patchPart(i, { special: e.target.value })} placeholder="צרכים מיוחדים (אופ')" className={input} />
+                    </div>
+                    {hasTiers && (
+                      <select value={p.tier} onChange={(e) => patchPart(i, { tier: e.target.value })} className={`${input} bg-surface-2`}>
+                        {categories.map((c) => <option key={c.value} value={c.value}>{c.label} — ₪{c.price}</option>)}
+                      </select>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Simple (quantity) or single — a price category per participant */}
+          {!isDetailed && hasTiers && (
+            <div className="flex flex-col gap-1.5">
+              <div className="text-xs font-medium text-fg-muted">קטגוריית מחיר לכל משתתף</div>
               {Array.from({ length: count }).map((_, i) => (
-                <input key={i} type="text" value={names[i] ?? ""} onChange={(e) => setNames((prev) => prev.map((x, j) => j === i ? e.target.value : x))}
-                  placeholder={`שם משתתף ${i + 1}`} className={input} />
+                <div key={i} className="flex items-center gap-2">
+                  <span className="text-xs text-fg-muted w-16 shrink-0">משתתף {i + 1}</span>
+                  <select value={participants[i]?.tier ?? ""} onChange={(e) => patchPart(i, { tier: e.target.value })} className={`${input} bg-surface-2 flex-1`}>
+                    {categories.map((c) => <option key={c.value} value={c.value}>{c.label} — ₪{c.price}</option>)}
+                  </select>
+                </div>
               ))}
             </div>
           )}
+
+          <div className="flex justify-between text-sm pt-1 border-t border-border">
+            <span className="text-fg-muted">סה״כ לתשלום</span>
+            <span className="font-semibold text-fg">₪{total.toLocaleString("he-IL")}</span>
+          </div>
         </div>
       )}
 
