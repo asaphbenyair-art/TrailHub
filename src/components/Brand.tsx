@@ -37,8 +37,8 @@ export function BrandSlogan({
  *  well, and marked start/end points, on a black background. Hero/splash only. */
 export function BrandTrail({ className = "" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 320 84" className={`w-full ${className}`} role="img" aria-label="שביל מאויר"
-      style={{ display: "block" }}>
+    <svg viewBox="0 0 320 84" className={`block w-full ${className}`} role="img" aria-label="שביל מאויר"
+      preserveAspectRatio="none" style={{ height: 72, display: "block" }}>
       <g fill="none" stroke={GREEN} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
         {/* Two wavy parallel trail lines */}
         <path d="M14,58 C60,40 90,72 130,54 C170,36 210,70 250,50 C278,36 296,52 306,44" />
