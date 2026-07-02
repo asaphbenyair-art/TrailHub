@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { googleCalendarUrl } from "@/lib/calendar";
+import RegistrantsModal from "@/components/RegistrantsModal";
 
 interface RegField { id: string; label: string; type: string; required: boolean; options: string[] }
 interface Registrant {
@@ -41,6 +44,10 @@ export default function RegistrantsPage() {
   const [error, setError] = useState("");
   interface Broadcast { id: string; body: string; createdAt: string; sender: { name: string | null } }
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
+  interface TripMeta { title: string; date: string; startTime: string; region: string; status: string; visibility: string }
+  const [trip, setTrip] = useState<TripMeta | null>(null);
+  const [showRegistrants, setShowRegistrants] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   function loadBroadcasts() {
     fetch(`/api/trips/${id}/broadcasts`).then((r) => (r.ok ? r.json() : []))
@@ -58,7 +65,25 @@ export default function RegistrantsPage() {
       .catch(() => setError("שגיאה בטעינה"))
       .finally(() => setLoading(false));
     loadBroadcasts();
+    fetch(`/api/trips/${id}`).then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d && !d.error) setTrip(d); }).catch(() => {});
   }, [id]);
+
+  async function postpone() {
+    const category = window.prompt("סיבת הדחייה (מזג אוויר / מחלה / אישי / אחר):");
+    if (!category?.trim()) return;
+    const reason = window.prompt("פירוט (אופציונלי):") ?? "";
+    const res = await fetch(`/api/guide/trips/${id}/postpone`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ category, reason }),
+    });
+    window.alert(res.ok ? "הטיול סומן כנדחה" : "שגיאה");
+  }
+
+  function copyLink() {
+    navigator.clipboard?.writeText(`${window.location.origin}/trips/${id}`)
+      .then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }).catch(() => {});
+  }
 
   const active = regs.filter((r) => r.status !== "CANCELLED");
   const conditional = active.filter((r) => r.conditions && r.conditions.length > 0);
@@ -94,14 +119,39 @@ export default function RegistrantsPage() {
   return (
     <div dir="rtl" className="min-h-screen bg-bg py-4 px-3">
       <div className="max-w-[560px] mx-auto">
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-3">
           <button type="button" onClick={() => router.back()} className="text-fg-faint hover:text-fg-muted text-sm">← חזרה</button>
-          <h1 className="text-sm font-semibold text-fg">נרשמים לטיול</h1>
-          <span className="text-xs text-fg-faint mr-auto">{active.length} פעילים</span>
-          <button type="button" onClick={generateCompCode}
-            className="text-xs text-[#7A5010] border border-[#E8A020]/40 rounded-full px-3 py-1 hover:bg-[#FDF6E8]">🎟 קוד מתנדב</button>
+          <div className="min-w-0">
+            <h1 className="text-sm font-semibold text-fg truncate">ניהול הטיול{trip?.title ? ` — ${trip.title}` : ""}</h1>
+            <span className="text-xs text-fg-faint">{active.length} משתתפים פעילים</span>
+          </div>
+        </div>
+
+        {/* Management actions — everything the guide can do for this trip */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          <button type="button" onClick={() => setShowRegistrants(true)}
+            className="text-xs text-[#0F5038] border border-[#1A6B4A]/30 bg-[#F0FAF5] rounded-lg px-3 py-1.5 hover:bg-[#D6EDE3]">👥 רשימת משתתפים</button>
+          <Link href={`/guide/trips/${id}/qa`}
+            className="text-xs text-[#1A6B4A] border border-[#1A6B4A]/25 rounded-lg px-3 py-1.5 hover:bg-[#D6EDE3]">💬 שאלות</Link>
+          <Link href={`/guide/trips/${id}/chat`}
+            className="text-xs text-[#185FA5] border border-[#185FA5]/25 rounded-lg px-3 py-1.5 hover:bg-[#EEF5FC]">✉️ הודעות</Link>
           <button type="button" onClick={broadcast}
-            className="text-xs text-fg-muted border border-border rounded-full px-3 py-1 hover:bg-surface-2">📢 Broadcast</button>
+            className="text-xs text-fg-muted border border-border rounded-lg px-3 py-1.5 hover:bg-surface-2">📢 הודעה לקבוצה</button>
+          <button type="button" onClick={postpone}
+            className="text-xs text-[#7A5010] border border-[#E8A020]/40 rounded-lg px-3 py-1.5 hover:bg-[#FDF6E8]">⏸ דחה טיול</button>
+          {trip && (
+            <a href={googleCalendarUrl({ title: trip.title, dateISO: trip.date, startTime: trip.startTime, location: trip.region })}
+              target="_blank" rel="noreferrer"
+              className="text-xs text-[#185FA5] border border-[#185FA5]/30 rounded-lg px-3 py-1.5 hover:bg-[#EEF5FC]">📅 ליומן</a>
+          )}
+          <button type="button" onClick={generateCompCode}
+            className="text-xs text-[#7A5010] border border-[#E8A020]/40 rounded-lg px-3 py-1.5 hover:bg-[#FDF6E8]">🎟 קוד מתנדב</button>
+          <Link href={`/guide/trips/${id}/edit`}
+            className="text-xs text-fg-muted border border-border rounded-lg px-3 py-1.5 hover:bg-surface-2">✏️ עריכה</Link>
+          {trip?.visibility === "PRIVATE" && (
+            <button type="button" onClick={copyLink}
+              className="text-xs text-[#185FA5] border border-[#185FA5]/25 rounded-lg px-3 py-1.5 hover:bg-[#EEF5FC]">{copied ? "✓ הועתק" : "🔗 העתק לינק"}</button>
+          )}
         </div>
 
         {/* Aggregated conditional requests */}
@@ -197,6 +247,10 @@ export default function RegistrantsPage() {
           })}
         </div>
       </div>
+
+      {showRegistrants && (
+        <RegistrantsModal tripId={id} tripTitle={trip?.title ?? "הטיול"} onClose={() => setShowRegistrants(false)} />
+      )}
     </div>
   );
 }
