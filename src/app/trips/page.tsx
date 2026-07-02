@@ -580,6 +580,7 @@ export default function TripsPage() {
               trips={trips}
               range={range}
               onRangeChange={handleRangeChange}
+              calMode={calMode}
             />
           </div>
         </aside>
@@ -617,6 +618,7 @@ export default function TripsPage() {
                     trips={trips}
                     range={range}
                     onRangeChange={handleRangeChange}
+                    calMode={calMode}
                   />
                 </div>
               )}

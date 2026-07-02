@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { hebrewDayNum, hebrewMonthYear, type CalendarMode } from "@/lib/hebrewDate";
 
 const WEEKDAY_NAMES = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
 const MONTH_NAMES = ["ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר"];
@@ -45,11 +46,12 @@ export interface DateRange { start: Date | null; end: Date | null }
 
 // ── Compact Month Panel (side panel) ──────────────────────────────
 function CompactMonthPanel({
-  trips, range, onRangeChange,
+  trips, range, onRangeChange, calMode = "gregorian",
 }: {
   trips: Trip[];
   range: DateRange;
   onRangeChange: (r: DateRange) => void;
+  calMode?: CalendarMode;
 }) {
   const today = new Date();
   const anchor = range.start;
@@ -147,7 +149,9 @@ function CompactMonthPanel({
       <div className="flex items-center justify-between mb-2">
         <button type="button" onClick={prevMonth}
           className="w-7 h-7 rounded-full bg-surface-2 flex items-center justify-center text-fg-muted hover:bg-surface-2 text-sm">‹</button>
-        <span className="text-sm font-semibold text-fg">{MONTH_NAMES[viewMonth]} {viewYear}</span>
+        <span className="text-sm font-semibold text-fg">
+          {calMode === "hebrew" ? hebrewMonthYear(new Date(viewYear, viewMonth, 1)) : `${MONTH_NAMES[viewMonth]} ${viewYear}`}
+        </span>
         <button type="button" onClick={nextMonth}
           className="w-7 h-7 rounded-full bg-surface-2 flex items-center justify-center text-fg-muted hover:bg-surface-2 text-sm">›</button>
       </div>
@@ -190,6 +194,9 @@ function CompactMonthPanel({
       <div className="grid grid-cols-7 gap-y-0.5">
         {cells.map((cell, i) => {
           const cellDate = cell.curr ? new Date(viewYear, viewMonth, cell.day) : null;
+          // Absolute date for this grid slot (works for spill-over cells too).
+          const slotDate = new Date(viewYear, viewMonth, 1 - startDow + i);
+          const dayLabel = calMode === "hebrew" ? hebrewDayNum(slotDate) : cell.day;
           const isToday = !!cellDate && sameDay(cellDate, today);
           const isStart = !!cellDate && !!range.start && sameDay(cellDate, range.start);
           const isEnd = !!cellDate && !!range.end && sameDay(cellDate, range.end);
@@ -220,7 +227,7 @@ function CompactMonthPanel({
                 isToday ? "text-[#1A6B4A] font-bold" :
                 cell.curr ? "text-fg" : "text-fg-faint"
               }`}>
-                {cell.day}
+                {dayLabel}
               </span>
               {count > 0 && (
                 <span
@@ -260,9 +267,9 @@ function CompactMonthPanel({
 }
 
 // ── Full Month View (mobile fullscreen) ───────────────────────────
-function MonthView({ trips, year, month, onDayClick, selectedDay }: {
+function MonthView({ trips, year, month, onDayClick, selectedDay, calMode = "gregorian" }: {
   trips: Trip[]; year: number; month: number;
-  onDayClick: (d: Date) => void; selectedDay: Date;
+  onDayClick: (d: Date) => void; selectedDay: Date; calMode?: CalendarMode;
 }) {
   const firstDay = new Date(year, month, 1);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -314,7 +321,7 @@ function MonthView({ trips, year, month, onDayClick, selectedDay }: {
                 isToday ? "bg-[#1A6B4A] text-white font-semibold" :
                 cell.curr ? "text-fg" : "text-fg-faint"
               } ${cell.curr && dayTrips.length ? "font-semibold" : ""}`}>
-                {cell.day}
+                {calMode === "hebrew" ? hebrewDayNum(new Date(year, month, 1 - startDow + i)) : cell.day}
               </span>
               {badge && (
                 <div className="flex gap-[3px] mt-0.5">
@@ -496,9 +503,10 @@ interface CalendarViewProps {
   range?: DateRange;
   onRangeChange?: (r: DateRange) => void;
   regStatus?: Record<string, string>;
+  calMode?: CalendarMode;
 }
 
-export default function CalendarView({ trips, compact, onDateSelect, range, onRangeChange, regStatus }: CalendarViewProps) {
+export default function CalendarView({ trips, compact, onDateSelect, range, onRangeChange, regStatus, calMode = "gregorian" }: CalendarViewProps) {
   const today = new Date();
   const [calTab, setCalTab] = useState<CalTab>("month");
   const [viewYear, setViewYear] = useState(today.getFullYear());
@@ -517,6 +525,7 @@ export default function CalendarView({ trips, compact, onDateSelect, range, onRa
         trips={trips}
         range={range ?? { start: null, end: null }}
         onRangeChange={onRangeChange ?? (() => {})}
+        calMode={calMode}
       />
     );
   }
@@ -543,7 +552,7 @@ export default function CalendarView({ trips, compact, onDateSelect, range, onRa
     }
   }
   function periodLabel() {
-    if (calTab === "month") return `${MONTH_NAMES[viewMonth]} ${viewYear}`;
+    if (calTab === "month") return calMode === "hebrew" ? hebrewMonthYear(new Date(viewYear, viewMonth, 1)) : `${MONTH_NAMES[viewMonth]} ${viewYear}`;
     if (calTab === "week") {
       const e = new Date(weekStart); e.setDate(weekStart.getDate() + 6);
       return `${weekStart.getDate()}–${e.getDate()} ${MONTH_NAMES[weekStart.getMonth()]}`;
@@ -577,7 +586,7 @@ export default function CalendarView({ trips, compact, onDateSelect, range, onRa
         <button type="button" onClick={nextPeriod}
           className="w-7 h-7 rounded-full bg-surface-2 flex items-center justify-center text-fg-muted hover:bg-surface-2">›</button>
       </div>
-      {calTab === "month" && <MonthView trips={trips} year={viewYear} month={viewMonth} onDayClick={handleDayClick} selectedDay={selectedDay} />}
+      {calTab === "month" && <MonthView trips={trips} year={viewYear} month={viewMonth} onDayClick={handleDayClick} selectedDay={selectedDay} calMode={calMode} />}
       {calTab === "week" && <WeekView trips={trips} weekStart={weekStart} activeDay={selectedDay} setActiveDay={setSelectedDay} />}
       {calTab === "day" && <DayView trips={trips} day={selectedDay} regStatus={regStatus} />}
     </div>
