@@ -275,6 +275,7 @@ export default function TripDetailPage() {
   const [notFound, setNotFound] = useState(false);
   const [myRegStatus, setMyRegStatus] = useState<string | null>(null);
   const [myRegId, setMyRegId] = useState<string | null>(null);
+  const [myRegPos, setMyRegPos] = useState<number | null>(null);
   const [coupon, setCoupon] = useState("");
   const [couponMsg, setCouponMsg] = useState<string | null>(null);
   const [following, setFollowing] = useState(false);
@@ -372,10 +373,10 @@ export default function TripDetailPage() {
   useEffect(() => {
     if (!session) return;
     fetch("/api/my-trips").then((r) => r.json())
-      .then((regs: Array<{ id: string; status: string; trip: { id: string } }>) => {
+      .then((regs: Array<{ id: string; status: string; waitlistPosition: number | null; trip: { id: string } }>) => {
         if (!Array.isArray(regs)) return;
         const found = regs.find((r) => r.trip.id === id);
-        if (found) { setMyRegStatus(found.status); setMyRegId(found.id); }
+        if (found) { setMyRegStatus(found.status); setMyRegId(found.id); setMyRegPos(found.waitlistPosition ?? null); }
       }).catch(() => {});
   }, [session, id]);
 
@@ -457,13 +458,15 @@ export default function TripDetailPage() {
         {/* ── Registered: sticky top status bar with cancel (replaces bottom CTA) ── */}
         {!isSelfGuided && (myRegStatus === "CONFIRMED" || myRegStatus === "WAITLIST") && (
           <div className="sticky top-0 z-40 flex items-center justify-between px-5 py-3"
-            style={{ background: myRegStatus === "CONFIRMED" ? "#1A6B4A" : "#2C5F8A" }}>
+            style={{ background: myRegStatus === "CONFIRMED" ? "#1A6B4A" : "#E8A020" }}>
             <span className="text-sm font-semibold text-white">
-              {myRegStatus === "CONFIRMED" ? "✓ רשום לטיול" : "⏰ ברשימת המתנה"}
+              {myRegStatus === "CONFIRMED"
+                ? "✓ רשום לטיול"
+                : `⏳ ממתין למקום${myRegPos ? ` — מיקום ${myRegPos} בתור` : ""}`}
             </span>
             <button type="button" onClick={cancelRegistration}
               className="text-xs font-medium text-white border border-white/45 rounded-full px-3.5 py-1.5 hover:bg-white/10">
-              בטל הרשמה
+              {myRegStatus === "WAITLIST" ? "בטל המתנה" : "בטל הרשמה"}
             </button>
           </div>
         )}

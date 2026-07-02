@@ -1,16 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, Users } from "lucide-react";
+import { X, Users, Mars, Venus } from "lucide-react";
 
 interface Registrant {
   id: string; name: string | null; image: string | null; gender: string | null;
   slogan: string | null; anonymous: boolean; participantCount: number; createdAt: string;
 }
 
-function genderIcon(gender: string | null) {
-  if (gender === "male" || gender === "זכר" || gender === "m") return "♂";
-  if (gender === "female" || gender === "נקבה" || gender === "f") return "♀";
+function GenderIcon({ gender }: { gender: string | null }) {
+  const g = (gender ?? "").toLowerCase();
+  if (g === "male" || g === "m" || gender === "זכר") return <Mars size={12} className="text-[#185FA5]" />;
+  if (g === "female" || g === "f" || gender === "נקבה") return <Venus size={12} className="text-[#B0324D]" />;
   return null;
 }
 
@@ -27,7 +28,6 @@ function initials(name: string | null) {
 }
 
 function Row({ r }: { r: Registrant }) {
-  const g = genderIcon(r.gender);
   return (
     <div className="flex items-center gap-2.5 py-2.5 border-b border-gray-50 last:border-b-0">
       {r.image && !r.anonymous ? (
@@ -42,7 +42,7 @@ function Row({ r }: { r: Registrant }) {
       <div className="flex-1 min-w-0">
         <div className="text-sm text-gray-900 flex items-center gap-1">
           <span className="truncate">{r.anonymous ? "משתתף אנונימי" : (r.name ?? "מטייל")}{r.participantCount > 1 ? ` +${r.participantCount - 1}` : ""}</span>
-          {g && <span className={g === "♂" ? "text-[#185FA5]" : "text-[#B0324D]"}>{g}</span>}
+          {!r.anonymous && <GenderIcon gender={r.gender} />}
         </div>
         {r.slogan && <div className="text-[11px] text-gray-400 truncate">{r.slogan}</div>}
       </div>

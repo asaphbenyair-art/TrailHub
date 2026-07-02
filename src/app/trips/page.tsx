@@ -176,6 +176,7 @@ export default function TripsPage() {
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
   const [myRegIdMap, setMyRegIdMap] = useState<Record<string, string>>({});
+  const [myRegPos, setMyRegPos] = useState<Record<string, number>>({});
   const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set());
   const [purchaseExpiry, setPurchaseExpiry] = useState<Record<string, string | null>>({});
   const [purchasesOnly, setPurchasesOnly] = useState(false);
@@ -277,13 +278,20 @@ export default function TripsPage() {
     if (!session) return;
     fetch("/api/my-trips", { cache: "no-store" })
       .then((r) => r.json())
-      .then((regs: Array<{ id: string; status: string; trip: { id: string } }>) => {
+      .then((regs: Array<{ id: string; status: string; waitlistPosition: number | null; trip: { id: string } }>) => {
         if (!Array.isArray(regs)) return;
         const map: Record<string, string> = {};
         const idMap: Record<string, string> = {};
-        regs.forEach((r) => { if (r.status !== "CANCELLED") { map[r.trip.id] = r.status; idMap[r.trip.id] = r.id; } });
+        const posMap: Record<string, number> = {};
+        regs.forEach((r) => {
+          if (r.status !== "CANCELLED") {
+            map[r.trip.id] = r.status; idMap[r.trip.id] = r.id;
+            if (r.waitlistPosition) posMap[r.trip.id] = r.waitlistPosition;
+          }
+        });
         setMyRegMap(map);
         setMyRegIdMap(idMap);
+        setMyRegPos(posMap);
       })
       .catch(() => {});
   }, [session]);
@@ -792,14 +800,14 @@ export default function TripsPage() {
                   {myStatus && (
                     <div className={`px-3 py-1.5 flex items-center gap-1.5 text-xs font-medium ${
                       myStatus === "CONFIRMED" ? "bg-[#D6EDE3] text-[#0F5038]" :
-                      myStatus === "WAITLIST"  ? "bg-[#D4E4F0] text-[#185FA5]" : "bg-gray-50 text-gray-500"
+                      myStatus === "WAITLIST"  ? "bg-[#FDF3DC] text-[#7A5010]" : "bg-gray-50 text-gray-500"
                     }`}>
                       <span>{myStatus === "CONFIRMED" ? "✓ רשום לטיול" :
-                       myStatus === "WAITLIST"  ? "⏰ ברשימת המתנה" : "👀 מתעניין"}</span>
+                       myStatus === "WAITLIST"  ? `⏳ ממתין למקום${myRegPos[trip.id] ? ` — מיקום ${myRegPos[trip.id]} בתור` : ""}` : "👀 מתעניין"}</span>
                       {(myStatus === "CONFIRMED" || myStatus === "WAITLIST") && (
                         <button type="button" onClick={(e) => { e.stopPropagation(); cancelReg(trip.id); }}
                           className="mr-auto border border-current rounded-full px-2.5 py-0.5 text-[11px] font-medium hover:bg-black/5">
-                          בטל הרשמה
+                          {myStatus === "WAITLIST" ? "בטל המתנה" : "בטל הרשמה"}
                         </button>
                       )}
                     </div>
@@ -869,11 +877,13 @@ export default function TripsPage() {
                     </div>
                   </div>
 
-                  {isFull && (
-                    <div className="mx-3 mt-2.5 px-3 py-1.5 bg-[#FDF3DC] rounded-lg flex items-center justify-between text-xs text-[#633806]">
-                      <span>⏰ הטיול מלא — רשימת המתנה פתוחה</span>
+                  {isFull && !myStatus && (
+                    <div className="mx-3 mt-2.5 px-3 py-2 bg-[#FDF3DC] rounded-lg flex items-center justify-between gap-2 text-xs text-[#633806]">
+                      <span>⏰ הטיול מלא</span>
                       <button type="button" onClick={(e) => { e.stopPropagation(); router.push(`/trips/${trip.id}/register?flow=waitlist`); }}
-                        className="text-[#854F0B] font-medium mr-2">הצטרף</button>
+                        className="shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold text-white bg-[#E8A020] hover:bg-[#c8891a] transition-colors">
+                        הצטרף לרשימת המתנה
+                      </button>
                     </div>
                   )}
 
@@ -913,23 +923,11 @@ export default function TripsPage() {
                         ))}
                       </div>
                       {!isSG && (
-                        <div className="flex items-end gap-3 shrink-0">
-                          {/* Registrants indicator → opens modal (clearly tappable pill) */}
-                          <button type="button"
-                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); setRegistrantsModal({ id: trip.id, title: trip.title }); }}
-                            title="הצג משתתפים"
-                            className="flex flex-col items-end cursor-pointer group">
-                            <span className="text-[9px] leading-none mb-1 text-gray-400 group-hover:text-[#185FA5] transition-colors">משתתפים</span>
-                            <span className="text-[10px] font-semibold inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full border border-[#185FA5]/40 bg-[#EAF1F8] text-[#185FA5] group-hover:bg-[#185FA5] group-hover:text-white group-active:scale-95 transition-all">
-                              👥 {trip.spotsBooked} משתתפים
-                            </span>
-                          </button>
-                          <RideshareIndicator
-                            trip={trip}
-                            hasAccess={!!myStatus && myStatus !== "CANCELLED"}
-                            onOpen={() => setRideDrawer(trip.id)}
-                          />
-                        </div>
+                        <RideshareIndicator
+                          trip={trip}
+                          hasAccess={!!myStatus && myStatus !== "CANCELLED"}
+                          onOpen={() => setRideDrawer(trip.id)}
+                        />
                       )}
                     </div>
                     {!isSG && (
@@ -939,7 +937,15 @@ export default function TripsPage() {
                           style={{ width: `${Math.min(occupancy*100,100)}%`, background: isFull ? "#C0392B" : "#1A6B4A" }} />
                       </div>
                       <div className="flex justify-between text-[10px] text-gray-400 mt-1">
-                        <span>{trip.spotsBooked} מתוך {trip.maxSpots} רשומים</span>
+                        <span>
+                          {trip.spotsBooked} מתוך {trip.maxSpots} רשומים
+                          {" · "}
+                          <button type="button"
+                            onClick={(e) => { e.stopPropagation(); setRegistrantsModal({ id: trip.id, title: trip.title }); }}
+                            className="text-[#185FA5] underline underline-offset-2 hover:text-[#134e73] cursor-pointer">
+                            לרשימת המשתתפים
+                          </button>
+                        </span>
                         <span style={{ color: isFull ? "#C0392B" : "#1A6B4A", fontWeight: 500 }}>
                           {isFull ? "מלא" : `${spotsLeft} מקומות נותרו`}
                         </span>
