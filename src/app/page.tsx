@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import HikerHome from "./HikerHome";
-import { BrandSlogan } from "@/components/Brand";
+import { BrandSlogan, BrandTrail } from "@/components/Brand";
 
 export default async function Home() {
   const session = await auth();
@@ -40,7 +40,10 @@ export default async function Home() {
       <div className="absolute inset-0" style={{ background: "radial-gradient(120% 80% at 70% 0%, rgba(61,143,95,0.25), transparent 60%)" }} />
 
       <div className="relative max-w-[480px] mx-auto w-full px-6 pb-14 pt-24">
-        <BrandSlogan className="font-display text-xl leading-snug text-white/90 mb-10 block" />
+        <div className="mb-10">
+          <BrandSlogan className="font-display text-lg sm:text-xl leading-snug block mb-3" />
+          <BrandTrail className="max-w-[300px]" />
+        </div>
         <h1 className="font-display text-white text-[42px] leading-[1.08] mb-4">
           הטיול הבא שלך<br />מתחיל כאן.
         </h1>

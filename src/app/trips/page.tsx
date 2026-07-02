@@ -427,10 +427,23 @@ export default function TripsPage() {
 
       {/* Top bar */}
       <div className="px-3 py-3">
-        <div className="max-w-5xl mx-auto bg-surface rounded-xl px-3 py-2.5 flex items-center gap-2.5">
-          <Brand />
-          <ThemeToggle className="flex-shrink-0" />
-          <div className="flex-1 relative">
+        <div className="max-w-5xl mx-auto bg-surface rounded-xl px-3 py-2.5 flex flex-col gap-2.5">
+          {/* Row 1: brand + actions */}
+          <div className="flex items-center gap-2.5">
+            <Brand />
+            <ThemeToggle className="flex-shrink-0" />
+            <div className="flex-1" />
+            {session ? (
+              <div className="flex items-center gap-1.5">
+                <NotificationBell />
+                <AvatarMenu />
+              </div>
+            ) : (
+              <Link href="/auth/login" className="text-xs text-[#1A6B4A] border border-[#1A6B4A] rounded-full px-2.5 py-1 flex-shrink-0 whitespace-nowrap">כניסה</Link>
+            )}
+          </div>
+          {/* Row 2: full-width search */}
+          <div className="relative">
             <div className="flex items-center gap-2 bg-surface-2 border border-border rounded-full px-3 py-1.5">
               <span className="text-fg-faint text-sm">🔍</span>
               <input
@@ -458,14 +471,6 @@ export default function TripsPage() {
               </div>
             )}
           </div>
-          {session ? (
-            <div className="flex items-center gap-1.5">
-              <NotificationBell />
-              <AvatarMenu />
-            </div>
-          ) : (
-            <Link href="/auth/login" className="text-xs text-[#1A6B4A] border border-[#1A6B4A] rounded-full px-2.5 py-1 flex-shrink-0 whitespace-nowrap">כניסה</Link>
-          )}
         </div>
       </div>
 

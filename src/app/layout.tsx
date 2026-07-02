@@ -20,7 +20,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "בשבילי — דרך. אחרת. לטייל",
+  title: "בשבילי — נברא העולם",
   description: "מצא והירשם לטיולים מודרכים בישראל",
 };
 

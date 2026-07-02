@@ -1631,3 +1631,148 @@ Audit ALL notification creation points and ensure link field is populated correc
   - Show new discounted price in green
   - Show discount amount/percentage
 - If code invalid: show "קוד לא תקין" error message
+
+---
+
+## Group Registration — Full Spec
+
+### Three registration modes (guide decides per trip):
+1. **אדם בודד** — hiker registers only themselves. Default.
+2. **כמות בלבד** — hiker enters number of spots (e.g. "3 מקומות"), no details per person. Shows in registrant list as "דני לוי + 2" or "דני לוי (קבוצה של 3)".
+3. **פרטים לכל משתתף** — hiker fills details per person: full name, age, gender, fitness level, special needs (optional). OR search for existing platform users by name/email (autocomplete) and add them directly.
+
+### Payment for groups:
+- Each participant selects their own price category (adult/child/senior etc.) same as solo registration
+- Total calculated per all categories, charged as one payment on one card
+
+### Cancellation:
+- Can cancel individual participants from a group, not just the whole group
+
+---
+
+## Guide Mode — Bug Fixes & Features Round 6
+
+### 1. Free Self-Guided Trips
+- If guide sets price = 0, automatically tag the trip as "חינם" with a visual badge
+- Add "חינם בלבד" filter chip in self-guided trips search
+
+### 2. Registrant List — Guide Dashboard (THIRD TIME — must be fixed)
+- Must behave EXACTLY like the hiker-facing registrant modal
+- Same modal pattern: header "משתתפים — [trip name]", each card shows photo + gender icon + name (or אנונימי) + personal slogan, waitlist below divider
+- This has been requested 3 times and not implemented correctly
+
+### 3. PDF Upload per Waypoint — Fix
+- After uploading a PDF to a waypoint, show the uploaded file name with a delete button
+- Limit: max 2 files per waypoint
+- User must be able to see what was uploaded and delete if needed
+
+### 4. PDF Upload at Trip Level — Same Fix
+- Same as waypoint: show uploaded files, allow deletion, same UX
+
+### 5. Remove Web Link Field
+- Remove "קישור לדף web" field from trip creation — not useful, causes confusion
+
+### 6. Health Declaration — Fix
+- Must be an uploadable document (PDF)
+- Must be viewable inside the app AND downloadable/openable outside
+- Add text field next to it: "אני חותם על כך ש..." that hiker must fill/confirm
+
+### 7. Trip Team Search — Fix (THIRD TIME)
+- Search for second guide and מנהל טיול via autocomplete is broken
+- Must search only among users registered as מדריך (for second guide) or מנהל טיול (for trip manager)
+- This has been requested multiple times — must be fixed
+
+### 8. Discount Group Selection
+- After selecting a group for discounted pricing, the list disappears and requires manual re-entry
+- Fix: keep the list visible after selection, allow adding multiple groups without list disappearing
+
+### 9. Save Trip at Any Point (Draft Without Required Fields)
+- Add "שמור טיוטא" button visible at every step of trip creation wizard
+- Saves current state without requiring mandatory fields to be filled
+- Also add "בטל טיול" button to cancel/discard at any point
+
+### 10. Waypoint Distance Validation
+- GPX file is mandatory for guided/self-guided trips
+- When guide places a waypoint on the map, validate that it is within 10 meters of the GPX route
+- If waypoint is more than 10 meters from route: show warning "הנקודה רחוקה מהמסלול — האם אתה בטוח?"
+- Do not block saving, just warn
+
+---
+
+## Multi-Participant Registration — Full Spec
+
+### Guide setting (per trip):
+Guide chooses one of three registration modes when creating the trip:
+1. **אדם בודד** — hiker can only register themselves
+2. **כמות בלבד** — hiker enters number of spots, no details per person required
+3. **פרטים לכל משתתף** — hiker must fill details for each person
+
+### Mode 2 — Registrant list display:
+Shows as "דני לוי + 2" or "דני לוי (קבוצה של 3)" — no individual names shown
+
+### Mode 3 — Details per participant:
+For each additional participant, hiker fills:
+- Full name
+- Age
+- Gender
+- Fitness level
+- Special needs (optional)
+- OR: search existing platform user by name/email (autocomplete) and add them directly
+
+### Payment:
+Each participant selects their own price category (adult/child/senior). Total charged as one payment on one card.
+
+### Cancellation:
+Can cancel individual participants from a group without cancelling the whole registration.
+
+---
+
+## Notifications — Full Fix (Round 2)
+
+### Real-time (already requested — verify it works):
+Notifications must appear instantly without page refresh using Supabase Realtime.
+
+### Deep links — Full audit (already requested — verify each one):
+Every notification must navigate to the EXACT location, not just the trip homepage:
+- "המדריך ענה לשאלתך" → scroll to that specific Q&A answer
+- "הודעה מהמדריך" → scroll to announcements section
+- "טרמפ חדש" → open rideshare modal
+- "נרשם משתתף חדש" (guide) → open registrant list modal
+- etc. (see full list in Round 5)
+
+---
+
+## Branding — Updated Slogan
+Replace "TrailHub" in the top navigation bar with:
+
+**"בשבילי נברא העולם — אנוכי עפר ואפר"**
+
+Styling:
+- "בשבילי" — in green (#3d8f5f), bold
+- "עפר" — in green (#3d8f5f), bold  
+- Rest of text — regular color (white/light on dark background)
+- Same font size throughout — no size variation
+- "דרך. אחרת. לטייל" — removed from top nav (may appear elsewhere like splash screen)
+
+---
+
+## Branding — Logo/Slogan Visual Design
+
+### Text
+"בשבילי נברא העולם — אנוכי עפר ואפר"
+- "בשבילי" (כולה, כולל האות ב׳) — ירוק #3d8f5f, bold
+- "עפר" — ירוק #3d8f5f, bold
+- שאר הטקסט — #f0ede8, font-weight 300
+- גודל אחיד לכל הטקסט
+
+### אלמנט ויזואלי — שביל מאויר
+מתחת לטקסט: שביל מאויר בסגנון סקיצי/ידני:
+- שני קווים מקבילים מפותלים (לא ישרים) בירוק #3d8f5f
+- אלמנטים לאורך השביל: עץ מאויר, סלע, באר מים — בסגנון עדין וסכמטי
+- נקודת התחלה ונקודת סיום מסומנות
+- רקע שחור #0a0a0a
+
+### יישום
+- להטמיע כ-SVG inline בתוך הקומפוננטה
+- להופיע בדף הבית (Hero) ובמסך splash
+- בנאב העליון — הטקסט בלבד ללא השביל (אין מקום)
