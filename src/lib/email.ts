@@ -3,12 +3,12 @@
 // is fully testable without an email provider configured.
 export async function sendPasswordResetEmail(to: string, resetUrl: string) {
   const key = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM ?? "TrailHub <onboarding@resend.dev>";
-  const subject = "איפוס סיסמה — TrailHub";
+  const from = process.env.EMAIL_FROM ?? "בשבילי <onboarding@resend.dev>";
+  const subject = "איפוס סיסמה — בשבילי";
   const html = `
     <div dir="rtl" style="font-family:system-ui,Arial,sans-serif;max-width:480px;margin:auto">
       <h2 style="color:#1A6B4A">איפוס סיסמה</h2>
-      <p>קיבלנו בקשה לאיפוס הסיסמה שלך ב-TrailHub. לחץ על הכפתור כדי לבחור סיסמה חדשה:</p>
+      <p>קיבלנו בקשה לאיפוס הסיסמה שלך באפליקציית בשבילי. לחץ על הכפתור כדי לבחור סיסמה חדשה:</p>
       <p style="text-align:center;margin:28px 0">
         <a href="${resetUrl}" style="background:#1A6B4A;color:#fff;text-decoration:none;padding:12px 28px;border-radius:999px;display:inline-block">אפס סיסמה</a>
       </p>

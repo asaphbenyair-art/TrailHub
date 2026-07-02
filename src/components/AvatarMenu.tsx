@@ -4,8 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { Settings, LogOut, Repeat, Sun, Moon } from "lucide-react";
-import { useTheme } from "@/components/ThemeProvider";
+import { Settings, LogOut, Repeat } from "lucide-react";
 
 const AVATAR_COLORS = ["#854F0B", "#3B6D11", "#185FA5", "#6B3B87", "#1A6B4A"];
 function avatarColor(name: string | null) {
@@ -23,7 +22,6 @@ function initials(name: string | null) {
 export default function AvatarMenu() {
   const router = useRouter();
   const { data: session } = useSession();
-  const { theme, toggle: toggleTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"hiker" | "guide">("hiker");
   const [isGuide, setIsGuide] = useState(false);

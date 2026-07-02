@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { FileText, XCircle, MessageCircle, Mail, Bell, ChevronRight, Check } from "lucide-react";
 import AvatarMenu from "@/components/AvatarMenu";
+import ThemeToggle from "@/components/ThemeToggle";
 import { useLiveNotifications } from "@/hooks/useLiveNotifications";
 
 interface Notif {
@@ -85,6 +86,7 @@ export default function NotificationsPage() {
                 <Check size={13} /> סמן הכל כנקרא
               </button>
             )}
+            <ThemeToggle />
             <AvatarMenu />
           </div>
         </div>
