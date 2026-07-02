@@ -33,7 +33,7 @@ export async function POST(
       type: "RIDESHARE_UPDATE",
       title: "מישהו הצטרף לטרמפ שלך",
       body: `${session.user.name ?? "משתתף"} הצטרף לטרמפ מ${offer.departureCity} לטיול "${offer.trip.title}".`,
-      link: `/trips/${tripId}#rideshare`,
+      link: `/trips/${tripId}?modal=rideshare`,
     },
   });
 
@@ -88,7 +88,7 @@ export async function DELETE(
           type: "RIDESHARE_UPDATE" as const,
           title: "טרמפ בוטל",
           body: `הטרמפ מ${offer.departureCity} לטיול "${offer.trip.title}" בוטל. מצא חלופה.`,
-          link: `/trips/${tripId}#rideshare`,
+          link: `/trips/${tripId}?modal=rideshare`,
         })),
       });
     }

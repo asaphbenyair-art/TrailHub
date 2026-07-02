@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import RideshareBoard from "@/components/RideshareBoard";
+import RideshareModal from "@/components/RideshareModal";
 import { TAG_LABEL } from "@/lib/tripTags";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { coverImages } from "@/lib/tripImage";
@@ -410,14 +411,24 @@ export default function TripDetailPage() {
       .then((d) => { if (Array.isArray(d)) setAnnouncements(d); }).catch(() => {});
   }, [session, id, myRegStatus]);
 
-  // Scroll to a deep-linked section (#announcements / #rideshare / #qa-<id>).
+  // Deep links from notifications:
+  //  - ?modal=rideshare      → auto-open the rideshare modal for this trip
+  //  - ?scroll=<id> or #<id> → scroll to that element (e.g. qa-<questionId>, announcements)
+  const [showRideshare, setShowRideshare] = useState(false);
+  const deepLinkModalRef = useRef(false);
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const hash = window.location.hash?.slice(1);
-    if (!hash) return;
-    const el = document.getElementById(hash);
-    if (el) el.scrollIntoView({ behavior: "smooth" });
-  }, [announcements.length, trip, questions.length]);
+    if (typeof window === "undefined" || !trip) return;
+    const params = new URLSearchParams(window.location.search);
+    if (!deepLinkModalRef.current && params.get("modal") === "rideshare") {
+      deepLinkModalRef.current = true;
+      setShowRideshare(true);
+    }
+    const target = params.get("scroll") || window.location.hash.slice(1);
+    if (target) {
+      const el = document.getElementById(target);
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [trip, announcements.length, questions.length]);
 
   async function submitReply(qid: string) {
     const text = (replyBody[qid] ?? "").trim();
@@ -1083,6 +1094,10 @@ export default function TripDetailPage() {
           </div>
         </div>
       </div>
+      )}
+
+      {showRideshare && trip && (
+        <RideshareModal tripId={trip.id} tripTitle={trip.title} tripDate={trip.date} onClose={() => setShowRideshare(false)} />
       )}
     </div>
   );

@@ -48,7 +48,7 @@ export async function POST(
         type: isManager ? "QUESTION_ANSWERED" : "NEW_MESSAGE",
         title: isManager ? "המדריך הגיב בשרשור השאלה" : "תגובה חדשה בשרשור השאלה",
         body: `בטיול "${question.trip.title}": ${body.trim().slice(0, 80)}`,
-        link: isManager ? `/trips/${tripId}#qa-${qid}` : `/guide/trips/${tripId}/qa`,
+        link: isManager ? `/trips/${tripId}?scroll=qa-${qid}` : `/guide/trips/${tripId}/qa`,
       },
     });
   }
