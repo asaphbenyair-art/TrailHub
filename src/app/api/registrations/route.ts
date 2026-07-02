@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   if (!session?.user) return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
 
   const body = await req.json();
-  const { tripId, type, notes, fieldAnswers, signedPolicy, alertThresholdHours, interestThreshold, conditions, autoRegister, compCode, participantCount, participantsDetail } = body as {
+  const { tripId, type, notes, fieldAnswers, signedPolicy, alertThresholdHours, interestThreshold, conditions, autoRegister, compCode, participantCount, participantsDetail, anonymous } = body as {
     tripId: string;
     type: "REGISTER" | "INTEREST" | "WAITLIST";
     notes?: string;
@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
     compCode?: string;
     participantCount?: number;
     participantsDetail?: { name: string }[];
+    anonymous?: boolean;
   };
   const count = Math.max(1, Number(participantCount) || 1);
 
@@ -90,6 +91,7 @@ export async function POST(req: NextRequest) {
     ...(interestThreshold !== undefined && { interestThreshold: Number(interestThreshold) || null }),
     ...(cleanConditions.length > 0 && { conditions: cleanConditions }),
     ...(autoRegister !== undefined && { autoRegister: !!autoRegister }),
+    ...(anonymous !== undefined && { anonymous: !!anonymous }),
     ...payTimestamps,
   };
 

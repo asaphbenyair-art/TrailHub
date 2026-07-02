@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { FileText, XCircle, MessageCircle, Mail, Bell, ChevronRight, Check } from "lucide-react";
@@ -15,6 +14,7 @@ interface Notif {
   read: boolean;
   createdAt: string;
   tripId: string | null;
+  link: string | null;
 }
 
 const TYPE_ICON: Record<string, typeof Bell> = {
@@ -57,6 +57,12 @@ export default function NotificationsPage() {
     await fetch(`/api/notifications/${id}`, { method: "PATCH" }).catch(() => {});
     setNotifs((p) => p.map((n) => (n.id === id ? { ...n, read: true } : n)));
   }
+  // Every notification is tappable → its deep link (or the trip page). No dead ends.
+  function open(n: Notif) {
+    markOne(n.id);
+    const dest = n.link ?? (n.tripId ? `/trips/${n.tripId}` : null);
+    if (dest) router.push(dest);
+  }
 
   return (
     <div dir="rtl" className="min-h-screen bg-bg pb-24">
@@ -88,7 +94,7 @@ export default function NotificationsPage() {
               return (
                 <div
                   key={n.id}
-                  onClick={() => markOne(n.id)}
+                  onClick={() => open(n)}
                   className="flex gap-3 rounded-2xl p-3.5 cursor-pointer border transition-colors"
                   style={{
                     background: n.read ? "var(--surface)" : "var(--surface-2)",
@@ -105,11 +111,10 @@ export default function NotificationsPage() {
                       <span className="text-[10px] text-fg-faint shrink-0">{relTime(n.createdAt)}</span>
                     </div>
                     <p className="text-xs text-fg-muted mt-0.5 leading-relaxed">{n.body}</p>
-                    {n.tripId && (
-                      <Link href={`/trips/${n.tripId}`} onClick={(e) => e.stopPropagation()}
-                        className="text-[11px] text-accent mt-1.5 inline-flex items-center gap-0.5">
-                        לטיול <ChevronRight size={12} className="rotate-180" />
-                      </Link>
+                    {(n.link || n.tripId) && (
+                      <span className="text-[11px] text-accent mt-1.5 inline-flex items-center gap-0.5">
+                        פתח <ChevronRight size={12} className="rotate-180" />
+                      </span>
                     )}
                   </div>
                   {!n.read && <div className="w-2 h-2 rounded-full bg-accent mt-1.5 shrink-0" />}

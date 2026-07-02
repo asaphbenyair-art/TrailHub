@@ -399,6 +399,9 @@ model Registration {
   isComp              Boolean   @default(false)
   participantsDetail  Json?     // [{ name, fieldAnswers }] for detailed multi-person
 
+  // Privacy: hide name from the fellow-registrants list (shows "משתתף אנונימי")
+  anonymous           Boolean   @default(false)
+
   trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -442,6 +445,7 @@ model Notification {
   type      NotificationType
   title     String
   body      String
+  link      String?          // deep link path, e.g. /trips/<id>#qa-<qid>
   read      Boolean          @default(false)
   createdAt DateTime         @default(now())
 

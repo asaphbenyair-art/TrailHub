@@ -111,6 +111,7 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: (alertHours:
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [signed, setSigned] = useState(false);
   const [alertHours, setAlertHours] = useState("24");
+  const [anonymous, setAnonymous] = useState(false);
   const [compCode, setCompCode] = useState("");
 
   const isMulti = trip.multiPersonMode === "simple" || trip.multiPersonMode === "detailed";
@@ -148,6 +149,7 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: (alertHours:
         body: JSON.stringify({
           tripId: trip.id, type: "REGISTER", fieldAnswers: answers, signedPolicy: signed,
           alertThresholdHours: Number(alertHours) || 24, compCode: compCode.trim() || undefined,
+          anonymous,
           participantCount: count,
           participantsDetail: isDetailed ? names.slice(0, count).map((n) => ({ name: n.trim() })) : undefined,
         }),
@@ -277,6 +279,22 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: (alertHours:
           <input type="number" min="1" value={alertHours} onChange={(e) => setAlertHours(e.target.value)}
             className={`w-16 text-center ${input}`} dir="ltr" />
           שעות לפני
+        </div>
+      </div>
+
+      {/* Privacy: visibility in the fellow-registrants list */}
+      <div className="p-4 border-b border-border">
+        <div className="text-sm font-medium text-fg mb-1">פרטיות ברשימת המשתתפים</div>
+        <div className="text-xs text-fg-muted mb-2">נרשמים אחרים רואים את רשימת המשתתפים</div>
+        <div className="grid grid-cols-2 gap-2">
+          {[[false, "הירשם גלוי", "השם שלך יוצג"], [true, "הירשם אנונימי", "יוצג \"משתתף אנונימי\""]].map(([val, t, s]) => (
+            <button key={String(val)} type="button" onClick={() => setAnonymous(val as boolean)}
+              className="py-2.5 px-2 border rounded-xl text-xs text-center"
+              style={anonymous === val ? { borderColor: "var(--accent)", background: "rgba(61,143,95,0.1)", color: "var(--fg)" } : { borderColor: "var(--border)", color: "var(--fg-muted)" }}>
+              <div className="font-medium mb-0.5">{t as string}</div>
+              <div className="text-[10px] text-fg-faint">{s as string}</div>
+            </button>
+          ))}
         </div>
       </div>
 

@@ -169,7 +169,9 @@ export default function TripsPage() {
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [myRegMap, setMyRegMap] = useState<Record<string, string>>({});
   const [myTripsOnly, setMyTripsOnly] = useState(false);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
+  const [myRegIdMap, setMyRegIdMap] = useState<Record<string, string>>({});
   const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set());
   const [purchasesOnly, setPurchasesOnly] = useState(false);
   const [rideDrawer, setRideDrawer] = useState<string | null>(null);
@@ -264,14 +266,28 @@ export default function TripsPage() {
     if (!session) return;
     fetch("/api/my-trips", { cache: "no-store" })
       .then((r) => r.json())
-      .then((regs: Array<{ status: string; trip: { id: string } }>) => {
+      .then((regs: Array<{ id: string; status: string; trip: { id: string } }>) => {
         if (!Array.isArray(regs)) return;
         const map: Record<string, string> = {};
-        regs.forEach((r) => { if (r.status !== "CANCELLED") map[r.trip.id] = r.status; });
+        const idMap: Record<string, string> = {};
+        regs.forEach((r) => { if (r.status !== "CANCELLED") { map[r.trip.id] = r.status; idMap[r.trip.id] = r.id; } });
         setMyRegMap(map);
+        setMyRegIdMap(idMap);
       })
       .catch(() => {});
   }, [session]);
+
+  // Cancel/remove a registration or interest directly from the search card.
+  async function cancelReg(tripId: string) {
+    const regId = myRegIdMap[tripId];
+    if (!regId) return;
+    if (!window.confirm("לבטל את ההרשמה לטיול?")) return;
+    const res = await fetch(`/api/registrations/${regId}`, { method: "DELETE" });
+    if (res.ok) {
+      setMyRegMap((m) => { const n = { ...m }; delete n[tripId]; return n; });
+      setMyRegIdMap((m) => { const n = { ...m }; delete n[tripId]; return n; });
+    }
+  }
 
   // Seed search filters from the user's saved preferences (once, on first load)
   const prefsApplied = useRef(false);
@@ -328,6 +344,7 @@ export default function TripsPage() {
     let list = trips;
     if (purchasesOnly && filters.category === "self_guided") list = list.filter((t) => purchasedIds.has(t.id));
     if (myTripsOnly && filters.category === "guided") list = list.filter((t) => myRegMap[t.id]);
+    if (favoritesOnly && filters.category === "guided") list = list.filter((t) => favIds.has(t.id));
     if (!range.start) return list;
     const startMs = new Date(range.start.getFullYear(), range.start.getMonth(), range.start.getDate()).getTime();
     const endRef = range.end ?? range.start;
@@ -413,7 +430,7 @@ export default function TripsPage() {
             <button key={v} type="button"
               onClick={() => {
                 const next = { ...filters, category: v };
-                setFilters(next); setPurchasesOnly(false); setMyTripsOnly(false);
+                setFilters(next); setPurchasesOnly(false); setMyTripsOnly(false); setFavoritesOnly(false);
                 if (v === "guides") { if (!guidesLoaded) loadGuides(); }
                 else { setTrips([]); fetchTrips(next); }
               }}
@@ -594,11 +611,18 @@ export default function TripsPage() {
               )}
             </button>
             {session && filters.category === "guided" && (
-              <button type="button" onClick={() => setMyTripsOnly((v) => !v)}
-                className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap border flex-shrink-0 transition-colors ${
-                  myTripsOnly ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "bg-white border-gray-200 text-gray-600"}`}>
-                ❤ הטיולים שלי
-              </button>
+              <>
+                <button type="button" onClick={() => setMyTripsOnly((v) => !v)}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap border flex-shrink-0 transition-colors ${
+                    myTripsOnly ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "bg-white border-gray-200 text-gray-600"}`}>
+                  🎒 הטיולים שלי
+                </button>
+                <button type="button" onClick={() => setFavoritesOnly((v) => !v)}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap border flex-shrink-0 transition-colors ${
+                    favoritesOnly ? "bg-[#FDE8EC] border-[#E86A87] text-[#B0324D]" : "bg-white border-gray-200 text-gray-600"}`}>
+                  ♥ מועדפים
+                </button>
+              </>
             )}
             {filters.regions.map((r) => (
               <button key={r} type="button" onClick={() => clearFilter("regions", r)}
@@ -934,6 +958,32 @@ export default function TripsPage() {
                             <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)}
                               className="px-3.5 py-1.5 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">רכוש</button>
                           )
+                        ) : myStatus === "CONFIRMED" ? (
+                          <>
+                            <span className="px-2.5 py-1.5 rounded-full text-[11px] font-medium bg-[#D6EDE3] text-[#0F5038]">✓ רשום לטיול</span>
+                            <button type="button" onClick={() => cancelReg(trip.id)}
+                              className="px-3 py-1.5 border border-[#C0392B] text-[#C0392B] rounded-full text-[11px] font-medium">
+                              בטל הרשמה
+                            </button>
+                          </>
+                        ) : myStatus === "WAITLIST" ? (
+                          <>
+                            <span className="px-2.5 py-1.5 rounded-full text-[11px] font-medium bg-[#D4E4F0] text-[#185FA5]">⏰ ברשימת המתנה</span>
+                            <button type="button" onClick={() => cancelReg(trip.id)}
+                              className="px-3 py-1.5 border border-[#C0392B] text-[#C0392B] rounded-full text-[11px] font-medium">
+                              בטל
+                            </button>
+                          </>
+                        ) : myStatus === "PENDING" ? (
+                          <>
+                            <span className="px-2.5 py-1.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-600">👀 מתעניין</span>
+                            {!isFull && (
+                              <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)}
+                                className="px-3.5 py-1.5 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">להרשמה</button>
+                            )}
+                            <button type="button" onClick={() => cancelReg(trip.id)}
+                              className="px-3 py-1.5 border border-gray-200 text-gray-500 rounded-full text-[11px]">הסר</button>
+                          </>
                         ) : (
                           <>
                             <button type="button" onClick={() => router.push(`/trips/${trip.id}/register?flow=interest`)}

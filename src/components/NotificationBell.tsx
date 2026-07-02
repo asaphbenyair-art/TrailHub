@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface Notification {
   id: string;
@@ -11,13 +11,22 @@ interface Notification {
   read: boolean;
   createdAt: string;
   tripId: string | null;
+  link: string | null;
   trip: { id: string; title: string } | null;
 }
 
 export default function NotificationBell() {
+  const router = useRouter();
   const [notifs, setNotifs] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  function openNotif(n: Notification) {
+    markRead(n.id);
+    setOpen(false);
+    const dest = n.link ?? (n.tripId ? `/trips/${n.tripId}` : null);
+    if (dest) router.push(dest);
+  }
 
   const unread = notifs.filter((n) => !n.read).length;
 
@@ -105,7 +114,7 @@ export default function NotificationBell() {
                 <div
                   key={n.id}
                   className={`flex gap-3 px-4 py-3 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors ${!n.read ? "bg-green-50/60" : ""}`}
-                  onClick={() => markRead(n.id)}
+                  onClick={() => openNotif(n)}
                 >
                   <span className="text-lg mt-0.5 shrink-0">{typeIcon[n.type] ?? "🔔"}</span>
                   <div className="flex-1 min-w-0">
@@ -114,14 +123,8 @@ export default function NotificationBell() {
                       <span className="text-[10px] text-gray-400 shrink-0">{relativeTime(n.createdAt)}</span>
                     </div>
                     <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{n.body}</p>
-                    {n.tripId && (
-                      <Link
-                        href={`/trips/${n.tripId}`}
-                        className="text-[10px] text-[#1A6B4A] mt-1 inline-block hover:underline"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        לטיול ←
-                      </Link>
+                    {(n.link || n.tripId) && (
+                      <span className="text-[10px] text-[#1A6B4A] mt-1 inline-block">פתח ←</span>
                     )}
                   </div>
                   {!n.read && <div className="w-2 h-2 rounded-full bg-[#1A6B4A] mt-1.5 shrink-0" />}

@@ -41,6 +41,7 @@ export async function PATCH(
       type: "QUESTION_ANSWERED",
       title: "המדריך ענה לשאלתך",
       body: `בטיול "${trip.title}": ${answer.trim().slice(0, 80)}`,
+      link: `/trips/${tripId}#qa-${qid}`,
     },
   });
 

@@ -229,6 +229,43 @@ const REG_STATUS_UI: Record<string, { bg: string; color: string; text: string }>
   PENDING:   { bg: "var(--surface-2)", color: "var(--fg-muted)", text: "👀 מתעניין" },
 };
 
+interface Registrant { id: string; name: string | null; anonymous: boolean; participantCount: number; createdAt: string }
+
+// Fellow-registrants list — visible to registrants/interested; respects anonymity.
+function RegistrantsSection({ tripId }: { tripId: string }) {
+  const [data, setData] = useState<{ confirmed: Registrant[]; waitlist: Registrant[] } | null>(null);
+  useEffect(() => {
+    fetch(`/api/trips/${tripId}/registrants`).then((r) => (r.ok ? r.json() : null)).then(setData).catch(() => {});
+  }, [tripId]);
+  if (!data) return null;
+  const row = (r: Registrant) => (
+    <div key={r.id} className="flex items-center gap-2.5 py-1.5">
+      <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-medium text-white shrink-0"
+        style={{ background: r.anonymous ? "#9ca3af" : avatarColor(r.name) }}>
+        {r.anonymous ? "?" : initials(r.name)}
+      </div>
+      <span className="text-sm text-fg">
+        {r.anonymous ? "משתתף אנונימי" : (r.name ?? "מטייל")}{r.participantCount > 1 ? ` +${r.participantCount - 1}` : ""}
+      </span>
+      <span className="text-[10px] text-fg-faint mr-auto">{new Date(r.createdAt).toLocaleDateString("he-IL", { day: "numeric", month: "short" })}</span>
+    </div>
+  );
+  return (
+    <div>
+      <Heading icon={Users}>משתתפים ({data.confirmed.length})</Heading>
+      <div className="rounded-2xl p-3.5 border border-border bg-surface">
+        {data.confirmed.length > 0 ? data.confirmed.map(row) : <div className="text-xs text-fg-faint">אין נרשמים עדיין</div>}
+        {data.waitlist.length > 0 && (
+          <div className="mt-2 pt-2 border-t border-border">
+            <div className="text-[11px] text-fg-faint mb-1">רשימת המתנה ({data.waitlist.length})</div>
+            {data.waitlist.map(row)}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function TripDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -237,12 +274,30 @@ export default function TripDetailPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [myRegStatus, setMyRegStatus] = useState<string | null>(null);
+  const [myRegId, setMyRegId] = useState<string | null>(null);
+  const [coupon, setCoupon] = useState("");
+  const [couponMsg, setCouponMsg] = useState<string | null>(null);
   const [following, setFollowing] = useState(false);
   const [fav, setFav] = useState(false);
   const [purchase, setPurchase] = useState<{ purchased: boolean; expired?: boolean } | null>(null);
   const [showLoc, setShowLoc] = useState(false);
   const [focusWp, setFocusWp] = useState<number | null>(null);
   const mapWrapRef = useRef<HTMLDivElement>(null);
+
+  async function cancelRegistration() {
+    if (!myRegId || !window.confirm("לבטל את ההרשמה לטיול?")) return;
+    const res = await fetch(`/api/registrations/${myRegId}`, { method: "DELETE" });
+    if (res.ok) { setMyRegStatus(null); setMyRegId(null); }
+  }
+  async function applyCoupon() {
+    if (!coupon.trim() || !myRegId) return;
+    const res = await fetch(`/api/registrations/${myRegId}/coupon`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: coupon.trim() }),
+    });
+    const d = await res.json().catch(() => ({}));
+    setCouponMsg(res.ok ? `הקוד הוחל! זוכית ב-₪${d.refund} (${d.discountPct}%).` : (d.error ?? "שגיאה"));
+    if (res.ok) setCoupon("");
+  }
   const [sourcesOpen, setSourcesOpen] = useState(false); // closed by default (spec)
   const [copied, setCopied] = useState(false);
   const [drawer, setDrawer] = useState<Waypoint | null>(null);
@@ -317,10 +372,10 @@ export default function TripDetailPage() {
   useEffect(() => {
     if (!session) return;
     fetch("/api/my-trips").then((r) => r.json())
-      .then((regs: Array<{ status: string; trip: { id: string } }>) => {
+      .then((regs: Array<{ id: string; status: string; trip: { id: string } }>) => {
         if (!Array.isArray(regs)) return;
         const found = regs.find((r) => r.trip.id === id);
-        if (found) setMyRegStatus(found.status);
+        if (found) { setMyRegStatus(found.status); setMyRegId(found.id); }
       }).catch(() => {});
   }, [session, id]);
 
@@ -705,7 +760,7 @@ export default function TripDetailPage() {
               {sortedQuestions.length > 0 && (
                 <div className="flex flex-col gap-3 mb-3">
                   {sortedQuestions.map((q) => (
-                    <div key={q.id} className="rounded-2xl p-3.5 border border-border bg-surface">
+                    <div key={q.id} id={`qa-${q.id}`} style={{ scrollMarginTop: 80 }} className="rounded-2xl p-3.5 border border-border bg-surface">
                       {q.official && <div className="text-[10px] font-semibold text-amber mb-1.5">★ תשובה רשמית</div>}
                       <div className="flex items-center gap-2 mb-1">
                         <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-medium text-white" style={{ background: avatarColor(q.user.name) }}>{initials(q.user.name)}</div>
@@ -786,6 +841,23 @@ export default function TripDetailPage() {
           )}
 
           {/* ── 16. Rideshare board ── */}
+          {/* ── Fellow registrants (visible to registrants/interested) ── */}
+          {session && !isSelfGuided && !!myRegStatus && <RegistrantsSection tripId={trip.id} />}
+
+          {/* ── Apply a discount code after registration ── */}
+          {session && myRegStatus === "CONFIRMED" && (
+            <div className="rounded-2xl p-3.5 border border-border bg-surface">
+              <div className="text-sm font-semibold text-fg mb-1.5">יש לך קוד הנחה?</div>
+              <div className="flex gap-2">
+                <input value={coupon} onChange={(e) => setCoupon(e.target.value)} placeholder="הזן קוד הנחה" dir="ltr"
+                  className="flex-1 rounded-lg px-3 py-2 text-sm bg-surface-2 border border-border text-fg placeholder:text-fg-faint focus:outline-none focus:border-accent" />
+                <button type="button" onClick={applyCoupon} disabled={!coupon.trim()}
+                  className="px-4 rounded-lg text-sm font-medium disabled:opacity-50" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>החל</button>
+              </div>
+              {couponMsg && <div className="text-xs mt-1.5" style={{ color: couponMsg.includes("שגיאה") || couponMsg.includes("לא") || couponMsg.includes("כבר") || couponMsg.includes("פג") || couponMsg.includes("מוצה") ? "var(--danger)" : "var(--accent)" }}>{couponMsg}</div>}
+            </div>
+          )}
+
           {session && !isSelfGuided && <RideshareBoard tripId={trip.id} />}
 
           {/* ── 17. Cancellation policy ── */}
@@ -867,9 +939,15 @@ export default function TripDetailPage() {
                   <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)} className="px-6 py-2.5 text-sm rounded-full font-semibold" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>רכוש טיול עצמאי ←</button>
                 )
               ) : myRegStatus === "CONFIRMED" ? (
-                <button type="button" onClick={() => router.push("/my-trips")} className="px-5 py-2.5 text-sm rounded-full font-medium" style={{ background: "rgba(61,143,95,0.18)", color: "#7fd4a3", border: "1px solid var(--accent)" }}>✓ רשום</button>
+                <>
+                  <span className="px-4 py-2.5 text-sm rounded-full font-medium" style={{ background: "rgba(61,143,95,0.18)", color: "#7fd4a3", border: "1px solid var(--accent)" }}>✓ רשום לטיול</span>
+                  <button type="button" onClick={cancelRegistration} className="px-4 py-2.5 text-sm rounded-full font-medium" style={{ border: "1px solid var(--danger)", color: "var(--danger)" }}>בטל הרשמה</button>
+                </>
               ) : myRegStatus === "WAITLIST" ? (
-                <button type="button" onClick={() => router.push("/my-trips")} className="px-5 py-2.5 text-sm rounded-full font-medium" style={{ background: "rgba(44,95,138,0.22)", color: "#8fc0e8" }}>⏰ ברשימת המתנה</button>
+                <>
+                  <span className="px-4 py-2.5 text-sm rounded-full font-medium" style={{ background: "rgba(44,95,138,0.22)", color: "#8fc0e8" }}>⏰ ברשימת המתנה</span>
+                  <button type="button" onClick={cancelRegistration} className="px-4 py-2.5 text-sm rounded-full font-medium" style={{ border: "1px solid var(--danger)", color: "var(--danger)" }}>בטל</button>
+                </>
               ) : (
                 <>
                   <button type="button" onClick={() => router.push(`/trips/${trip.id}/register?flow=interest`)} className="px-4 py-2.5 text-sm rounded-full" style={{ border: "1px solid var(--border)", color: "var(--fg-muted)" }}>מתעניין</button>
