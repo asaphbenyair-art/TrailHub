@@ -1375,3 +1375,93 @@ Each participant card in the registrant list modal shows:
 
 ### Age filter ("מתאים לגיל")
 - Remove entirely. Current implementation is confusing and low value.
+
+---
+
+## Trip Manager (מנהל טיול) — New Role
+
+### Overview
+A third distinct platform role (separate from hiker and guide). A "remote supervisor" of trips — read-only access to everything the guide sees, but cannot change anything.
+
+### Registration
+- At signup, users choose one of three roles: מטייל / מדריך / מנהל טיול
+- A מנהל טיול cannot also be a guide or hiker (separate role)
+
+### How they're assigned to a trip
+- The guide manually assigns a מנהל טיול to their trip (same searchable autocomplete as adding a second guide, but searches ONLY from users registered as מנהל טיול)
+- Assignment is immediate, no confirmation required from the מנהל טיול
+
+### What מנהל טיול can see (read-only)
+- Everything the guide sees: registrant list, payment status, dynamic field answers, waitlist, Q&A, Broadcast history, trip details
+- Cannot modify anything
+- Cannot send Broadcast (blocked in Phase 1)
+- Cannot cancel or postpone the trip
+- Cannot add/remove other team members
+
+### Rename throughout system
+- All references to "co-manager" / "מנהל משנה" in the codebase and UI must be renamed to "מנהל טיול"
+- This is a breaking rename — update database schema, API routes, UI labels, and CLAUDE.md references accordingly
+
+---
+
+## Guide Dashboard — Trip Card Fix
+The guide dashboard trip cards are currently broken. Fix:
+1. Trip photos not loading — fix image URLs
+2. Action buttons (הודעות, שאלות, נרשמים, ליומן, דחה, הודעה לקבוצה) must NOT appear on the dashboard card. Card shows only: trip name, date, capacity, status tags. All actions go inside the trip management page.
+3. Status tags (קשה, ציבורי, פתוח) overlapping the trip name — fix positioning.
+
+---
+
+## Next Actions for Claude Code
+
+Read CLAUDE.md from start to finish. Then implement ALL of the following in order:
+
+### Priority 1 — Critical fixes
+1. Rename all "co-manager/מנהל משנה" → "מנהל טיול" throughout codebase, DB, API, UI
+2. Add "מנהל טיול" as third signup role
+3. Guide assigns מנהל טיול via autocomplete (searches only מנהל טיול users)
+4. מנהל טיול dashboard: read-only view of everything guide sees
+5. Fix guide dashboard trip cards (images, buttons, tag overlap)
+
+### Priority 2 — From bugfix_round3.txt (items not yet done)
+6. Post-registration banner: "בטל הרשמה" in green top bar, remove all buttons below
+7. Registrant list modal (clickable, opens like rideshare modal)
+8. Self-guided filter chips: "הרכישות שלי" + "מועדפים"
+9. Self-guided access window indicator (green/amber/red)
+10. Guides directory multi-select filters
+11. Autocomplete in search field
+12. Search intent flow — simplify (merge 1+2, fix option 4)
+13. Remove calendar toggle from guided trips, keep only list
+14. Remove calendar from self-guided entirely
+15. Date filter → range picker
+16. Remove price filter and age filter
+17. Notifications — mark as read without navigating
+18. Trip photos — high quality Unsplash with specific IDs
+19. Photo rotation — staggered fade
+
+Commit and push after each priority group. Send ntfy notification when done or waiting for input.
+
+---
+
+## Search — Quick Filter Chips Behavior
+When a user activates a quick filter chip ("הטיולים שלי", "מועדפים", "הרכישות שלי"):
+- All other active filters are automatically cleared/reset
+- The filter panel collapses or hides (no longer relevant in this context)
+- Only the selected chip remains active
+- Deactivating the chip restores the normal search view with filters available again
+
+---
+
+## Registrant Count & List — Display Fix
+
+### Trip Card
+- Remove the separate "X משתתפים" badge from the stats row — it duplicates information already shown in the capacity line below.
+- The capacity line "X מתוך Y רשומים" should include a clickable link "לרשימת המשתתפים" that opens the registrant list modal.
+
+### Registrant List Modal — Full Participant Card
+Each participant card must show:
+- Profile photo (or initials avatar if none)
+- Gender icon next to name (Lucide icon ♂/♀)
+- Name (or "משתתף אנונימי" if registered anonymously)
+- Personal slogan ("סלוגן אישי") if filled in profile
+- Waitlist members shown separately below a divider

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import NotificationBell from "@/components/NotificationBell";
 import ModeSwitch from "@/components/ModeSwitch";
 import { googleCalendarUrl } from "@/lib/calendar";
+import { coverImages } from "@/lib/tripImage";
 
 const DIFF_BADGE: Record<string, { bg: string; color: string; label: string }> = {
   EASY: { bg: "#EAF3DE", color: "#27500A", label: "קל" },
@@ -197,10 +198,8 @@ export default function GuideDashboard() {
             ) : selfGuided.map((t) => (
               <div key={t.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex">
                 <div className="w-24 flex-shrink-0" style={{ minHeight: 96 }}>
-                  {t.images?.[0] ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={t.images[0]} alt="" className="w-full h-full object-cover" />
-                  ) : <div className="w-full h-full" style={{ background: "linear-gradient(160deg,#3d6b35,#1a3d16)", minHeight: 96 }} />}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={coverImages(t.images, t.id, { region: t.region, title: t.title })[0]} alt="" className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 p-3 min-w-0">
                   <div className="text-sm font-medium text-gray-900 truncate">{t.title}</div>
@@ -295,12 +294,8 @@ export default function GuideDashboard() {
                   style={{ height: 150 }}
                   onClick={() => router.push(`/trips/${trip.id}`)}
                 >
-                  {trip.images?.[0] ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={trip.images[0]} alt={trip.title} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full" style={{ background: "linear-gradient(160deg, #2d6b4a, #0f3d2e)" }} />
-                  )}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={coverImages(trip.images, trip.id, { region: trip.region, title: trip.title })[0]} alt={trip.title} className="w-full h-full object-cover" />
 
                   <div className="absolute top-2.5 right-2.5 flex gap-1.5">
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: statusBadge.bg, color: statusBadge.color }}>

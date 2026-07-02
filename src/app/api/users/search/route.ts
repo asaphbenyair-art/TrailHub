@@ -8,12 +8,15 @@ export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
 
-  const q = (new URL(req.url).searchParams.get("q") ?? "").trim();
+  const params = new URL(req.url).searchParams;
+  const q = (params.get("q") ?? "").trim();
+  const role = params.get("role"); // e.g. TRIP_MANAGER → restrict to that role only
   if (q.length < 2) return NextResponse.json([]);
 
   const users = await prisma.user.findMany({
     where: {
       id: { not: session.user.id! },
+      ...(role ? { role: role as "USER" | "GUIDE" | "TRIP_MANAGER" | "ADMIN" } : {}),
       OR: [
         { name: { contains: q, mode: "insensitive" } },
         { email: { contains: q, mode: "insensitive" } },

@@ -12,12 +12,14 @@ export default function UserPicker({
   onChange,
   max = 3,
   guidesOnly = false,
+  managersOnly = false,
 }: {
   placeholder?: string;
   selected: string[];        // selected emails
   onChange: (emails: string[]) => void;
   max?: number;
   guidesOnly?: boolean;
+  managersOnly?: boolean;    // search only "מנהל טיול" (TRIP_MANAGER) users
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<FoundUser[]>([]);
@@ -29,13 +31,14 @@ export default function UserPicker({
     if (query.trim().length < 2) { setResults([]); return; }
     timer.current = setTimeout(async () => {
       try {
-        const r = await fetch(`/api/users/search?q=${encodeURIComponent(query.trim())}`);
+        const roleParam = managersOnly ? "&role=TRIP_MANAGER" : "";
+        const r = await fetch(`/api/users/search?q=${encodeURIComponent(query.trim())}${roleParam}`);
         const data: FoundUser[] = r.ok ? await r.json() : [];
         setResults(guidesOnly ? data.filter((u) => u.isGuide) : data);
         setOpen(true);
       } catch { setResults([]); }
     }, 250);
-  }, [query, guidesOnly]);
+  }, [query, guidesOnly, managersOnly]);
 
   function add(u: FoundUser) {
     if (selected.includes(u.email) || selected.length >= max) return;

@@ -362,11 +362,11 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
           )}
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-[11px] text-gray-400">מנהלי-משנה (גישה מלאה, עד 3) — חפש משתמשים רשומים</label>
-          <UserPicker max={3} placeholder="חפש מנהל-משנה..."
+          <label className="text-[11px] text-gray-400">מנהלי טיול (גישה מלאה, עד 3) — חפש משתמשים עם תפקיד מנהל טיול</label>
+          <UserPicker max={3} managersOnly placeholder="חפש מנהל טיול..."
             selected={data.managerEmails || []}
             onChange={(emails) => onChange("managerEmails" as keyof WizardData, emails as unknown as string)} />
-          <p className="text-[11px] text-gray-400">מנהל-משנה רואה ויכול לעשות הכל כמו המדריך, אך אינו מוצג כמדריך בטיול.</p>
+          <p className="text-[11px] text-gray-400">מנהל טיול רואה ויכול לעשות הכל כמו המדריך, אך אינו מוצג כמדריך בטיול.</p>
         </div>
       </div>
       )}

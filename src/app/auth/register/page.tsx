@@ -65,6 +65,7 @@ export default function RegisterPage() {
       });
       if (result?.ok) {
         if (form.role === "GUIDE") router.push("/guide/dashboard");
+        else if (form.role === "TRIP_MANAGER") router.push("/manager");
         else router.push("/trips");
       } else {
         router.push("/auth/login");
@@ -164,10 +165,11 @@ export default function RegisterPage() {
 
             <div className="flex flex-col gap-2">
               <label className="text-xs text-gray-500">אני...</label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {[
-                  { value: "USER",      label: "מטייל",       icon: "🥾" },
-                  { value: "GUIDE",     label: "מדריך",       icon: "🧭" },
+                  { value: "USER",         label: "מטייל",     icon: "🥾" },
+                  { value: "GUIDE",        label: "מדריך",     icon: "🧭" },
+                  { value: "TRIP_MANAGER", label: "מנהל טיול", icon: "🗂" },
                 ].map((opt) => (
                   <button
                     key={opt.value}
