@@ -180,6 +180,7 @@ export default function TripsPage() {
   const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set());
   const [purchaseExpiry, setPurchaseExpiry] = useState<Record<string, string | null>>({});
   const [purchasesOnly, setPurchasesOnly] = useState(false);
+  const [freeOnly, setFreeOnly] = useState(false);
   const [rideDrawer, setRideDrawer] = useState<string | null>(null);
   const [registrantsModal, setRegistrantsModal] = useState<{ id: string; title: string } | null>(null);
   const [guides, setGuides] = useState<GuideCard[]>([]);
@@ -375,6 +376,7 @@ export default function TripsPage() {
   const displayedTrips = (() => {
     let list = trips;
     if (purchasesOnly && filters.category === "self_guided") list = list.filter((t) => purchasedIds.has(t.id));
+    if (freeOnly && filters.category === "self_guided") list = list.filter((t) => t.price === 0);
     if (myTripsOnly && filters.category === "guided") list = list.filter((t) => myRegMap[t.id]);
     if (favoritesOnly) list = list.filter((t) => favIds.has(t.id));
     // Date filter applies to guided trips only (self-guided have no date)
@@ -677,6 +679,13 @@ export default function TripsPage() {
                 </button>
               </>
             )}
+            {filters.category === "self_guided" && (
+              <button type="button" onClick={() => setFreeOnly((v) => !v)}
+                className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap border flex-shrink-0 transition-colors ${
+                  freeOnly ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "bg-surface border-border text-fg-muted"}`}>
+                🆓 חינם בלבד
+              </button>
+            )}
             {filters.regions.map((r) => (
               <button key={r} type="button" onClick={() => clearFilter("regions", r)}
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap bg-[#D6EDE3] border border-[#1A6B4A] text-[#0F5038] flex-shrink-0">
@@ -976,8 +985,14 @@ export default function TripsPage() {
                     {!(myStatus === "CONFIRMED" || myStatus === "WAITLIST") && (
                     <div className="flex items-center justify-between pt-2 border-t border-border">
                       <div>
-                        <span className="text-[17px] font-medium text-fg">₪{trip.price.toLocaleString("he-IL")}</span>
-                        <span className="text-[11px] text-fg-faint mr-1">{isSG ? "לחבילה" : trip.tripType && trip.tripType !== "DAY_HIKE" ? "למסע" : "לאדם"}</span>
+                        {trip.price === 0 ? (
+                          <span className="text-[15px] font-bold px-2 py-0.5 rounded-full" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>חינם</span>
+                        ) : (
+                          <>
+                            <span className="text-[17px] font-medium text-fg">₪{trip.price.toLocaleString("he-IL")}</span>
+                            <span className="text-[11px] text-fg-faint mr-1">{isSG ? "לחבילה" : trip.tripType && trip.tripType !== "DAY_HIKE" ? "למסע" : "לאדם"}</span>
+                          </>
+                        )}
                       </div>
                       <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
                         {isSG ? (
