@@ -77,20 +77,7 @@ export default function GuideDashboard() {
   const [tab, setTab] = useState<"trips" | "selfguided" | "stats">("trips");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [selfGuided, setSelfGuided] = useState<SelfGuidedTrip[]>([]);
-  const [publishId, setPublishId] = useState<string | null>(null);
   const [registrantsModal, setRegistrantsModal] = useState<{ id: string; title: string } | null>(null);
-
-  async function publish(tripId: string, visibility: "PUBLIC" | "PRIVATE") {
-    const res = await fetch(`/api/guide/trips/${tripId}/publish`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ visibility }),
-    });
-    if (res.ok) {
-      setTrips((prev) => prev.map((t) => t.id === tripId ? { ...t, status: "OPEN", visibility } : t));
-      setSelfGuided((prev) => prev.map((t) => t.id === tripId ? { ...t, status: "OPEN" } : t));
-      setPublishId(null);
-    }
-  }
 
   async function broadcast(tripId: string) {
     const message = window.prompt("הודעה לכל הנרשמים:");
@@ -222,15 +209,10 @@ export default function GuideDashboard() {
                     <Link href={`/trips/${t.id}`} className="flex-1 text-center text-[11px] text-[#1A6B4A] border border-[#1A6B4A]/25 rounded-lg py-1.5 hover:bg-[#D6EDE3]">תצוגה</Link>
                   </div>
                   {(t.status === "DRAFT" || t.status === "PENDING_REVIEW") && (
-                    publishId === t.id ? (
-                      <div className="flex gap-2 mt-2">
-                        <button type="button" onClick={() => publish(t.id, "PRIVATE")} className="flex-1 py-1.5 text-[11px] font-semibold rounded-lg border border-[#185FA5] text-[#185FA5]">🔒 פרטי</button>
-                        <button type="button" onClick={() => publish(t.id, "PUBLIC")} className="flex-1 py-1.5 text-[11px] font-semibold rounded-lg bg-[#1A6B4A] text-white">🌍 ציבורי</button>
-                        <button type="button" onClick={() => setPublishId(null)} className="px-2 text-[11px] text-fg-faint">✕</button>
-                      </div>
-                    ) : (
-                      <button type="button" onClick={() => setPublishId(t.id)} className="w-full mt-2 py-1.5 text-[11px] font-semibold rounded-lg border-2 border-dashed border-[#1A6B4A] text-[#1A6B4A] hover:bg-[#D6EDE3]">העבר לפרסום ↑</button>
-                    )
+                    <Link href={`/guide/trips/${t.id}/edit`}
+                      className="block text-center w-full mt-2 py-1.5 text-[11px] font-semibold rounded-lg border-2 border-dashed border-[#1A6B4A] text-[#1A6B4A] hover:bg-[#D6EDE3]">
+                      ✏️ המשך עריכה כדי לפרסם
+                    </Link>
                   )}
                 </div>
               </div>
@@ -397,22 +379,12 @@ export default function GuideDashboard() {
                     </button>
                   </div>
 
-                  {/* Move a draft to published — choose Public or Private */}
+                  {/* Draft cannot be published directly — must complete required fields in the editor */}
                   {(trip.status === "DRAFT" || trip.status === "PENDING_REVIEW" || trip.status === "REJECTED") && (
-                    publishId === trip.id ? (
-                      <div className="mt-2 flex gap-2" onClick={(e) => e.stopPropagation()}>
-                        <button type="button" onClick={() => publish(trip.id, "PRIVATE")}
-                          className="flex-1 py-1.5 text-xs font-semibold rounded-full border border-[#185FA5] text-[#185FA5] hover:bg-[#EEF5FC]">🔒 פרטי</button>
-                        <button type="button" onClick={() => publish(trip.id, "PUBLIC")}
-                          className="flex-1 py-1.5 text-xs font-semibold rounded-full bg-[#1A6B4A] text-white hover:bg-[#155a3e]">🌍 ציבורי</button>
-                        <button type="button" onClick={() => setPublishId(null)} className="px-2 text-xs text-fg-faint">✕</button>
-                      </div>
-                    ) : (
-                      <button type="button" onClick={(e) => { e.stopPropagation(); setPublishId(trip.id); }}
-                        className="w-full mt-2 py-1.5 text-xs font-semibold rounded-full border-2 border-dashed border-[#1A6B4A] text-[#1A6B4A] hover:bg-[#D6EDE3] transition-colors">
-                        העבר לפרסום ↑
-                      </button>
-                    )
+                    <Link href={`/guide/trips/${trip.id}/edit`} onClick={(e) => e.stopPropagation()}
+                      className="block text-center w-full mt-2 py-1.5 text-xs font-semibold rounded-full border-2 border-dashed border-[#1A6B4A] text-[#1A6B4A] hover:bg-[#D6EDE3] transition-colors">
+                      ✏️ המשך עריכה כדי לפרסם
+                    </Link>
                   )}
 
                   {/* Communication links */}

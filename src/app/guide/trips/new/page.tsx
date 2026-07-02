@@ -223,8 +223,8 @@ export default function NewTripWizard() {
           {!isSelfGuided && step === 5 && <Step5 data={data} onChange={onChange} />}
           {isSelfGuided && step === 4 && <Step5 data={data} onChange={onChange} />}
 
-          {/* Save-draft / cancel bar — available at every step */}
-          <div className="flex items-center justify-between px-5 pt-3 gap-2">
+          {/* Save-draft / cancel bar — always visible, clearly separated from content */}
+          <div className="flex items-center justify-between gap-2 px-5 py-2.5 border-t border-border bg-surface">
             <button
               type="button"
               onClick={() => { if (window.confirm("לבטל את יצירת הטיול? השינויים לא יישמרו.")) router.push("/guide/dashboard"); }}

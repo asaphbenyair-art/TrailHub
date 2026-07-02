@@ -166,7 +166,7 @@ export default function EditTripPage() {
     setStep(n);
   }
 
-  async function handleSave() {
+  async function handleSave(forceDraft = false) {
     setSaving(true);
     setError("");
 
@@ -202,7 +202,8 @@ export default function EditTripPage() {
       whatToBring: allEquipment || null,
       healthDeclarationUrl: data.tripType === "SELF_GUIDED" ? null : (data.healthDeclarationUrl || null),
       cancellationPolicy,
-      status: data.status === "PREVIEW" ? "DRAFT" : data.status,
+      status: forceDraft ? "DRAFT" : (data.status === "PREVIEW" ? "DRAFT" : data.status),
+      isDraftSave: forceDraft,
       visibility: data.visibility || "PUBLIC",
       images,
       tripType: data.tripType || "DAY_HIKE",
@@ -304,6 +305,25 @@ export default function EditTripPage() {
           {!isSelfGuided && step === 5 && <Step5 data={data} onChange={onChange} />}
           {isSelfGuided && step === 4 && <Step5 data={data} onChange={onChange} />}
 
+          {/* Save-draft / cancel bar — always visible during any edit session */}
+          <div className="flex items-center justify-between gap-2 px-5 py-2.5 border-t border-border bg-surface">
+            <button
+              type="button"
+              onClick={() => { if (window.confirm("לבטל את העריכה? שינויים שלא נשמרו יאבדו.")) router.push("/guide/dashboard"); }}
+              className="px-3 py-1.5 text-xs text-red-500 border border-red-500/30 rounded-full hover:bg-red-500/10 transition-colors"
+            >
+              בטל
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSave(true)}
+              disabled={saving}
+              className="px-3 py-1.5 text-xs text-[#1A6B4A] border border-[#1A6B4A]/40 rounded-full hover:bg-[#D6EDE3] transition-colors disabled:opacity-60"
+            >
+              {saving ? "שומר..." : "💾 שמור טיוטא"}
+            </button>
+          </div>
+
           <div className="border-t border-border bg-surface-2">
             {error && (
               <div className="px-5 pt-2 text-xs text-red-500 text-center">{error}</div>
@@ -324,7 +344,7 @@ export default function EditTripPage() {
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={handleSave}
+                  onClick={() => handleSave()}
                   disabled={saving}
                   className="px-4 py-2 text-xs border border-[#1A6B4A] text-[#1A6B4A] rounded-full font-medium hover:bg-[#D6EDE3] transition-colors disabled:opacity-60"
                 >
