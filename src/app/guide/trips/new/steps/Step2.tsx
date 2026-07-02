@@ -46,6 +46,62 @@ interface Props {
   onChange: (field: keyof WizardData, value: string | WaypointData[]) => void;
 }
 
+function fmtDur(s?: number) {
+  if (!s || !Number.isFinite(s)) return "";
+  const m = Math.floor(s / 60), sec = Math.round(s % 60);
+  return `${m}:${String(sec).padStart(2, "0")}`;
+}
+
+// Per-waypoint guidance-audio uploader (MP3/M4A/WAV) — inline data URL, max 1 file.
+function WaypointAudio({
+  wp, onSet, onClear,
+}: {
+  wp: WaypointData;
+  onSet: (audio: { audioUrl: string; audioName: string; audioDuration: number }) => void;
+  onClear: () => void;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  function pick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const ok = /audio\/(mpeg|mp3|mp4|x-m4a|aac|wav|wave|x-wav)/i.test(file.type) || /\.(mp3|m4a|wav)$/i.test(file.name);
+    if (!ok) { alert("קובץ אודיו נתמך: MP3 / M4A / WAV"); if (ref.current) ref.current.value = ""; return; }
+    if (file.size > 8 * 1024 * 1024) { alert("הקובץ גדול מדי — עד 8MB"); if (ref.current) ref.current.value = ""; return; }
+    setBusy(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const url = reader.result as string;
+      const audio = new Audio();
+      const done = (dur: number) => { onSet({ audioUrl: url, audioName: file.name, audioDuration: Math.round(dur || 0) }); setBusy(false); if (ref.current) ref.current.value = ""; };
+      audio.onloadedmetadata = () => done(audio.duration);
+      audio.onerror = () => done(0);
+      audio.src = url;
+    };
+    reader.onerror = () => { setBusy(false); if (ref.current) ref.current.value = ""; };
+    reader.readAsDataURL(file);
+  }
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-[11px] font-medium text-fg-muted">🎙 אודיו הדרכה (MP3/M4A/WAV) <span className="text-fg-faint">— עדיף על הקראה אוטומטית</span></label>
+      {wp.audioUrl ? (
+        <div className="bg-surface-2 rounded-lg px-3 py-1.5 flex items-center gap-2 text-xs">
+          <span>🎵</span>
+          <span className="flex-1 truncate text-fg">{wp.audioName || "אודיו"}</span>
+          {wp.audioDuration ? <span className="text-fg-faint">{fmtDur(wp.audioDuration)}</span> : null}
+          <button type="button" onClick={onClear} className="text-fg-faint hover:text-red-400" aria-label="מחק אודיו">✕</button>
+        </div>
+      ) : (
+        <button type="button" onClick={() => ref.current?.click()} disabled={busy}
+          className="text-xs text-[#1A6B4A] border border-dashed border-[#1A6B4A]/40 rounded-lg py-1.5 hover:bg-[#F0FAF5] disabled:opacity-50">
+          {busy ? "מעלה..." : "🎙 העלה אודיו"}
+        </button>
+      )}
+      <input ref={ref} type="file" accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/aac,audio/wav,.mp3,.m4a,.wav" className="hidden" onChange={pick} />
+    </div>
+  );
+}
+
 export default function Step2({ data, onChange }: Props) {
   const gpxRef = useRef<HTMLInputElement>(null);
   const [gpxName, setGpxName] = useState<string>(data.routeGpx ? "מסלול קיים" : "");
@@ -203,6 +259,11 @@ export default function Step2({ data, onChange }: Props) {
                     placeholder="📖 חומר הדרכה (יוקרא בקול — מחליף את המדריך)" className="border border-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1A6B4A] resize-none" />
                   <input type="text" value={wp.safety ?? ""} onChange={(e) => patchWaypoint(i, { safety: e.target.value })}
                     placeholder="⚠ אזהרת בטיחות לקטע זה" className="border border-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1A6B4A]" />
+                  <WaypointAudio
+                    wp={wp}
+                    onSet={(audio) => patchWaypoint(i, audio)}
+                    onClear={() => patchWaypoint(i, { audioUrl: undefined, audioName: undefined, audioDuration: undefined })}
+                  />
                 </div>
               )}
               <div className="mt-1 pt-1.5 border-t border-border">

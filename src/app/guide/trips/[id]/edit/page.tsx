@@ -73,6 +73,9 @@ function tripToWizard(trip: Record<string, unknown>): WizardData {
           guidance: w.guidance ? String(w.guidance) : undefined,
           safety: w.safety ? String(w.safety) : undefined,
           sources: Array.isArray(w.sources) ? (w.sources as SourceMaterial[]) : undefined,
+          audioUrl: w.audioUrl ? String(w.audioUrl) : undefined,
+          audioName: w.audioName ? String(w.audioName) : undefined,
+          audioDuration: w.audioDuration != null ? Number(w.audioDuration) : undefined,
         }))
       : [],
     individualDayPrice: trip.individualDayPrice != null ? String(trip.individualDayPrice) : "",

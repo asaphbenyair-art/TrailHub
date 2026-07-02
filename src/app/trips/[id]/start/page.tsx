@@ -7,7 +7,7 @@ import dynamic from "next/dynamic";
 const TripDetailMap = dynamic(() => import("@/components/TripDetailMap"), { ssr: false });
 
 interface SourceMaterial { type: "pdf" | "link"; url: string; title: string; description?: string }
-interface Waypoint { lat?: number; lng?: number; name?: string; description?: string; navInstructions?: string; guidance?: string; safety?: string; sources?: SourceMaterial[] }
+interface Waypoint { lat?: number; lng?: number; name?: string; description?: string; navInstructions?: string; guidance?: string; safety?: string; sources?: SourceMaterial[]; audioUrl?: string; audioName?: string; audioDuration?: number }
 interface Trip {
   id: string; title: string; description: string | null; whatToBring: string | null; region: string;
   waypointsJson: Waypoint[] | null;
@@ -20,6 +20,49 @@ function speak(text: string) {
   const u = new SpeechSynthesisUtterance(text);
   u.lang = "he-IL";
   window.speechSynthesis.speak(u);
+}
+
+function fmtTime(s: number) {
+  if (!Number.isFinite(s)) return "0:00";
+  const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+  return `${m}:${String(sec).padStart(2, "0")}`;
+}
+
+// Inline guidance-audio player: play/pause + seekable progress bar.
+function WaypointAudioPlayer({ src }: { src: string }) {
+  const ref = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [cur, setCur] = useState(0);
+  const [dur, setDur] = useState(0);
+  function toggle() {
+    const a = ref.current;
+    if (!a) return;
+    if (a.paused) { a.play().catch(() => {}); } else { a.pause(); }
+  }
+  function seek(e: React.MouseEvent<HTMLDivElement>) {
+    const a = ref.current; if (!a || !dur) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    // RTL-aware: bar fills right-to-left
+    const ratio = (rect.right - e.clientX) / rect.width;
+    a.currentTime = Math.min(Math.max(ratio, 0), 1) * dur;
+  }
+  const pct = dur ? (cur / dur) * 100 : 0;
+  return (
+    <div className="flex items-center gap-2 bg-[#D6EDE3] rounded-full pl-3 pr-1.5 py-1.5 shrink-0" style={{ minWidth: 150 }}>
+      <button type="button" onClick={toggle} aria-label={playing ? "השהה" : "נגן"}
+        className="w-6 h-6 rounded-full bg-[#1A6B4A] text-white flex items-center justify-center text-[11px] shrink-0">
+        {playing ? "⏸" : "▶"}
+      </button>
+      <div className="flex-1 h-1.5 rounded-full bg-[#1A6B4A]/20 cursor-pointer relative" onClick={seek}>
+        <div className="absolute top-0 right-0 h-full rounded-full bg-[#1A6B4A]" style={{ width: `${pct}%` }} />
+      </div>
+      <span className="text-[10px] text-[#0F5038] tabular-nums shrink-0">{fmtTime(cur)}/{fmtTime(dur)}</span>
+      <audio ref={ref} src={src} preload="metadata"
+        onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)}
+        onLoadedMetadata={(e) => setDur(e.currentTarget.duration || 0)}
+        onTimeUpdate={(e) => setCur(e.currentTarget.currentTime)} />
+    </div>
+  );
 }
 
 export default function SelfGuidedStartPage() {
@@ -176,8 +219,13 @@ export default function SelfGuidedStartPage() {
                   <button type="button" onClick={() => focusOnWaypoint(i)}
                     className="text-[11px] text-[#185FA5] border border-[#185FA5]/30 rounded-full px-2 py-1 shrink-0">📍 במפה</button>
                 )}
-                <button type="button" onClick={() => speak([wp.guidance, wp.navInstructions, wp.description].filter(Boolean).join(". "))}
-                  className="text-xs text-[#1A6B4A] border border-[#1A6B4A]/30 rounded-full px-2.5 py-1 shrink-0">🔊 הקרא</button>
+                {/* Audio takes priority over TTS when the guide uploaded a clip */}
+                {wp.audioUrl ? (
+                  <WaypointAudioPlayer src={wp.audioUrl} />
+                ) : (
+                  <button type="button" onClick={() => speak([wp.guidance, wp.navInstructions, wp.description].filter(Boolean).join(". "))}
+                    className="text-xs text-[#1A6B4A] border border-[#1A6B4A]/30 rounded-full px-2.5 py-1 shrink-0">🔊 הקרא</button>
+                )}
               </div>
               {wp.navInstructions && (
                 <div className="text-xs text-fg bg-surface-2 rounded-lg px-3 py-2 mb-1.5">🧭 {wp.navInstructions}</div>

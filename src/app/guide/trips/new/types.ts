@@ -49,6 +49,9 @@ export interface WaypointData {
   guidance?: string;        // guidance material text (self-guided, read-aloud)
   safety?: string;          // segment safety warning (self-guided)
   sources?: SourceMaterial[];
+  audioUrl?: string;        // uploaded guidance audio (data URL) — takes priority over TTS
+  audioName?: string;
+  audioDuration?: number;   // seconds
 }
 
 export interface WizardData {
