@@ -210,7 +210,6 @@ export default function TripsPage() {
   }
   const [range, setRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
   const [mobileCalOpen, setMobileCalOpen] = useState(false);
-  const [view, setView] = useState<"list" | "calendar">("list");
   const [showIntent, setShowIntent] = useState(false);
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -241,16 +240,13 @@ export default function TripsPage() {
     if (typeof window !== "undefined") localStorage.setItem("trailhub_intent", opt);
     setShowIntent(false);
     if (opt === "when") {
-      setView("calendar");
+      setMobileCalOpen(true); // open the date filter (calendar is a filter, not a view)
     } else if (opt === "kind") {
-      setView("list"); setPanelOpen(true);
+      setPanelOpen(true);
     } else if (opt === "soon") {
-      setView("list");
       const next = { ...filters, sort: "date" }; setFilters(next); fetchTrips(next);
-    } else {
-      // browse — preferences already seed filters; just show the list
-      setView("list");
     }
+    // browse — preferences already seed filters; just show the list
   }
 
   const fetchTrips = useCallback(async (f: Filters) => {
@@ -362,7 +358,8 @@ export default function TripsPage() {
     if (purchasesOnly && filters.category === "self_guided") list = list.filter((t) => purchasedIds.has(t.id));
     if (myTripsOnly && filters.category === "guided") list = list.filter((t) => myRegMap[t.id]);
     if (favoritesOnly) list = list.filter((t) => favIds.has(t.id));
-    if (!range.start) return list;
+    // Date filter applies to guided trips only (self-guided have no date)
+    if (!range.start || filters.category === "self_guided") return list;
     const startMs = new Date(range.start.getFullYear(), range.start.getMonth(), range.start.getDate()).getTime();
     const endRef = range.end ?? range.start;
     const endMs = new Date(endRef.getFullYear(), endRef.getMonth(), endRef.getDate(), 23, 59, 59).getTime();
@@ -524,37 +521,15 @@ export default function TripsPage() {
         );
       })()}
 
-      {/* List / Calendar view toggle */}
-      <div className={`max-w-5xl mx-auto px-3 mb-2 flex justify-center md:justify-start ${filters.category === "self_guided" || filters.category === "guides" ? "hidden" : ""}`}>
-        <div className="inline-flex bg-white rounded-full border border-gray-200 p-0.5">
-          {([["list", "📋 רשימה"], ["calendar", "📅 יומן"]] as const).map(([v, label]) => (
-            <button key={v} type="button" onClick={() => setView(v)}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                view === v ? "bg-[#1A6B4A] text-white" : "text-gray-500 hover:text-gray-700"
-              }`}>
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Body (list view) — the calendar is a date filter only now, no separate view */}
+      <div className={`max-w-5xl mx-auto px-3 pb-24 ${filters.category === "guides" ? "hidden" : "md:flex md:gap-4"}`}>
 
-      {/* Calendar full view */}
-      {view === "calendar" && filters.category !== "guides" && (
-        <div className="max-w-5xl mx-auto px-3 pb-8">
-          <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
-            <CalendarView trips={trips} regStatus={myRegMap} />
-          </div>
-        </div>
-      )}
-
-      {/* Body (list view) */}
-      <div className={`max-w-5xl mx-auto px-3 pb-24 ${view === "calendar" || filters.category === "guides" ? "hidden" : "md:flex md:gap-4"}`}>
-
-        {/* ── Calendar side panel (desktop, RIGHT side in RTL) ── */}
+        {/* ── Date-filter side panel (desktop) — guided only; self-guided has no dates ── */}
+        {filters.category !== "self_guided" && (
         <aside className="hidden md:block w-[290px] shrink-0 self-start sticky top-4">
           <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
             <div className="px-3 pt-3 pb-1 border-b border-gray-100">
-              <span className="text-sm font-semibold text-gray-800">📅 יומן טיולים</span>
+              <span className="text-sm font-semibold text-gray-800">📅 סינון לפי תאריך</span>
               {range.start && (
                 <button type="button" onClick={() => setRange({ start: null, end: null })}
                   className="float-left text-[10px] text-gray-400 hover:text-[#1A6B4A] mt-0.5">נקה</button>
@@ -568,40 +543,44 @@ export default function TripsPage() {
             />
           </div>
         </aside>
+        )}
 
         {/* ── List panel (LEFT side in RTL) ── */}
         <main className="flex-1 min-w-0 md:max-w-none max-w-[480px] mx-auto md:mx-0">
 
-          {/* Mobile calendar toggle */}
-          <div className="md:hidden mb-2">
-            <button
-              type="button"
-              onClick={() => setMobileCalOpen((v) => !v)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition-colors ${
-                mobileCalOpen || range.start
-                  ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]"
-                  : "bg-white border-gray-200 text-gray-600"
-              }`}
-            >
-              📅 {range.start
-                ? rangeLabel({ day: "numeric", month: "short" })
-                : "סנן לפי תאריך"}
-              {range.start && (
-                <span onClick={(e) => { e.stopPropagation(); setRange({ start: null, end: null }); }} className="font-bold">✕</span>
-              )}
-            </button>
-          </div>
+          {/* Mobile date filter (guided only — self-guided has no dates) */}
+          {filters.category !== "self_guided" && (
+            <>
+              <div className="md:hidden mb-2">
+                <button
+                  type="button"
+                  onClick={() => setMobileCalOpen((v) => !v)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                    mobileCalOpen || range.start
+                      ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]"
+                      : "bg-white border-gray-200 text-gray-600"
+                  }`}
+                >
+                  📅 {range.start
+                    ? rangeLabel({ day: "numeric", month: "short" })
+                    : "סנן לפי תאריך"}
+                  {range.start && (
+                    <span onClick={(e) => { e.stopPropagation(); setRange({ start: null, end: null }); }} className="font-bold">✕</span>
+                  )}
+                </button>
+              </div>
 
-          {/* Mobile calendar panel */}
-          {mobileCalOpen && (
-            <div className="md:hidden bg-white rounded-2xl overflow-hidden mb-2 shadow-sm">
-              <CalendarView
-                compact
-                trips={trips}
-                range={range}
-                onRangeChange={handleRangeChange}
-              />
-            </div>
+              {mobileCalOpen && (
+                <div className="md:hidden bg-white rounded-2xl overflow-hidden mb-2 shadow-sm">
+                  <CalendarView
+                    compact
+                    trips={trips}
+                    range={range}
+                    onRangeChange={handleRangeChange}
+                  />
+                </div>
+              )}
+            </>
           )}
 
           {/* Filter chips */}

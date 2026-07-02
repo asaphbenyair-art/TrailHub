@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 const WEEKDAY_NAMES = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
@@ -56,6 +56,25 @@ function CompactMonthPanel({
   const [viewYear, setViewYear] = useState(anchor?.getFullYear() ?? today.getFullYear());
   const [viewMonth, setViewMonth] = useState(anchor?.getMonth() ?? today.getMonth());
   const [jumpValue, setJumpValue] = useState("");
+
+  // Drag-to-select a date range (mousedown → drag across days → mouseup)
+  const [dragging, setDragging] = useState(false);
+  const dragAnchor = useRef<Date | null>(null);
+  const dragMoved = useRef(false);
+  useEffect(() => {
+    const up = () => setDragging(false);
+    window.addEventListener("mouseup", up);
+    return () => window.removeEventListener("mouseup", up);
+  }, []);
+
+  function startDrag(d: Date) { dragAnchor.current = d; dragMoved.current = false; setDragging(true); }
+  function dragOver(d: Date) {
+    if (!dragging || !dragAnchor.current) return;
+    dragMoved.current = true;
+    const a = dragAnchor.current;
+    const [s, e] = d < a ? [d, a] : [a, d];
+    onRangeChange({ start: s, end: e });
+  }
 
   useEffect(() => {
     if (range.start) {
@@ -186,8 +205,10 @@ function CompactMonthPanel({
               key={i}
               type="button"
               disabled={!cell.curr}
-              onClick={() => cell.curr && handleDayClick(cell.day)}
-              className={`flex flex-col items-center py-1 transition-colors ${
+              onMouseDown={() => cellDate && startDrag(cellDate)}
+              onMouseEnter={() => cellDate && dragOver(cellDate)}
+              onClick={() => { if (!cell.curr) return; if (dragMoved.current) { dragMoved.current = false; return; } handleDayClick(cell.day); }}
+              className={`flex flex-col items-center py-1 transition-colors select-none ${
                 isEndpoint ? "bg-[#1A6B4A] rounded-lg" :
                 inRange ? "bg-[#D6EDE3] rounded-none" :
                 cell.curr ? "hover:bg-gray-100 cursor-pointer rounded-lg" : "cursor-default rounded-lg"
