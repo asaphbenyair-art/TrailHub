@@ -7,8 +7,12 @@ import bcrypt from "bcryptjs";
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
-// Verified Unsplash portrait photo IDs (each returns 200) — one unique per guide.
-const photo = (id: string) => `https://images.unsplash.com/photo-${id}?w=400&h=400&fit=crop&q=80`;
+// Masculine, modest illustrated avatars (DiceBear avataaars) — forced facial
+// hair so every guide reads clearly male, deterministic per email, no women.
+// (source.unsplash.com's "?man" query was shut down, so photos can't be
+//  gender-guaranteed; illustrated masculine avatars satisfy the requirement.)
+const photo = (seed: string) =>
+  `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(seed)}&facialHairProbability=100&accessoriesProbability=0`;
 
 // The 12 canonical guides — the ONLY guides that should exist on the platform.
 const GUIDES = [
@@ -71,8 +75,8 @@ async function main() {
   for (const g of GUIDES) {
     const user = await prisma.user.upsert({
       where: { email: g.email },
-      update: { name: g.name, image: photo(g.photoId), role: "GUIDE", password },
-      create: { name: g.name, email: g.email, password, role: "GUIDE", image: photo(g.photoId) },
+      update: { name: g.name, image: photo(g.email), role: "GUIDE", password },
+      create: { name: g.name, email: g.email, password, role: "GUIDE", image: photo(g.email) },
     });
     const data = {
       bio: g.bio, headline: g.headline, location: g.location, yearsActive: g.yearsActive,

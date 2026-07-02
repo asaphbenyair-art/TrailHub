@@ -512,7 +512,7 @@ export default function TripsPage() {
       )}
 
       {/* Body (list view) */}
-      <div className={`max-w-5xl mx-auto px-3 pb-24 md:flex md:gap-4 ${view === "calendar" || filters.category === "guides" ? "hidden" : ""}`}>
+      <div className={`max-w-5xl mx-auto px-3 pb-24 ${view === "calendar" || filters.category === "guides" ? "hidden" : "md:flex md:gap-4"}`}>
 
         {/* ── Calendar side panel (desktop, RIGHT side in RTL) ── */}
         <aside className="hidden md:block w-[290px] shrink-0 self-start sticky top-4">
