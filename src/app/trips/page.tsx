@@ -9,6 +9,8 @@ import CalendarView from "@/components/CalendarView";
 import ModeSwitch from "@/components/ModeSwitch";
 import { TRIP_TAGS } from "@/lib/tripTags";
 import { coverImages } from "@/lib/tripImage";
+import RideshareBoard from "@/components/RideshareBoard";
+import { Car, Lock, UserSearch, X } from "lucide-react";
 
 const REGIONS = ["גליל עליון","גליל תחתון","כרמל","ירושלים","שפלה","נגב","ערבה","גולן","עמק יזרעאל"];
 const DIFFICULTIES = [
@@ -54,8 +56,51 @@ interface Trip {
   date: string; startTime: string; durationMin: number; distanceKm: number;
   price: number; maxSpots: number; spotsBooked: number; images: string[];
   tripType?: string; endDate?: string | null; _count?: { days: number }; accessWindowDays?: number | null;
+  rideSpots?: number; rideSeekers?: number;
   guide: { rating: number; user: { name: string | null } };
   guides?: { role: string; guide: { user: { name: string | null } } }[];
+}
+
+// Rideshare indicator for the trip-card stats row — 5 states (CLAUDE.md spec).
+function RideshareIndicator({ trip, hasAccess, onOpen }: { trip: Trip; hasAccess: boolean; onOpen: () => void }) {
+  const spots = trip.rideSpots ?? 0;
+  const seekers = trip.rideSeekers ?? 0;
+  const MUTED = "#9ca3af", BLUE = "#185FA5", GREEN = "#1A6B4A";
+
+  // State 1 — no access (not registered/interested): locked, not clickable
+  if (!hasAccess) {
+    return (
+      <div className="flex flex-col items-end shrink-0" title="הירשם לטיול כדי לגשת ללוח הטרמפים">
+        <span className="text-[9px] leading-none mb-1" style={{ color: MUTED }}>טרמפים</span>
+        <span className="flex items-center gap-0.5" style={{ color: MUTED, opacity: 0.5 }}>
+          <Car size={14} /><Lock size={10} />
+        </span>
+      </div>
+    );
+  }
+
+  const labelColor = spots > 0 ? GREEN : seekers > 0 ? BLUE : MUTED;
+  return (
+    <button type="button" onClick={(e) => { e.stopPropagation(); onOpen(); }} className="flex flex-col items-end shrink-0">
+      <span className="text-[9px] leading-none mb-1" style={{ color: labelColor }}>טרמפים</span>
+      {spots > 0 && seekers > 0 ? (
+        // State 5 — both rides and seekers
+        <span className="flex items-center gap-1.5">
+          <span className="flex items-center gap-0.5 text-[10px] font-semibold" style={{ color: GREEN }}><Car size={13} />{spots}</span>
+          <span className="flex items-center gap-0.5 text-[10px] font-semibold" style={{ color: BLUE }}><UserSearch size={13} />{seekers}</span>
+        </span>
+      ) : spots > 0 ? (
+        // State 4 — rides available
+        <span className="flex items-center gap-0.5 text-[10px] font-semibold" style={{ color: GREEN }}><Car size={13} />{spots} מקומות</span>
+      ) : seekers > 0 ? (
+        // State 3 — only seekers
+        <span className="flex items-center gap-0.5 text-[10px] font-semibold" style={{ color: BLUE }}><UserSearch size={13} />{seekers} מחפשים</span>
+      ) : (
+        // State 2 — registered, no rides yet
+        <span className="flex items-center gap-0.5 text-[10px]" style={{ color: MUTED }}><Car size={13} />אין עדיין</span>
+      )}
+    </button>
+  );
 }
 
 function tripDayCount(t: Trip): number {
@@ -112,6 +157,7 @@ export default function TripsPage() {
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
   const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set());
   const [purchasesOnly, setPurchasesOnly] = useState(false);
+  const [rideDrawer, setRideDrawer] = useState<string | null>(null);
 
   async function toggleFav(tripId: string) {
     if (!session) { router.push("/auth/login"); return; }
@@ -753,13 +799,22 @@ export default function TripsPage() {
                         ];
                     return (
                   <div className="px-3 pt-2 pb-2.5">
-                    <div className="flex flex-wrap mb-2" style={{ gap: 0 }}>
-                      {meta.map((m, i, arr) => (
-                        <span key={i} className="text-[11px] text-gray-500"
-                          style={{ paddingLeft: i < arr.length-1 ? 8 : 0, marginLeft: i < arr.length-1 ? 8 : 0, borderLeft: i < arr.length-1 ? "1px solid #eee" : "none" }}>
-                          {m.t}
-                        </span>
-                      ))}
+                    <div className="flex items-end justify-between gap-2 mb-2">
+                      <div className="flex flex-wrap" style={{ gap: 0 }}>
+                        {meta.map((m, i, arr) => (
+                          <span key={i} className="text-[11px] text-gray-500"
+                            style={{ paddingLeft: i < arr.length-1 ? 8 : 0, marginLeft: i < arr.length-1 ? 8 : 0, borderLeft: i < arr.length-1 ? "1px solid #eee" : "none" }}>
+                            {m.t}
+                          </span>
+                        ))}
+                      </div>
+                      {!isSG && (
+                        <RideshareIndicator
+                          trip={trip}
+                          hasAccess={!!myStatus && myStatus !== "CANCELLED"}
+                          onOpen={() => setRideDrawer(trip.id)}
+                        />
+                      )}
                     </div>
                     {!isSG && (
                     <div className="mb-2">
@@ -814,6 +869,27 @@ export default function TripsPage() {
           </div>
         </main>
       </div>
+
+      {/* Rideshare bottom drawer — full board content, in-context (not a new page) */}
+      {rideDrawer && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setRideDrawer(null)}>
+          <div className="absolute inset-0 bg-black/50" />
+          <div dir="rtl" className="relative w-full max-w-[480px] bg-white rounded-t-3xl max-h-[82vh] overflow-y-auto shadow-2xl"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="sticky top-0 bg-white px-4 py-3 border-b border-gray-100 flex items-center justify-between z-10">
+              <span className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
+                <Car size={16} className="text-[#1A6B4A]" /> לוח הטרמפים
+              </span>
+              <button type="button" onClick={() => setRideDrawer(null)} className="text-gray-400 hover:text-gray-600">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-4">
+              <RideshareBoard tripId={rideDrawer} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

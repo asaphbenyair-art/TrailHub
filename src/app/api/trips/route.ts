@@ -76,5 +76,30 @@ export async function GET(request: Request) {
       })
     : trips;
 
-  return NextResponse.json(filtered);
+  // Rideshare summary per trip for the card indicator: available seats across
+  // open offers + number of "looking for a ride" seekers.
+  const ids = filtered.map((t) => t.id);
+  const [offers, seekerGroups] = await Promise.all([
+    prisma.rideshareOffer.findMany({
+      where: { tripId: { in: ids }, isCancelled: false },
+      select: { tripId: true, spots: true, _count: { select: { claims: true } } },
+    }),
+    prisma.rideshareRequest.groupBy({
+      by: ["tripId"],
+      where: { tripId: { in: ids } },
+      _count: { _all: true },
+    }),
+  ]);
+  const spotsByTrip: Record<string, number> = {};
+  for (const o of offers) spotsByTrip[o.tripId] = (spotsByTrip[o.tripId] ?? 0) + Math.max(o.spots - o._count.claims, 0);
+  const seekersByTrip: Record<string, number> = {};
+  for (const g of seekerGroups) seekersByTrip[g.tripId] = g._count._all;
+
+  const withRideshare = filtered.map((t) => ({
+    ...t,
+    rideSpots: spotsByTrip[t.id] ?? 0,
+    rideSeekers: seekersByTrip[t.id] ?? 0,
+  }));
+
+  return NextResponse.json(withRideshare);
 }
