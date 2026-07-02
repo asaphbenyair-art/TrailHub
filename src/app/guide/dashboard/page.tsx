@@ -417,12 +417,13 @@ export default function GuideDashboard() {
 
                   {/* Communication links */}
                   <div className="flex gap-2 mt-2.5 pt-2.5 border-t border-border">
-                    <Link
-                      href={`/guide/trips/${trip.id}/registrants`}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setRegistrantsModal({ id: trip.id, title: trip.title }); }}
                       className="flex-1 text-center text-[11px] text-[#7A5010] border border-[#E8A020]/30 bg-[#FDF6E8] rounded-lg py-1.5 hover:bg-[#FBEFD5] transition-colors"
                     >
                       👥 נרשמים
-                    </Link>
+                    </button>
                     <Link
                       href={`/guide/trips/${trip.id}/qa`}
                       className="flex-1 text-center text-[11px] text-[#1A6B4A] border border-[#1A6B4A]/25 bg-[#F0FAF5] rounded-lg py-1.5 hover:bg-[#D6EDE3] transition-colors"
