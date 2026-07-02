@@ -63,19 +63,21 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
 
   const healthRef = useRef<HTMLInputElement>(null);
   const [uploadingHealth, setUploadingHealth] = useState(false);
-  async function uploadHealthPdf(e: React.ChangeEvent<HTMLInputElement>) {
+  function uploadHealthPdf(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.type !== "application/pdf") { alert("יש להעלות קובץ PDF"); if (healthRef.current) healthRef.current.value = ""; return; }
+    if (file.size > 4 * 1024 * 1024) { alert("הקובץ גדול מדי — עד 4MB"); if (healthRef.current) healthRef.current.value = ""; return; }
+    // Inline data URL — works on serverless/read-only hosting; shows immediately.
     setUploadingHealth(true);
-    try {
-      const form = new FormData();
-      form.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", body: form });
-      if (res.ok) { const { url } = await res.json(); onChange("healthDeclarationUrl" as keyof WizardData, url); }
-    } finally {
+    const reader = new FileReader();
+    reader.onload = () => {
+      onChange("healthDeclarationUrl" as keyof WizardData, reader.result as string);
       setUploadingHealth(false);
       if (healthRef.current) healthRef.current.value = "";
-    }
+    };
+    reader.onerror = () => { setUploadingHealth(false); if (healthRef.current) healthRef.current.value = ""; };
+    reader.readAsDataURL(file);
   }
 
   return (

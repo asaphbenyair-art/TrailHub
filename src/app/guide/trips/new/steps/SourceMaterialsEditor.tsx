@@ -29,23 +29,23 @@ export default function SourceMaterialsEditor({
   function setDescription(i: number, description: string) {
     onChange(materials.map((m, j) => (j === i ? { ...m, description } : m)));
   }
-  async function uploadPdf(e: React.ChangeEvent<HTMLInputElement>) {
+  function uploadPdf(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (materials.length >= maxFiles) return;
+    if (materials.length >= maxFiles) { if (fileRef.current) fileRef.current.value = ""; return; }
+    if (file.type !== "application/pdf") { alert("יש להעלות קובץ PDF"); if (fileRef.current) fileRef.current.value = ""; return; }
+    if (file.size > 4 * 1024 * 1024) { alert("הקובץ גדול מדי — עד 4MB"); if (fileRef.current) fileRef.current.value = ""; return; }
+    // Store the PDF inline as a data URL (works on read-only/serverless hosting;
+    // shows immediately). No server write needed.
     setUploading(true);
-    try {
-      const form = new FormData();
-      form.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", body: form });
-      if (res.ok) {
-        const { url } = await res.json();
-        onChange([...materials, { type: "pdf", url, title: file.name }]);
-      }
-    } finally {
+    const reader = new FileReader();
+    reader.onload = () => {
+      onChange([...materials, { type: "pdf", url: reader.result as string, title: file.name }]);
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
-    }
+    };
+    reader.onerror = () => { setUploading(false); if (fileRef.current) fileRef.current.value = ""; };
+    reader.readAsDataURL(file);
   }
 
   return (
