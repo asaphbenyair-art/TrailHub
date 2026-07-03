@@ -171,6 +171,24 @@ export async function PUT(
     });
   }
 
+  // Route (GPX) changed on a trip that already has registrants → auto-broadcast a
+  // route-update notice so everyone re-checks the updated route (spec: GPX edit).
+  const gpxChanged = (routeGpx || null) !== (result.trip.routeGpx || null);
+  if (gpxChanged && registrants.length > 0) {
+    const routeMsg = `המדריך עדכן את מסלול הטיול — ${title ?? result.trip.title}. מומלץ לבדוק את המסלול המעודכן.`;
+    await prisma.broadcast.create({ data: { tripId: id, senderId: session.user.id!, body: routeMsg } });
+    await prisma.notification.createMany({
+      data: registrants.map((r) => ({
+        userId: r.userId,
+        tripId: id,
+        type: "TRIP_UPDATED" as const,
+        title: `עדכון מסלול · ${title ?? result.trip.title}`,
+        body: routeMsg,
+        link: `/trips/${id}`,
+      })),
+    });
+  }
+
   return NextResponse.json(updated);
 }
 

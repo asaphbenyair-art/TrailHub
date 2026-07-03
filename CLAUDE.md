@@ -1926,3 +1926,31 @@ Every time a new user registers (email or Google), send ntfy notification with: 
 - Each review is stored with the user ID in DB
 - In the trip's review section: hiker's own review appears first with "הביקורת שלי" label + edit button
 - In היסטוריה tab: button shows "כתוב ביקורת" or "ערוך ביקורת" based on whether they've reviewed
+
+---
+
+## GPX Route Editing & Waypoint Safety
+
+### Waypoint map gating (creation/edit)
+- The waypoint map section is disabled/greyed until a GPX file is uploaded, showing: "יש להעלות קובץ GPX תחילה כדי להוסיף נקודות עניין". Once a GPX is uploaded the section becomes active.
+- Deleting OR replacing the GPX while waypoints exist prompts: "מחיקת קובץ ה-GPX תמחק את כל נקודות העניין שהגדרת. האם להמשיך?" — confirm deletes all waypoints (and applies the new/empty GPX); cancel keeps the existing GPX and waypoints unchanged.
+
+### GPX edit after publish
+- The GPX may be edited/replaced at any time, even after publish and with registrants.
+- If the trip has registered hikers, saving a changed route first warns: "שינוי המסלול ישלח הודעה אוטומטית לכל הנרשמים. האם להמשיך?". On confirm, the new GPX is saved AND an automatic broadcast + notification is sent to all registrants: "המדריך עדכן את מסלול הטיול — [trip name]. מומלץ לבדוק את המסלול המעודכן." (logged in broadcast history).
+- If the trip has no registrants, the GPX is replaced silently with no notification.
+- Elevation stats and the map/waypoint positions are derived from the GPX on the fly, so they update automatically after a GPX change.
+
+---
+
+## Broadcast (הודעות קבוצתיות) — Modal
+- Guide dashboard trip cards have a single "הודעות קבוצתיות" button (no separate "דחה" / "הודעה לקבוצה" buttons) opening a modal.
+- Modal lists past broadcasts newest-first, with a "+ הודעה חדשה" composer.
+- The composer has an optional "הטיול בוטל" checkbox that requires a reason; cancellation broadcasts are shown in red in the history list.
+
+---
+
+## Search Filters — Persistence & Presets
+- Active filters persist permanently (localStorage) — never reset on refresh or navigation.
+- Profile preferences are NOT auto-applied as filters.
+- The filter panel has an "אפס לפי העדפותי" button that loads the user's saved profile preferences (regions/difficulties) into the active filters — the only connection between profile prefs and active filters.

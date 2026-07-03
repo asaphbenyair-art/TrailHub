@@ -127,13 +127,24 @@ export default function Step2({ data, onChange }: Props) {
   // GPX file dialog closes — GPX must only draw the route, never add a waypoint.
   const gpxPickedAt = useRef(0);
 
+  const GPX_REMOVE_WARNING = "מחיקת קובץ ה-GPX תמחק את כל נקודות העניין שהגדרת. האם להמשיך?";
+
   function handleGpxFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    // Replacing an existing GPX while waypoints exist wipes them — confirm first.
+    if (gpxContent && mapWaypoints.length > 0 && !window.confirm(GPX_REMOVE_WARNING)) {
+      if (gpxRef.current) gpxRef.current.value = "";
+      return;
+    }
     gpxPickedAt.current = Date.now();
     setGpxName(file.name);
     const reader = new FileReader();
-    reader.onload = (ev) => onChange("routeGpx", (ev.target?.result as string) ?? "");
+    reader.onload = (ev) => {
+      onChange("routeGpx", (ev.target?.result as string) ?? "");
+      // A new route invalidates existing waypoints (they were placed on the old one).
+      if (mapWaypoints.length > 0) onChange("waypointsJson", []);
+    };
     reader.readAsText(file);
   }
 
@@ -155,11 +166,13 @@ export default function Step2({ data, onChange }: Props) {
     onChange("waypointsJson", mapWaypoints.filter((_, j) => j !== i));
   }
   function clearGpx() {
+    if (mapWaypoints.length > 0 && !window.confirm(GPX_REMOVE_WARNING)) return;
     setGpxName("");
     onChange("routeGpx", "");
     onChange("waypointsJson", []);
     if (gpxRef.current) gpxRef.current.value = "";
   }
+  const hasGpx = !!gpxContent;
 
   return (
     <div className="p-5 flex flex-col gap-4">
@@ -200,7 +213,13 @@ export default function Step2({ data, onChange }: Props) {
         <input ref={gpxRef} type="file" accept=".gpx,application/gpx+xml" className="hidden" onChange={handleGpxFile} />
       </div>
 
-      {/* Map + view/edit mode toggle */}
+      {/* Map + view/edit mode toggle — disabled until a GPX route is uploaded */}
+      {!hasGpx ? (
+        <div className="rounded-xl border border-dashed border-border bg-surface-2/50 py-10 px-4 text-center opacity-70 select-none">
+          <div className="text-2xl mb-2">🗺</div>
+          <div className="text-sm text-fg-muted">יש להעלות קובץ GPX תחילה כדי להוסיף נקודות עניין</div>
+        </div>
+      ) : (
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between gap-2">
           <div className="inline-flex bg-surface-2 rounded-full p-0.5">
@@ -227,6 +246,7 @@ export default function Step2({ data, onChange }: Props) {
           />
         </div>
       </div>
+      )}
 
       {/* Waypoints list — name + description per point */}
       <div className="flex flex-col gap-2">
@@ -234,7 +254,7 @@ export default function Step2({ data, onChange }: Props) {
           <label className="text-xs font-medium text-fg-muted">
             {data.tripType === "SELF_GUIDED" ? "תחנות ניווט" : "נקודות עצירה"} ({mapWaypoints.length})
           </label>
-          <span className="text-[11px] text-fg-faint">הקש על המפה במצב עריכה כדי להוסיף</span>
+          {hasGpx && <span className="text-[11px] text-fg-faint">הקש על המפה במצב עריכה כדי להוסיף</span>}
         </div>
         {data.tripType === "SELF_GUIDED" && mapWaypoints.length === 0 && (
           <p className="text-[11px] text-fg-faint">כל תחנה כוללת הוראות ניווט צעד-אחר-צעד, חומר הדרכה שיוקרא בקול, ואזהרת בטיחות — הם מחליפים את המדריך החי.</p>

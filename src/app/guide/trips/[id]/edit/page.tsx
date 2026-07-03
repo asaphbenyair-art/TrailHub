@@ -133,6 +133,8 @@ export default function EditTripPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [originalGpx, setOriginalGpx] = useState("");
+  const [registrantCount, setRegistrantCount] = useState(0);
 
   const isSelfGuided = data.tripType === "SELF_GUIDED";
   const STEPS = isSelfGuided ? SELF_GUIDED_STEPS : REGULAR_STEPS;
@@ -143,6 +145,8 @@ export default function EditTripPage() {
       .then((trip) => {
         if (trip.error) { router.replace("/guide/dashboard"); return; }
         setData(tripToWizard(trip));
+        setOriginalGpx(String(trip.routeGpx ?? ""));
+        setRegistrantCount(Number(trip.spotsBooked ?? 0));
         setLoading(false);
       })
       .catch(() => router.replace("/guide/dashboard"));
@@ -171,6 +175,11 @@ export default function EditTripPage() {
   }
 
   async function handleSave(forceDraft = false) {
+    // Route change on a trip that has registrants → confirm the auto-notification.
+    const gpxChanged = (data.routeGpx || "") !== (originalGpx || "");
+    if (!forceDraft && gpxChanged && registrantCount > 0) {
+      if (!window.confirm("שינוי המסלול ישלח הודעה אוטומטית לכל הנרשמים. האם להמשיך?")) return;
+    }
     setSaving(true);
     setError("");
 
