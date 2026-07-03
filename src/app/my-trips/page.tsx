@@ -10,6 +10,7 @@ import Brand from "@/components/Brand";
 import ThemeToggle from "@/components/ThemeToggle";
 import ModeIndicator from "@/components/ModeIndicator";
 import SharedTripCard, { type TripCardData } from "@/components/TripCard";
+import QAModal from "@/components/QAModal";
 import { useDateFmt, useCalendarMode } from "@/components/CalendarModeProvider";
 import { formatDualDate } from "@/lib/hebrewDate";
 
@@ -94,9 +95,11 @@ const now = new Date();
 function TripCard({
   reg,
   onCancel,
+  onOpenQa,
 }: {
   reg: Registration;
   onCancel: (id: string) => void;
+  onOpenQa: (id: string, title: string) => void;
 }) {
   const dfmt = useDateFmt();
   const { mode } = useCalendarMode();
@@ -216,10 +219,7 @@ function TripCard({
         <div className="flex gap-1.5 items-center flex-wrap">
           {showQa && (
             <button type="button"
-              onClick={() => {
-                try { window.localStorage.setItem(`qa-ans-seen-${trip.id}`, String(qaAnswered)); } catch {}
-                router.push(`/trips/${trip.id}?scroll=qa-section`);
-              }}
+              onClick={() => onOpenQa(trip.id, trip.title)}
               className="px-2.5 py-1 rounded-full text-[11px] font-medium flex items-center gap-1"
               style={{ color: qaColor, border: `1px solid ${qaColor}55` }}
               title="שאלות ותשובות">
@@ -333,6 +333,7 @@ export default function MyTripsPage() {
   const [activeTab, setActiveTab] = useState<"upcoming" | "interested" | "favorites" | "past" | "selfguided">("upcoming");
   const [purchases, setPurchases] = useState<Array<{ id: string; accessExpiresAt: string | null; trip: { id: string; title: string; region: string; images: string[] } }>>([]);
   const [favorites, setFavorites] = useState<TripCardData[]>([]);
+  const [qaModal, setQaModal] = useState<{ id: string; title: string } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -486,11 +487,15 @@ export default function MyTripsPage() {
         ) : (
           <div className="flex flex-col gap-3">
             {currentList.map((reg) => (
-              <TripCard key={reg.id} reg={reg} onCancel={removeReg} />
+              <TripCard key={reg.id} reg={reg} onCancel={removeReg} onOpenQa={(id, title) => setQaModal({ id, title })} />
             ))}
           </div>
         )}
       </div>
+
+      {qaModal && (
+        <QAModal tripId={qaModal.id} tripTitle={qaModal.title} onClose={() => setQaModal(null)} />
+      )}
     </div>
   );
 }

@@ -13,6 +13,7 @@ import ModeIndicator from "@/components/ModeIndicator";
 import { TRIP_TAGS } from "@/lib/tripTags";
 import { coverImages } from "@/lib/tripImage";
 import RideshareModal from "@/components/RideshareModal";
+import QAModal from "@/components/QAModal";
 import RegistrantsModal from "@/components/RegistrantsModal";
 import { useCalendarMode, useDateFmt } from "@/components/CalendarModeProvider";
 import { Car, Lock, UserSearch, MessageCircle } from "lucide-react";
@@ -218,6 +219,7 @@ export default function TripsPage() {
   const [freeOnly, setFreeOnly] = useState(false);
   const [rideDrawer, setRideDrawer] = useState<string | null>(null);
   const [registrantsModal, setRegistrantsModal] = useState<{ id: string; title: string } | null>(null);
+  const [qaModal, setQaModal] = useState<{ id: string; title: string } | null>(null);
   const [guides, setGuides] = useState<GuideCard[]>([]);
   const [guidesLoaded, setGuidesLoaded] = useState(false);
   const [guideRegions, setGuideRegions] = useState<string[]>([]);
@@ -1021,13 +1023,7 @@ export default function TripsPage() {
                           <QAIndicator
                             trip={trip}
                             hasAccess={!!myStatus && myStatus !== "CANCELLED"}
-                            onOpen={() => {
-                              try {
-                                const answered = Math.max((trip.qaCount ?? 0) - (trip.qaOpen ?? 0), 0);
-                                window.localStorage.setItem(`qa-ans-seen-${trip.id}`, String(answered));
-                              } catch {}
-                              router.push(`/trips/${trip.id}?scroll=qa-section`);
-                            }}
+                            onOpen={() => setQaModal({ id: trip.id, title: trip.title })}
                           />
                           <RideshareIndicator
                             trip={trip}
@@ -1153,6 +1149,10 @@ export default function TripsPage() {
           tripTitle={registrantsModal.title}
           onClose={() => setRegistrantsModal(null)}
         />
+      )}
+
+      {qaModal && (
+        <QAModal tripId={qaModal.id} tripTitle={qaModal.title} onClose={() => setQaModal(null)} />
       )}
     </div>
   );
