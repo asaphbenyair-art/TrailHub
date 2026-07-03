@@ -62,11 +62,9 @@ export default function BottomNav() {
                   </span>
                 )}
               </span>
-              {active && (
-                <span className="text-[10px] font-medium" style={{ color: "var(--accent)" }}>
-                  {label}
-                </span>
-              )}
+              <span className="text-[10px] font-medium" style={{ color: active ? "var(--accent)" : "var(--fg-muted)" }}>
+                {label}
+              </span>
             </Link>
           );
         })}
