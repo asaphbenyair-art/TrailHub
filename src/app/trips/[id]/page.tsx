@@ -727,7 +727,7 @@ export default function TripDetailPage() {
           {/* ── 8. Meeting point + navigation (guided) ── */}
           {!isSelfGuided && trip.meetingPoint && (
             <div className="rounded-2xl p-3.5 border border-border bg-surface">
-              <div className="text-[11px] text-fg-faint mb-1">נקודת מפגש</div>
+              <div className="text-[11px] text-fg-faint mb-1">{tt("meetingPoint")}</div>
               <div className="text-sm text-fg font-medium mb-3">{trip.meetingPoint}</div>
               <div className="flex gap-2">
                 <a href={`https://waze.com/ul?q=${encodeURIComponent(trip.meetingPoint)}&navigate=yes`} target="_blank" rel="noreferrer"
@@ -768,7 +768,7 @@ export default function TripDetailPage() {
 
           {/* ── 10. Map + waypoints (tap row → pan map; details → drawer) ── */}
           <div>
-            <Heading icon={MapPin}>{isSelfGuided ? "מסלול" : "מסלול ותחנות"}</Heading>
+            <Heading icon={MapPin}>{tt("route")}</Heading>
             <div ref={mapWrapRef} className="rounded-2xl overflow-hidden border border-border">
               <TripDetailMap region={trip.region} meetingPoint={trip.meetingPoint}
                 waypoints={waypointsVisible ? parsedWaypoints : []}
@@ -785,7 +785,7 @@ export default function TripDetailPage() {
             <button type="button" onClick={() => setShowLoc((v) => !v)}
               className="mt-2 text-xs rounded-full px-3 py-1.5 inline-flex items-center gap-1.5"
               style={showLoc ? { background: "var(--accent)", color: "var(--accent-ink)" } : { border: "1px solid var(--border)", color: "var(--fg-muted)" }}>
-              <Navigation size={12} /> {showLoc ? "המיקום שלי פעיל" : "הצג את המיקום שלי"}
+              <Navigation size={12} /> {showLoc ? tt("myLocationActive") : tt("showMyLocation")}
             </button>
 
             {waypointsVisible && parsedWaypoints.length > 0 && (
@@ -852,7 +852,7 @@ export default function TripDetailPage() {
                 </div>
                 <button type="button" onClick={copyEquipment}
                   className="text-xs flex items-center gap-1" style={{ color: copied ? "var(--accent)" : "var(--fg-muted)" }}>
-                  {copied ? <><Check size={13} /> הועתק</> : <><Copy size={13} /> העתק רשימה</>}
+                  {copied ? <><Check size={13} /> הועתק</> : <><Copy size={13} /> {tt("copyList")}</>}
                 </button>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -870,7 +870,7 @@ export default function TripDetailPage() {
             sourcesVisible ? (
               <div className="rounded-2xl border border-border bg-surface overflow-hidden">
                 <button type="button" onClick={() => setSourcesOpen((v) => !v)} className="w-full flex items-center justify-between px-4 py-3.5">
-                  <span className="flex items-center gap-2 font-display text-lg text-fg"><BookOpen size={16} style={{ color: "var(--accent)" }} /> חומרי מקור</span>
+                  <span className="flex items-center gap-2 font-display text-lg text-fg"><BookOpen size={16} style={{ color: "var(--accent)" }} /> {tt("sourceMaterials")}</span>
                   <ChevronDown size={17} className={`text-fg-faint transition-transform ${sourcesOpen ? "rotate-180" : ""}`} />
                 </button>
                 {sourcesOpen && <div className="px-4 pb-4 pt-1 border-t border-border"><SourceList items={trip.sourceMaterials} /></div>}
