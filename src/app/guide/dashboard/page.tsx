@@ -45,6 +45,7 @@ interface Trip {
   spotsBooked: number;
   images: string[];
   approvalNote: string | null;
+  unmatchedSeekers?: number;
   visibility?: string;
   tripType?: string;
 }
@@ -378,6 +379,13 @@ export default function GuideDashboard() {
                       נרשמים · {trip.spotsBooked}/{trip.maxSpots}
                     </button>
                   </div>
+
+                  {/* Unmatched ride seekers — informational only */}
+                  {(trip.unmatchedSeekers ?? 0) > 0 && (
+                    <div className="mt-1.5 text-[11px] text-[#185FA5] flex items-center gap-1">
+                      🙋 {trip.unmatchedSeekers} {trip.unmatchedSeekers === 1 ? "מחפש טרמפ" : "מחפשי טרמפ"}
+                    </div>
+                  )}
 
                   {/* Draft cannot be published directly — must complete required fields in the editor */}
                   {(trip.status === "DRAFT" || trip.status === "PENDING_REVIEW" || trip.status === "REJECTED") && (

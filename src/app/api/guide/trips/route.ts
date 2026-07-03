@@ -31,8 +31,33 @@ export async function GET() {
 
   const byId = new Map<string, (typeof guide.trips)[number]>();
   for (const t of [...guide.trips, ...shared]) byId.set(t.id, t);
+  const trips = Array.from(byId.values());
 
-  return NextResponse.json({ guide, trips: Array.from(byId.values()) });
+  // Unmatched ride seekers per trip = people "looking for a ride" beyond the
+  // seats available across open offers (informational card indicator).
+  const ids = trips.map((t) => t.id);
+  const [offers, seekerGroups] = await Promise.all([
+    prisma.rideshareOffer.findMany({
+      where: { tripId: { in: ids }, isCancelled: false },
+      select: { tripId: true, spots: true, _count: { select: { claims: true } } },
+    }),
+    prisma.rideshareRequest.groupBy({
+      by: ["tripId"],
+      where: { tripId: { in: ids } },
+      _count: { _all: true },
+    }),
+  ]);
+  const spotsByTrip: Record<string, number> = {};
+  for (const o of offers) spotsByTrip[o.tripId] = (spotsByTrip[o.tripId] ?? 0) + Math.max(o.spots - o._count.claims, 0);
+  const seekersByTrip: Record<string, number> = {};
+  for (const g of seekerGroups) seekersByTrip[g.tripId] = g._count._all;
+
+  const withRideshare = trips.map((t) => ({
+    ...t,
+    unmatchedSeekers: Math.max((seekersByTrip[t.id] ?? 0) - (spotsByTrip[t.id] ?? 0), 0),
+  }));
+
+  return NextResponse.json({ guide, trips: withRideshare });
 }
 
 export async function POST(req: NextRequest) {
