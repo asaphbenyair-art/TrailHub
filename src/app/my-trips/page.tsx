@@ -331,7 +331,7 @@ export default function MyTripsPage() {
   const [regs, setRegs] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"upcoming" | "interested" | "favorites" | "past" | "selfguided">("upcoming");
-  const [purchases, setPurchases] = useState<Array<{ id: string; accessExpiresAt: string | null; trip: { id: string; title: string; region: string; images: string[] } }>>([]);
+  const [purchases, setPurchases] = useState<Array<{ id: string; accessExpiresAt: string | null; trip: { id: string; title: string; region: string; images: string[]; price?: number } }>>([]);
   const [favorites, setFavorites] = useState<TripCardData[]>([]);
   const [qaModal, setQaModal] = useState<{ id: string; title: string } | null>(null);
 
@@ -427,7 +427,8 @@ export default function MyTripsPage() {
           ) : (
             <div className="flex flex-col gap-3">
               {purchases.map((p) => {
-                const expired = p.accessExpiresAt ? new Date(p.accessExpiresAt) < new Date() : false;
+                const isFree = p.trip.price === 0;
+                const expired = !isFree && p.accessExpiresAt ? new Date(p.accessExpiresAt) < new Date() : false;
                 return (
                   <div key={p.id} className="bg-surface rounded-2xl border border-border overflow-hidden flex">
                     <div className="w-24 flex-shrink-0" style={{ minHeight: 90 }}>
@@ -438,7 +439,9 @@ export default function MyTripsPage() {
                       <div>
                         <div className="text-sm font-medium text-fg truncate">{p.trip.title}</div>
                         <div className="text-xs text-fg-faint mt-0.5">📍 {p.trip.region}</div>
-                        {(() => { const r = accessRemaining(p.accessExpiresAt); return (
+                        {isFree ? (
+                          <div className="text-[11px] mt-1 font-semibold" style={{ color: "#1A6B4A" }}>♾ גישה חופשית · חינם</div>
+                        ) : (() => { const r = accessRemaining(p.accessExpiresAt); return (
                           <div className="text-[11px] mt-1 font-semibold" style={{ color: r.color }}>{r.text}</div>
                         ); })()}
                       </div>

@@ -80,7 +80,8 @@ export async function POST(
   if (!trip) return NextResponse.json({ error: "טיול לא נמצא" }, { status: 404 });
   if (trip.tripType !== "SELF_GUIDED") return NextResponse.json({ error: "לא טיול עצמאי" }, { status: 400 });
 
-  const accessExpiresAt = trip.accessWindowDays
+  // Free self-guided trips have unlimited access — no expiry window.
+  const accessExpiresAt = trip.price > 0 && trip.accessWindowDays
     ? new Date(Date.now() + trip.accessWindowDays * 86400000)
     : null;
 

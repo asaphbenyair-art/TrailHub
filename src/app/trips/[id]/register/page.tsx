@@ -671,12 +671,14 @@ function SelfGuidedPurchaseFlow({ trip }: { trip: Trip }) {
 
   const fmt = (iso: string | null) => iso ? dfmt(iso, { long: true, greg: { day: "numeric", month: "long", year: "numeric" } }) : "";
 
+  const isFree = trip.price === 0;
+
   if (done) {
     return (
       <div className="p-6 text-center">
         <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: "rgba(61,143,95,0.15)" }}><Backpack size={24} style={{ color: "var(--accent)" }} /></div>
-        <div className="text-lg font-semibold text-fg mb-1">הטיול נרכש</div>
-        <div className="text-sm text-fg-muted mb-4 leading-relaxed">{expiresAt ? `התוכן זמין לך מהיום ועד ${fmt(expiresAt)}.` : `התוכן זמין לך למשך ${trip.accessWindowDays ?? 30} ימים.`}</div>
+        <div className="text-lg font-semibold text-fg mb-1">{isFree ? "נרשמת לטיול" : "הטיול נרכש"}</div>
+        <div className="text-sm text-fg-muted mb-4 leading-relaxed">{isFree ? "התוכן זמין לך תמיד, ללא הגבלת זמן." : expiresAt ? `התוכן זמין לך מהיום ועד ${fmt(expiresAt)}.` : `התוכן זמין לך למשך ${trip.accessWindowDays ?? 30} ימים.`}</div>
         <div className="flex flex-col gap-2">
           <button type="button" onClick={() => router.push(`/trips/${trip.id}/start`)} className="w-full py-3 rounded-full text-sm font-semibold" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>▶ התחל טיול</button>
           <button type="button" onClick={() => router.push("/my-trips")} className="w-full py-2.5 text-sm rounded-full" style={{ border: "1px solid var(--border)", color: "var(--fg-muted)" }}>הטיולים שלי</button>
@@ -689,21 +691,25 @@ function SelfGuidedPurchaseFlow({ trip }: { trip: Trip }) {
     <>
       <div className="p-4 border-b border-border">
         <div className="rounded-xl p-3 text-xs text-fg-muted mb-3" style={{ background: "var(--surface-2)" }}>
-          טיול עצמאי — תוכן הדרכה מלא לרכישה. תשלום מיידי וסופי, ללא תאריך וללא הגבלת משתתפים.
+          {isFree
+            ? "טיול עצמאי חינם — תוכן הדרכה מלא, ללא תשלום, גישה חופשית ללא הגבלת זמן וללא הגבלת משתתפים."
+            : "טיול עצמאי — תוכן הדרכה מלא לרכישה. תשלום מיידי וסופי, ללא תאריך וללא הגבלת משתתפים."}
         </div>
         <div className="rounded-xl p-3 border border-border" style={{ background: "var(--surface-2)" }}>
-          <div className="flex justify-between text-sm py-1"><span className="text-fg-muted">מחיר לחבילה</span><span className="font-medium text-fg">₪{trip.price}</span></div>
-          <div className="flex justify-between text-xs py-1 text-fg-faint"><span>חלון גישה</span><span>{trip.accessWindowDays ?? 30} ימים מרגע הרכישה</span></div>
-          <div className="flex justify-between text-sm font-semibold pt-2 mt-1 border-t border-border"><span className="text-fg">סה״כ לתשלום</span><span className="text-fg">₪{trip.price}</span></div>
+          <div className="flex justify-between text-sm py-1"><span className="text-fg-muted">מחיר לחבילה</span><span className="font-medium text-fg">{isFree ? "חינם" : `₪${trip.price}`}</span></div>
+          {!isFree && <div className="flex justify-between text-xs py-1 text-fg-faint"><span>חלון גישה</span><span>{trip.accessWindowDays ?? 30} ימים מרגע הרכישה</span></div>}
+          {isFree && <div className="flex justify-between text-xs py-1 text-fg-faint"><span>גישה</span><span>חופשית, ללא הגבלת זמן</span></div>}
         </div>
       </div>
-      <div className="p-4 border-b border-border">
-        <div className="text-sm font-medium text-fg mb-3">פרטי תשלום</div>
-        <CardForm note="תשלום מיידי וסופי — לאחר הרכישה התוכן המלא ייפתח לך מיד." />
-      </div>
+      {!isFree && (
+        <div className="p-4 border-b border-border">
+          <div className="text-sm font-medium text-fg mb-3">פרטי תשלום</div>
+          <CardForm note="תשלום מיידי וסופי — לאחר הרכישה התוכן המלא ייפתח לך מיד." />
+        </div>
+      )}
       <div className="p-4">
         <button type="button" onClick={buy} disabled={buying} className="w-full py-3 rounded-full text-sm font-semibold disabled:opacity-60" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
-          {buying ? "רוכש…" : trip.price === 0 ? "קבל בחינם" : `רכוש עכשיו · ₪${trip.price}`}
+          {buying ? (isFree ? "נרשם…" : "רוכש…") : isFree ? "הירשם בחינם" : `רכוש עכשיו · ₪${trip.price}`}
         </button>
       </div>
     </>

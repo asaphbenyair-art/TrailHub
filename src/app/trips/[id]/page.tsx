@@ -681,7 +681,7 @@ export default function TripDetailPage() {
             </div>
           ) : (
             <div className="rounded-2xl p-3.5 border border-border bg-surface text-xs text-fg-muted flex items-center gap-2">
-              <Users size={15} style={{ color: "var(--accent)" }} /> ללא הגבלת משתתפים · זמין תמיד · גישה ל-{trip.accessWindowDays ?? 30} ימים מרגע הרכישה
+              <Users size={15} style={{ color: "var(--accent)" }} /> ללא הגבלת משתתפים · זמין תמיד · {trip.price === 0 ? "גישה חופשית ללא הגבלת זמן" : `גישה ל-${trip.accessWindowDays ?? 30} ימים מרגע הרכישה`}
             </div>
           )}
 
@@ -1137,7 +1137,7 @@ export default function TripDetailPage() {
                   <>₪{trip.price.toLocaleString("he-IL")}<span className="text-xs font-normal text-fg-faint mr-1">{isSelfGuided ? "רכישה חד-פעמית" : "לאדם"}</span></>
                 )}
               </div>
-              <div className="text-xs text-fg-faint">{isSelfGuided ? `גישה ל-${trip.accessWindowDays ?? 30} ימים` : dfmt(trip.date, { greg: { weekday: "short", day: "numeric", month: "short" } })}</div>
+              <div className="text-xs text-fg-faint">{isSelfGuided ? (trip.price === 0 ? "♾ גישה חופשית ללא הגבלת זמן" : `גישה ל-${trip.accessWindowDays ?? 30} ימים`) : dfmt(trip.date, { greg: { weekday: "short", day: "numeric", month: "short" } })}</div>
             </div>
             <div className="flex gap-2">
               {isSelfGuided ? (
@@ -1149,7 +1149,7 @@ export default function TripDetailPage() {
                 ) : purchase?.purchased && purchase?.expired ? (
                   <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)} className="px-5 py-2.5 text-sm rounded-full font-semibold" style={{ border: "1px solid var(--danger)", color: "var(--danger)" }}>פג תוקף — רכוש מחדש</button>
                 ) : (
-                  <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)} className="px-6 py-2.5 text-sm rounded-full font-semibold" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>רכוש טיול עצמאי ←</button>
+                  <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)} className="px-6 py-2.5 text-sm rounded-full font-semibold" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>{trip.price === 0 ? "הירשם בחינם ←" : "רכוש טיול עצמאי ←"}</button>
                 )
               ) : myRegStatus === "CONFIRMED" ? (
                 <>

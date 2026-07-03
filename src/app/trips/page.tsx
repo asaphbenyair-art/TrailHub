@@ -989,10 +989,13 @@ export default function TripsPage() {
                     const meta: { t: string; color?: string }[] = isSG
                       ? [
                           { t: `🎒 טיול עצמאי` },
-                          // Purchased → remaining access time (color-coded) where the date would be
-                          isPurchased
-                            ? (() => { const r = accessRemaining(purchaseExpiry[trip.id]); return { t: r.text, color: r.color }; })()
-                            : { t: `🔓 גישה ל-${trip.accessWindowDays ?? 30} ימים` },
+                          // Free trips: unlimited access, no window. Paid: show the
+                          // access window, or (once purchased) the remaining time.
+                          ...(trip.price === 0
+                            ? [{ t: "♾ גישה חופשית" }]
+                            : [isPurchased
+                                ? (() => { const r = accessRemaining(purchaseExpiry[trip.id]); return { t: r.text, color: r.color }; })()
+                                : { t: `🔓 גישה ל-${trip.accessWindowDays ?? 30} ימים` }]),
                           ...(trip.distanceKm > 0 ? [{ t: `📍 ${trip.distanceKm} ק"מ` }] : []),
                         ]
                       : isJourney
@@ -1075,7 +1078,7 @@ export default function TripsPage() {
                               className="px-3.5 py-1.5 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">▶ התחל</button>
                           ) : (
                             <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)}
-                              className="px-3.5 py-1.5 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">רכוש</button>
+                              className="px-3.5 py-1.5 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">{trip.price === 0 ? "הירשם בחינם" : "רכוש"}</button>
                           )
                         ) : myStatus === "CONFIRMED" ? (
                           <>
