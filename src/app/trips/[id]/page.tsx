@@ -560,12 +560,12 @@ export default function TripDetailPage() {
             style={{ background: myRegStatus === "CONFIRMED" ? "#1A6B4A" : "#E8A020" }}>
             <span className="text-sm font-semibold text-white">
               {myRegStatus === "CONFIRMED"
-                ? "✓ רשום לטיול"
-                : `⏳ ממתין למקום${myRegPos ? ` — מיקום ${myRegPos} בתור` : ""}`}
+                ? `✓ ${tt("registered")}`
+                : `⏳ ${myRegPos ? tt("waitingPosition", { n: myRegPos }) : tt("joinWaitlist")}`}
             </span>
             <button type="button" onClick={cancelRegistration}
               className="text-xs font-medium text-white border border-white/45 rounded-full px-3.5 py-1.5 hover:bg-surface/10">
-              {myRegStatus === "WAITLIST" ? "בטל המתנה" : "בטל הרשמה"}
+              {myRegStatus === "WAITLIST" ? tt("cancelWaitlist") : tt("cancelRegistration")}
             </button>
           </div>
         )}
@@ -1207,29 +1207,29 @@ export default function TripDetailPage() {
                 purchase?.purchased && !purchase?.expired ? (
                   <>
                     <button type="button" onClick={requestRefund} className="px-3 py-2.5 text-xs rounded-full" style={{ border: "1px solid var(--danger)", color: "var(--danger)" }}>בקשה להחזר</button>
-                    <button type="button" onClick={() => router.push(`/trips/${trip.id}/start`)} className="px-5 py-2.5 text-sm rounded-full font-semibold flex items-center gap-1" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}><Play size={14} /> התחל טיול</button>
+                    <button type="button" onClick={() => router.push(`/trips/${trip.id}/start`)} className="px-5 py-2.5 text-sm rounded-full font-semibold flex items-center gap-1" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}><Play size={14} /> {tt("startTrip")}</button>
                   </>
                 ) : purchase?.purchased && purchase?.expired ? (
                   <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)} className="px-5 py-2.5 text-sm rounded-full font-semibold" style={{ border: "1px solid var(--danger)", color: "var(--danger)" }}>פג תוקף — רכוש מחדש</button>
                 ) : (
-                  <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)} className="px-6 py-2.5 text-sm rounded-full font-semibold" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>{trip.price === 0 ? "הירשם בחינם ←" : "רכוש טיול עצמאי ←"}</button>
+                  <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)} className="px-6 py-2.5 text-sm rounded-full font-semibold" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>{trip.price === 0 ? `${tt("registerFree")} ←` : `${tt("purchase")} ←`}</button>
                 )
               ) : myRegStatus === "CONFIRMED" ? (
                 <>
-                  <span className="px-4 py-2.5 text-sm rounded-full font-medium" style={{ background: "rgba(61,143,95,0.18)", color: "#7fd4a3", border: "1px solid var(--accent)" }}>✓ רשום לטיול</span>
-                  <button type="button" onClick={cancelRegistration} className="px-4 py-2.5 text-sm rounded-full font-medium" style={{ border: "1px solid var(--danger)", color: "var(--danger)" }}>בטל הרשמה</button>
+                  <span className="px-4 py-2.5 text-sm rounded-full font-medium" style={{ background: "rgba(61,143,95,0.18)", color: "#7fd4a3", border: "1px solid var(--accent)" }}>✓ {tt("registered")}</span>
+                  <button type="button" onClick={cancelRegistration} className="px-4 py-2.5 text-sm rounded-full font-medium" style={{ border: "1px solid var(--danger)", color: "var(--danger)" }}>{tt("cancelRegistration")}</button>
                 </>
               ) : myRegStatus === "WAITLIST" ? (
                 <>
-                  <span className="px-4 py-2.5 text-sm rounded-full font-medium" style={{ background: "rgba(44,95,138,0.22)", color: "#8fc0e8" }}>⏰ ברשימת המתנה</span>
-                  <button type="button" onClick={cancelRegistration} className="px-4 py-2.5 text-sm rounded-full font-medium" style={{ border: "1px solid var(--danger)", color: "var(--danger)" }}>בטל</button>
+                  <span className="px-4 py-2.5 text-sm rounded-full font-medium" style={{ background: "rgba(44,95,138,0.22)", color: "#8fc0e8" }}>⏰ {tt("joinWaitlist")}</span>
+                  <button type="button" onClick={cancelRegistration} className="px-4 py-2.5 text-sm rounded-full font-medium" style={{ border: "1px solid var(--danger)", color: "var(--danger)" }}>{tt("cancelWaitlist")}</button>
                 </>
               ) : (
                 <>
-                  <button type="button" onClick={() => router.push(`/trips/${trip.id}/register?flow=interest`)} className="px-4 py-2.5 text-sm rounded-full" style={{ border: "1px solid var(--border)", color: "var(--fg-muted)" }}>מתעניין</button>
+                  <button type="button" onClick={() => router.push(`/trips/${trip.id}/register?flow=interest`)} className="px-4 py-2.5 text-sm rounded-full" style={{ border: "1px solid var(--border)", color: "var(--fg-muted)" }}>{tt("interested")}</button>
                   <button type="button" onClick={() => router.push(isFull ? `/trips/${trip.id}/register?flow=waitlist` : `/trips/${trip.id}/register`)}
                     className="px-5 py-2.5 text-sm rounded-full text-white font-semibold" style={{ background: isFull ? "var(--danger)" : "var(--accent)" }}>
-                    {isFull ? "רשימת המתנה" : "להרשמה ←"}
+                    {isFull ? tt("joinWaitlist") : `${tt("register")} ←`}
                   </button>
                 </>
               )}
