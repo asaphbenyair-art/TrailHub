@@ -140,7 +140,7 @@ export default function GuideDashboard() {
 
   return (
     <div dir="rtl" className="min-h-screen bg-bg p-4 flex justify-center">
-      <div className="w-full max-w-[480px] flex flex-col gap-3">
+      <div className="w-full max-w-5xl flex flex-col gap-3">
 
         {/* Header */}
         <div className="bg-surface rounded-xl p-4 flex items-center justify-between shadow-sm">

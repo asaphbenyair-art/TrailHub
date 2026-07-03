@@ -377,7 +377,7 @@ export default function TripsPage() {
   const displayedTrips = (() => {
     let list = trips;
     if (purchasesOnly && filters.category === "self_guided") list = list.filter((t) => purchasedIds.has(t.id));
-    if (freeOnly && filters.category === "self_guided") list = list.filter((t) => t.price === 0);
+    if (freeOnly) list = list.filter((t) => t.price === 0);
     if (myTripsOnly && filters.category === "guided") list = list.filter((t) => myRegMap[t.id]);
     if (favoritesOnly) list = list.filter((t) => favIds.has(t.id));
     // Date filter applies to guided trips only (self-guided have no date)
@@ -681,7 +681,7 @@ export default function TripsPage() {
                 </button>
               </>
             )}
-            {filters.category === "self_guided" && (
+            {(filters.category === "self_guided" || filters.category === "guided") && (
               <button type="button" onClick={() => setFreeOnly((v) => !v)}
                 className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap border flex-shrink-0 transition-colors ${
                   freeOnly ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "bg-surface border-border text-fg-muted"}`}>

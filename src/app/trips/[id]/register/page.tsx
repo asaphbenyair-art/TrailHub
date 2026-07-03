@@ -139,7 +139,7 @@ function TripSummary({ trip }: { trip: Trip }) {
         </div>
       </div>
       <div className="text-left shrink-0">
-        <div className="text-lg font-semibold text-fg">₪{trip.price}</div>
+        <div className="text-lg font-semibold" style={trip.price === 0 ? { color: "var(--accent)" } : { color: "var(--fg)" }}>{trip.price === 0 ? "חינם" : `₪${trip.price}`}</div>
         <div className="text-[11px] text-fg-faint">{isSG ? "לחבילה" : "לאדם"}</div>
       </div>
     </div>
@@ -463,7 +463,7 @@ function SuccessScreen({ trip, alertHours }: { trip: Trip; alertHours: number })
           ["טיול", trip.title],
           ["תאריך ושעה", `${dfmt(trip.date, { long: true, weekday: true, greg: FULL_GREG })} · ${trip.startTime}`],
           ["מדריך", trip.guide?.user?.name || "מדריך"],
-          ["סכום", `₪${total}`],
+          ["סכום", total === 0 ? "חינם" : `₪${total}`],
           ["מועד חיוב", `${chargeDate} · אם לא בוטל`],
           ["התראת ביטול", `${alertHours} שעות לפני חלון החיוב`],
         ].map(([label, val]) => (
@@ -703,7 +703,7 @@ function SelfGuidedPurchaseFlow({ trip }: { trip: Trip }) {
       </div>
       <div className="p-4">
         <button type="button" onClick={buy} disabled={buying} className="w-full py-3 rounded-full text-sm font-semibold disabled:opacity-60" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
-          {buying ? "רוכש…" : `רכוש עכשיו · ₪${trip.price}`}
+          {buying ? "רוכש…" : trip.price === 0 ? "קבל בחינם" : `רכוש עכשיו · ₪${trip.price}`}
         </button>
       </div>
     </>

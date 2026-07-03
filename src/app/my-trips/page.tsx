@@ -185,13 +185,18 @@ function TripCard({
 
       {/* Footer */}
       <div className="flex items-center justify-between px-3 py-2 border-t border-border bg-surface-2/60">
-        <span className="text-xs font-medium text-fg">
-          {isCancelled
-            ? `₪${reg.totalPrice.toLocaleString()} · הוחזר`
-            : isConfirmed
-            ? `₪${reg.totalPrice.toLocaleString()} · ${reg.paymentStatus === "PAID" ? "שולם" : "אושר, טרם חויב"}`
-            : `₪${reg.totalPrice.toLocaleString()}`}
-        </span>
+        {reg.totalPrice === 0 ? (
+          // Free trips: show "חינם" in green, no payment status.
+          <span className="text-xs font-bold" style={{ color: "#1A6B4A" }}>חינם</span>
+        ) : (
+          <span className="text-xs font-medium text-fg">
+            {isCancelled
+              ? `₪${reg.totalPrice.toLocaleString()} · הוחזר`
+              : isConfirmed
+              ? `₪${reg.totalPrice.toLocaleString()} · ${reg.paymentStatus === "PAID" ? "שולם" : "אושר, טרם חויב"}`
+              : `₪${reg.totalPrice.toLocaleString()}`}
+          </span>
+        )}
         <div className="flex gap-1.5">
           {isPast && !isCancelled && (
             <>

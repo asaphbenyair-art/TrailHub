@@ -1071,8 +1071,11 @@ export default function TripDetailPage() {
           <div className="px-5 py-3.5 flex items-center justify-between gap-3">
             <div>
               <div className="text-xl font-semibold text-fg">
-                ₪{trip.price.toLocaleString("he-IL")}
-                <span className="text-xs font-normal text-fg-faint mr-1">{isSelfGuided ? "רכישה חד-פעמית" : "לאדם"}</span>
+                {trip.price === 0 ? (
+                  <span style={{ color: "var(--accent)" }}>חינם</span>
+                ) : (
+                  <>₪{trip.price.toLocaleString("he-IL")}<span className="text-xs font-normal text-fg-faint mr-1">{isSelfGuided ? "רכישה חד-פעמית" : "לאדם"}</span></>
+                )}
               </div>
               <div className="text-xs text-fg-faint">{isSelfGuided ? `גישה ל-${trip.accessWindowDays ?? 30} ימים` : dfmt(trip.date, { greg: { weekday: "short", day: "numeric", month: "short" } })}</div>
             </div>
