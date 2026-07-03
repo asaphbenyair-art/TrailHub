@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { WizardData, TripDayData, SourceMaterial } from "../types";
 import SourceMaterialsEditor from "./SourceMaterialsEditor";
 
-const REGIONS = ["גליל עליון", "גליל תחתון", "כרמל", "ירושלים", "שפלה", "נגב", "ערבה", "גולן", "עמק יזרעאל"];
+const REGIONS = ["גליל עליון", "גליל תחתון", "כרמל", "ירושלים", "שפלה", "נגב", "ערבה", "גולן", "עמק יזרעאל", "אפרים ומנשה", "ארץ בנימין", "יהודה"];
 
 const TRIP_TYPES = [
   { value: "DAY_HIKE", label: "טיול יום", desc: "טיול חד-יומי" },

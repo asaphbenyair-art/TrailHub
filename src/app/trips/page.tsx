@@ -17,7 +17,7 @@ import RegistrantsModal from "@/components/RegistrantsModal";
 import { useCalendarMode, useDateFmt } from "@/components/CalendarModeProvider";
 import { Car, Lock, UserSearch } from "lucide-react";
 
-const REGIONS = ["גליל עליון","גליל תחתון","כרמל","ירושלים","שפלה","נגב","ערבה","גולן","עמק יזרעאל"];
+const REGIONS = ["גליל עליון","גליל תחתון","כרמל","ירושלים","שפלה","נגב","ערבה","גולן","עמק יזרעאל", "אפרים ומנשה", "ארץ בנימין", "יהודה"];
 const DIFFICULTIES = [
   { value: "EASY",    label: "קל" },
   { value: "MEDIUM",  label: "בינוני" },

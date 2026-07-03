@@ -8,7 +8,7 @@ import { useCalendarMode } from "@/components/CalendarModeProvider";
 import ModeIndicator from "@/components/ModeIndicator";
 import { SignOutButton } from "@/components/SignOutButton";
 
-const REGIONS = ["גליל עליון", "גליל תחתון", "כרמל", "ירושלים", "שפלה", "נגב", "ערבה", "גולן", "עמק יזרעאל"];
+const REGIONS = ["גליל עליון", "גליל תחתון", "כרמל", "ירושלים", "שפלה", "נגב", "ערבה", "גולן", "עמק יזרעאל", "אפרים ומנשה", "ארץ בנימין", "יהודה"];
 const DIFFICULTIES = ["EASY", "MEDIUM", "HARD", "EXTREME"];
 const DIFFICULTY_LABELS: Record<string, string> = {
   EASY: "קל", MEDIUM: "בינוני", HARD: "קשה", EXTREME: "קיצוני",
