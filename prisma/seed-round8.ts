@@ -24,7 +24,7 @@ const avatar = (seed: string, headCover = false) =>
 const NEW_GUIDES = [
   { email: "shmuel.bar-shay@trailhub.co.il", name: "שמואל בר שי", headline: "מומחה לתלים ארכיאולוגיים באזור בית שמש", regions: ["שפלה", "ירושלים", "ארץ בנימין"], headCover: true },
   { email: "amichai.naom@trailhub.co.il", name: "עמיחי נעם", headline: "מומחה לעולם ספר המדבר", regions: ["נגב", "יהודה"], headCover: true },
-  { email: "amit.mendelson@trailhub.co.il", name: "אמית מנדלסון", headline: "מטייל בכל הארץ לאורכה ולרוחבה", regions: ["גליל עליון", "כרמל", "גולן", "אפרים ומנשה"], headCover: false },
+  { email: "amit.mendelson@trailhub.co.il", name: "עמית מנדלסון", headline: "מטייל בכל הארץ לאורכה ולרוחבה", regions: ["גליל עליון", "כרמל", "גולן", "אפרים ומנשה"], headCover: false },
 ];
 
 // Real hiking-area anchors per region [lat, lng].
@@ -87,8 +87,8 @@ async function main() {
   for (const g of NEW_GUIDES) {
     const user = await prisma.user.upsert({
       where: { email: g.email },
-      update: { name: g.name, image: avatar(g.email, g.headCover), role: "GUIDE", password },
-      create: { name: g.name, email: g.email, password, role: "GUIDE", image: avatar(g.email, g.headCover) },
+      update: { name: g.name, image: avatar(g.email, g.headCover), role: "GUIDE", password, gender: "זכר" },
+      create: { name: g.name, email: g.email, password, role: "GUIDE", image: avatar(g.email, g.headCover), gender: "זכר" },
     });
     const data = { headline: g.headline, bio: g.headline, specialtyRegions: g.regions, isVerified: true };
     const guide = await prisma.guide.upsert({ where: { userId: user.id }, update: data, create: { userId: user.id, ...data } });
