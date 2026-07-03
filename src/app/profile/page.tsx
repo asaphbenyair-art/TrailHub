@@ -34,6 +34,8 @@ interface UserProfile {
   fitnessLevel: string | null;
   preferredRegions: string[];
   preferredDifficulties: string[];
+  companyLogo: string | null;
+  isGuide?: boolean;
   role: string;
   hasPassword: boolean;
 }
@@ -81,6 +83,12 @@ export default function ProfilePage() {
   // Avatar upload
   const fileRef = useRef<HTMLInputElement>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const logoRef = useRef<HTMLInputElement>(null);
+  const [isGuide, setIsGuide] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/me/mode").then((r) => r.json()).then((d) => setIsGuide(!!d.isGuide)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (status === "unauthenticated") { router.push("/auth/login"); return; }
@@ -203,9 +211,31 @@ export default function ProfilePage() {
     }
   }
 
+  function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { alert("יש להעלות קובץ תמונה"); if (logoRef.current) logoRef.current.value = ""; return; }
+    if (file.size > 3 * 1024 * 1024) { alert("הלוגו גדול מדי — עד 3MB"); if (logoRef.current) logoRef.current.value = ""; return; }
+    // Inline data URL — works on serverless/read-only hosting.
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const url = reader.result as string;
+      await fetch("/api/profile", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ companyLogo: url }) });
+      setProfile((p) => p ? { ...p, companyLogo: url } : p);
+      if (logoRef.current) logoRef.current.value = "";
+    };
+    reader.readAsDataURL(file);
+  }
+  async function clearLogo() {
+    await fetch("/api/profile", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ companyLogo: "" }) });
+    setProfile((p) => p ? { ...p, companyLogo: null } : p);
+  }
+
   function toggleArr(arr: string[], val: string, setter: (a: string[]) => void) {
     setter(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
   }
+
+  const showLogo = isGuide || profile?.role === "TRIP_MANAGER" || profile?.role === "ADMIN";
 
   if (loading) {
     return (
@@ -260,6 +290,33 @@ export default function ProfilePage() {
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
           </div>
         </div>
+
+        {/* Company / organization logo — guides & trip managers */}
+        {showLogo && (
+          <div className="bg-surface rounded-2xl border border-border shadow-sm p-5 mb-4 flex items-center gap-4">
+            <div className="w-16 h-16 rounded-xl border border-border bg-surface-2 flex items-center justify-center overflow-hidden shrink-0">
+              {profile?.companyLogo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={profile.companyLogo} alt="logo" className="w-full h-full object-contain" />
+              ) : (
+                <span className="text-2xl">🏢</span>
+              )}
+            </div>
+            <div className="flex flex-col gap-1 min-w-0">
+              <span className="font-semibold text-fg text-sm">לוגו החברה / הארגון</span>
+              <span className="text-xs text-fg-faint">מוצג על כרטיסי הטיולים שלך</span>
+              <div className="flex items-center gap-3 mt-1">
+                <button type="button" onClick={() => logoRef.current?.click()} className="text-xs text-[#1A6B4A] font-medium">
+                  {profile?.companyLogo ? "החלף לוגו" : "העלה לוגו"}
+                </button>
+                {profile?.companyLogo && (
+                  <button type="button" onClick={clearLogo} className="text-xs text-red-500">הסר</button>
+                )}
+              </div>
+              <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+            </div>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="bg-surface rounded-2xl border border-border shadow-sm overflow-hidden">

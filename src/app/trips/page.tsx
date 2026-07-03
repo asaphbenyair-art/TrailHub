@@ -74,7 +74,7 @@ interface Trip {
   date: string; startTime: string; durationMin: number; distanceKm: number;
   price: number; maxSpots: number; spotsBooked: number; images: string[];
   tripType?: string; endDate?: string | null; _count?: { days: number }; accessWindowDays?: number | null;
-  rideSpots?: number; rideSeekers?: number;
+  rideSpots?: number; rideSeekers?: number; cardLogo?: string | null;
   guide: { rating: number; user: { name: string | null } };
   guides?: { role: string; guide: { user: { name: string | null } } }[];
 }
@@ -881,6 +881,10 @@ export default function TripsPage() {
                       style={{ color: favIds.has(trip.id) ? "#ff6b81" : "#fff" }}>
                       {favIds.has(trip.id) ? "♥" : "♡"}
                     </button>
+                    {trip.cardLogo && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={trip.cardLogo} alt="" className="absolute top-11 left-2.5 w-7 h-7 rounded-md bg-white object-contain p-0.5 shadow z-10" />
+                    )}
                     <div className="absolute bottom-0 left-0 right-0 px-3 py-2.5 z-10"
                       style={{ background: "linear-gradient(to top,rgba(0,0,0,0.68),transparent)" }}>
                       <div className="text-[13px] font-medium text-white leading-snug mb-1.5">{trip.title}</div>

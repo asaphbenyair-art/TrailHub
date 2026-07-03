@@ -60,8 +60,9 @@ export async function GET(request: Request) {
       ...(followedGuideIds !== null && { guideId: { in: followedGuideIds } }),
     },
     include: {
-      guide: { include: { user: { select: { name: true, image: true } } } },
+      guide: { include: { user: { select: { name: true, image: true, companyLogo: true } } } },
       guides: { include: { guide: { include: { user: { select: { name: true, image: true } } } } } },
+      managers: { include: { user: { select: { companyLogo: true } } } },
       _count: { select: { days: true } },
     },
     orderBy: { date: "asc" },
@@ -95,11 +96,17 @@ export async function GET(request: Request) {
   const seekersByTrip: Record<string, number> = {};
   for (const g of seekerGroups) seekersByTrip[g.tripId] = g._count._all;
 
-  const withRideshare = filtered.map((t) => ({
-    ...t,
-    rideSpots: spotsByTrip[t.id] ?? 0,
-    rideSeekers: seekersByTrip[t.id] ?? 0,
-  }));
+  const withRideshare = filtered.map((t) => {
+    // Trip-manager logo takes priority over the guide's; else none.
+    const managerLogo = t.managers?.map((m) => m.user?.companyLogo).find(Boolean) ?? null;
+    const guideLogo = t.guide?.user?.companyLogo ?? null;
+    return {
+      ...t,
+      rideSpots: spotsByTrip[t.id] ?? 0,
+      rideSeekers: seekersByTrip[t.id] ?? 0,
+      cardLogo: managerLogo ?? guideLogo ?? null,
+    };
+  });
 
   return NextResponse.json(withRideshare);
 }

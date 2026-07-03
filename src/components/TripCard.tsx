@@ -22,6 +22,7 @@ export interface TripCardData {
   tripType?: string;
   dayCount?: number;
   accessWindowDays?: number | null;
+  cardLogo?: string | null;
   guideName: string | null;
   guideRating?: number;
 }
@@ -100,7 +101,11 @@ export default function TripCard({
 
         {/* Top row: badges + favorite */}
         <div className="absolute top-3 inset-x-3 flex items-start justify-between">
-          <div className="flex gap-1.5">
+          <div className="flex gap-1.5 items-center">
+            {trip.cardLogo && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={trip.cardLogo} alt="" className="w-6 h-6 rounded-md bg-white object-contain p-0.5 shadow" />
+            )}
             {isJourney && (
               <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold text-white backdrop-blur-sm" style={{ background: "rgba(200,137,58,0.92)" }}>
                 מסע · {trip.dayCount} ימים

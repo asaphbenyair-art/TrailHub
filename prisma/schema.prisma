@@ -152,6 +152,7 @@ model User {
   slogan                String?  // personal tagline shown on participant cards
   calendarPref          String   @default("gregorian") // 'gregorian' | 'hebrew' date display
   themePref             String?  // 'dark' | 'light' | null (null → system/default)
+  companyLogo           String?  // guide/trip-manager company logo (shown on trip cards)
   phone                 String?
   fitnessLevel          String?
   preferredRegions      String[]
