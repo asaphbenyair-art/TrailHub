@@ -373,6 +373,8 @@ export default function TripDetailPage() {
   const [replyBody, setReplyBody] = useState<Record<string, string>>({});
   const [replyBusy, setReplyBusy] = useState<string | null>(null);
   const meId = (session?.user as { id?: string })?.id;
+  // Registered or interested (not a plain viewer) — gates Q&A ask + toggle.
+  const isParticipant = !!myRegStatus && myRegStatus !== "CANCELLED";
 
   useEffect(() => {
     fetch(`/api/trips/${id}`).then((r) => r.json())
@@ -866,15 +868,19 @@ export default function TripDetailPage() {
           {/* ── 14. Q&A (official first) ── */}
           {!isSelfGuided && (
             <div id="qa-section" style={{ scrollMarginTop: 80 }}>
-              <Heading icon={MessageCircle} right={<SelfOthersToggle view={qaView} onChange={setQaView} />}>שאלות ותשובות</Heading>
+              <Heading icon={MessageCircle} right={isParticipant ? <SelfOthersToggle view={qaView} onChange={setQaView} /> : undefined}>שאלות ותשובות</Heading>
               {(() => {
-                const shown = qaView === "mine"
+                // Participants (registered/interested) get the שלי/אחרים toggle;
+                // plain viewers see only the public questions, no toggle.
+                const shown = !isParticipant
+                  ? sortedQuestions.filter((q) => !q.isPrivate)
+                  : qaView === "mine"
                   ? sortedQuestions.filter((q) => q.userId === meId)
                   : sortedQuestions.filter((q) => q.userId !== meId);
                 return (<>
               {shown.length === 0 && (
                 <p className="text-xs text-fg-faint mb-3">
-                  {qaView === "mine" ? "לא שאלת שאלות עדיין." : "אין שאלות ממטיילים אחרים עדיין."}
+                  {!isParticipant ? "אין עדיין שאלות." : qaView === "mine" ? "לא שאלת שאלות עדיין." : "אין שאלות ממטיילים אחרים עדיין."}
                 </p>
               )}
               {shown.length > 0 && (
@@ -929,7 +935,20 @@ export default function TripDetailPage() {
               )}
                 </>);
               })()}
-              {session ? (
+              {!session ? (
+                <p className="text-xs text-fg-faint">
+                  <button type="button" onClick={() => router.push("/auth/login")} className="text-accent underline">התחבר</button> כדי לשאול שאלה
+                </p>
+              ) : !isParticipant ? (
+                // Plain viewer: can't ask until registered/interested.
+                <div className="rounded-xl p-3 border border-border bg-surface-2/50 flex items-center justify-between gap-2">
+                  <span className="text-xs text-fg-muted">רק נרשמים ומתעניינים יכולים לשאול</span>
+                  <button type="button" onClick={() => router.push(`/trips/${trip.id}/register?flow=interest`)}
+                    className="px-3 py-1.5 text-xs rounded-full font-medium shrink-0" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
+                    שאל שאלה — הירשם תחילה
+                  </button>
+                </div>
+              ) : (
                 <div className="flex flex-col gap-2">
                   <div className="flex gap-2">
                     <textarea value={qaBody} onChange={(e) => setQaBody(e.target.value)} placeholder="שאל שאלה…" rows={2}
@@ -946,10 +965,6 @@ export default function TripDetailPage() {
                       className={`px-2.5 py-1 rounded-full font-medium ${qaPrivate ? "bg-[#185FA5] text-white" : "text-fg-muted"}`}>🔒 שאלה פרטית</button>
                   </div>
                 </div>
-              ) : (
-                <p className="text-xs text-fg-faint">
-                  <button type="button" onClick={() => router.push("/auth/login")} className="text-accent underline">התחבר</button> כדי לשאול שאלה
-                </p>
               )}
             </div>
           )}
