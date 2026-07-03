@@ -405,7 +405,10 @@ export default function MyTripsPage() {
                           <div className="text-[11px] mt-1 font-semibold" style={{ color: r.color }}>{r.text}</div>
                         ); })()}
                       </div>
-                      {!expired && (
+                      {expired ? (
+                        <button type="button" onClick={() => router.push(`/trips/${p.trip.id}`)}
+                          className="self-start mt-2 px-3 py-1.5 rounded-full text-[11px] font-medium border border-[#C0392B] text-[#C0392B]">פג תוקף — רכוש מחדש</button>
+                      ) : (
                         <button type="button" onClick={() => router.push(`/trips/${p.trip.id}/start`)}
                           className="self-start mt-2 px-3 py-1.5 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">▶ התחל / המשך</button>
                       )}
