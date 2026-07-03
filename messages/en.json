@@ -73,6 +73,7 @@
     "follow": "Follow",
     "following": "Following",
     "upcomingTrips": "{n} upcoming trips",
+    "reviewsCount": "{n} reviews",
     "newGuide": "New guide"
   },
   "difficulty": {

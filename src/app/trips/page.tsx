@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import NotificationBell from "@/components/NotificationBell";
 import CalendarView from "@/components/CalendarView";
@@ -204,6 +205,8 @@ function TripCardHero({ images, title }: { images: string[]; title: string }) {
 export default function TripsPage() {
   const router = useRouter();
   const { data: session } = useSession();
+  const ts = useTranslations("search");
+  const tc = useTranslations("common");
 
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
@@ -547,7 +550,7 @@ export default function TripsPage() {
       {/* Category: guided vs self-guided */}
       <div className="max-w-5xl mx-auto px-3 mb-2 flex items-center gap-2 justify-center md:justify-start">
         <div className="inline-flex bg-surface rounded-full border border-border p-0.5">
-          {([["guided", "🧭 טיולים מודרכים"], ["self_guided", "🎒 טיולים עצמאיים"], ["guides", "🧑‍🏫 מדריכים"]] as const).map(([v, label]) => (
+          {([["guided", `🧭 ${ts("guided")}`], ["self_guided", `🎒 ${ts("selfGuided")}`], ["guides", `🧑‍🏫 ${ts("guides")}`]] as const).map(([v, label]) => (
             <button key={v} type="button"
               onClick={() => {
                 const next = { ...filters, category: v };
@@ -597,9 +600,9 @@ export default function TripsPage() {
             </div>
 
             {!guidesLoaded ? (
-              <div className="text-center py-12 text-fg-faint text-sm">טוען מדריכים…</div>
+              <div className="text-center py-12 text-fg-faint text-sm">{ts("loadingGuides")}</div>
             ) : shown.length === 0 ? (
-              <div className="text-center py-12 text-fg-faint text-sm">לא נמצאו מדריכים</div>
+              <div className="text-center py-12 text-fg-faint text-sm">{ts("noGuides")}</div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {shown.map((g) => (
@@ -615,17 +618,17 @@ export default function TripsPage() {
                     <div className="text-sm font-semibold text-fg truncate w-full">{g.name ?? "מדריך"}</div>
                     {g.headline && <div className="text-[11px] text-fg-muted mt-0.5 line-clamp-2">{g.headline}</div>}
                     <div className="text-[11px] text-fg-faint mt-1.5 flex items-center gap-1">
-                      {g.rating > 0 ? <span className="text-amber-500">★ {g.rating.toFixed(1)}</span> : <span className="text-[#1A6B4A]">מדריך חדש</span>}
-                      {g.reviewCount > 0 && <span>· {g.reviewCount} ביקורות</span>}
+                      {g.rating > 0 ? <span className="text-amber-500">★ {g.rating.toFixed(1)}</span> : <span className="text-[#1A6B4A]">{ts("newGuide")}</span>}
+                      {g.reviewCount > 0 && <span>· {ts("reviewsCount", { n: g.reviewCount })}</span>}
                     </div>
                     <div className="text-[11px] text-[#0F5038] bg-[#D6EDE3] rounded-full px-2 py-0.5 mt-1.5">
-                      {g.upcomingTrips} טיולים קרובים
+                      {ts("upcomingTrips", { n: g.upcomingTrips })}
                     </div>
                     <button type="button"
                       onClick={(e) => { e.stopPropagation(); toggleFollowGuide(g.id, !!g.following); }}
                       className={`mt-2 w-full text-[11px] rounded-full px-2 py-1.5 font-medium border transition-colors ${
                         g.following ? "bg-[#D6EDE3] text-[#0F5038] border-[#1A6B4A]/30" : "bg-[#1A6B4A] text-white border-[#1A6B4A]"}`}>
-                      {g.following ? "עוקב ✓" : "+ עקוב"}
+                      {g.following ? `${ts("following")} ✓` : `+ ${ts("follow")}`}
                     </button>
                   </div>
                 ))}
@@ -643,7 +646,7 @@ export default function TripsPage() {
         <aside className="hidden md:block w-[290px] shrink-0 self-start sticky top-4">
           <div className="bg-surface rounded-2xl overflow-hidden shadow-sm">
             <div className="px-3 pt-3 pb-1 border-b border-border flex items-center justify-between">
-              <span className="text-sm font-semibold text-fg">📅 סינון לפי תאריך</span>
+              <span className="text-sm font-semibold text-fg">📅 {ts("dateFilter")}</span>
               <div className="flex items-center gap-2">
                 {range.start && (
                   <button type="button" onClick={() => setRange({ start: null, end: null })}
@@ -730,12 +733,12 @@ export default function TripsPage() {
                 <button type="button" onClick={() => setMyTripsOnly((v) => !v)}
                   className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap border flex-shrink-0 transition-colors ${
                     myTripsOnly ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "bg-surface border-border text-fg-muted"}`}>
-                  🎒 הטיולים שלי
+                  🎒 {ts("myTripsChip")}
                 </button>
                 <button type="button" onClick={() => setFavoritesOnly((v) => !v)}
                   className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap border flex-shrink-0 transition-colors ${
                     favoritesOnly ? "bg-[#FDE8EC] border-[#E86A87] text-[#B0324D]" : "bg-surface border-border text-fg-muted"}`}>
-                  ♥ מועדפים
+                  ♥ {ts("favoritesChip")}
                 </button>
               </>
             )}
@@ -744,12 +747,12 @@ export default function TripsPage() {
                 <button type="button" onClick={() => setPurchasesOnly((v) => !v)}
                   className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap border flex-shrink-0 transition-colors ${
                     purchasesOnly ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "bg-surface border-border text-fg-muted"}`}>
-                  🎒 הרכישות שלי
+                  🎒 {ts("purchasesChip")}
                 </button>
                 <button type="button" onClick={() => setFavoritesOnly((v) => !v)}
                   className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap border flex-shrink-0 transition-colors ${
                     favoritesOnly ? "bg-[#FDE8EC] border-[#E86A87] text-[#B0324D]" : "bg-surface border-border text-fg-muted"}`}>
-                  ♥ מועדפים
+                  ♥ {ts("favoritesChip")}
                 </button>
               </>
             )}
@@ -757,7 +760,7 @@ export default function TripsPage() {
               <button type="button" onClick={() => setFreeOnly((v) => !v)}
                 className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap border flex-shrink-0 transition-colors ${
                   freeOnly ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "bg-surface border-border text-fg-muted"}`}>
-                🆓 חינם בלבד
+                🆓 {ts("freeOnly")}
               </button>
             )}
             {filters.regions.map((r) => (
@@ -775,7 +778,7 @@ export default function TripsPage() {
             {activeCount > 0 && (
               <button type="button" onClick={clearAllFilters}
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap bg-surface border border-border text-fg-muted flex-shrink-0">
-                נקה הכל <span className="font-bold">✕</span>
+                {tc("clearAll")} <span className="font-bold">✕</span>
               </button>
             )}
           </div>
@@ -797,7 +800,7 @@ export default function TripsPage() {
                 </div>
               </div>
               <div className="mb-4">
-                <div className="text-[11px] text-fg-muted mb-2">רמת קושי</div>
+                <div className="text-[11px] text-fg-muted mb-2">{ts("difficulty")}</div>
                 <div className="flex gap-2">
                   {DIFFICULTIES.map((d) => (
                     <button key={d.value} type="button"
@@ -820,7 +823,7 @@ export default function TripsPage() {
                 </button>
               </div>
               <div className="mb-4">
-                <div className="text-[11px] text-fg-muted mb-2">מאפיינים</div>
+                <div className="text-[11px] text-fg-muted mb-2">{ts("attributes")}</div>
                 <div className="flex flex-wrap gap-1.5">
                   {/* Gender-designated options live alongside the attribute tags */}
                   {([["MEN", "👨 גברים בלבד"], ["WOMEN", "👩 נשים בלבד"]] as const).map(([val, label]) => (
@@ -844,12 +847,12 @@ export default function TripsPage() {
               {session && (prefs.regions.length > 0 || prefs.difficulties.length > 0) && (
                 <button type="button" onClick={applyPreferencesAsFilters}
                   className="w-full mb-2 py-2 rounded-full text-xs font-medium border border-[#1A6B4A]/40 text-[#1A6B4A] hover:bg-[#D6EDE3] transition-colors">
-                  ⭐ אפס לפי העדפותי
+                  ⭐ {ts("resetToPrefs")}
                 </button>
               )}
               <div className="flex items-center justify-between">
                 <button type="button" onClick={clearAllFilters}
-                  className="text-xs text-fg-faint hover:text-fg-muted">נקה הכל</button>
+                  className="text-xs text-fg-faint hover:text-fg-muted">{tc("clearAll")}</button>
                 <button type="button" onClick={() => setPanelOpen(false)}
                   className="px-5 py-2 bg-[#1A6B4A] text-white rounded-full text-xs font-medium hover:bg-[#155a3e] transition-colors">
                   סגור
@@ -897,7 +900,7 @@ export default function TripsPage() {
             {!loading && !range.start && displayedTrips.length === 0 && (
               <div className="text-center py-12">
                 <div className="text-3xl mb-3">🔍</div>
-                <div className="text-fg-muted text-sm">לא נמצאו טיולים</div>
+                <div className="text-fg-muted text-sm">{ts("noResults")}</div>
                 <div className="text-fg-faint text-xs mt-1">נסה לשנות את הפילטרים</div>
               </div>
             )}
