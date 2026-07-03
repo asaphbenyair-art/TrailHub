@@ -392,7 +392,7 @@ export default function Step1({ data, onChange }: Props) {
                 className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
                 dir="ltr"
               />
-              <span className="text-[10px] text-fg-faint">ביקורות ייפתחו שעה לפני</span>
+              <span className="text-[10px] text-fg-faint text-center block">ביקורות על הטיול יתאפשרו החל משעה לפני סוף הטיול</span>
             </div>
           </div>
         )}

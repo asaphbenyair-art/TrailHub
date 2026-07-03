@@ -11,6 +11,7 @@ import { useDateFmt } from "@/components/CalendarModeProvider";
 import Brand from "@/components/Brand";
 import ThemeToggle from "@/components/ThemeToggle";
 import RegistrantsModal from "@/components/RegistrantsModal";
+import BroadcastModal from "@/components/BroadcastModal";
 
 const DIFF_BADGE: Record<string, { bg: string; color: string; label: string }> = {
   EASY: { bg: "#EAF3DE", color: "#27500A", label: "קל" },
@@ -80,28 +81,7 @@ export default function GuideDashboard() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [selfGuided, setSelfGuided] = useState<SelfGuidedTrip[]>([]);
   const [registrantsModal, setRegistrantsModal] = useState<{ id: string; title: string } | null>(null);
-
-  async function broadcast(tripId: string) {
-    const message = window.prompt("הודעה לכל הנרשמים:");
-    if (!message?.trim()) return;
-    const res = await fetch(`/api/guide/trips/${tripId}/broadcast`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message }),
-    });
-    const d = await res.json().catch(() => ({}));
-    window.alert(res.ok ? `ההודעה נשלחה ל-${d.sent ?? 0} נרשמים` : (d.error ?? "שגיאה"));
-  }
-
-  async function postpone(tripId: string) {
-    const category = window.prompt("סיבת הדחייה (מזג אוויר / מחלה / אישי / אחר):");
-    if (!category?.trim()) return;
-    const reason = window.prompt("פירוט (אופציונלי):") ?? "";
-    const res = await fetch(`/api/guide/trips/${tripId}/postpone`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ category, reason }),
-    });
-    if (res.ok) { setTrips((prev) => prev.map((t) => t.id === tripId ? { ...t, status: "POSTPONED" } : t)); }
-  }
+  const [broadcastModal, setBroadcastModal] = useState<{ id: string; title: string } | null>(null);
 
   function copyLink(tripId: string) {
     const url = `${window.location.origin}/trips/${tripId}`;
@@ -448,16 +428,12 @@ export default function GuideDashboard() {
                     </Link>
                   </div>
 
-                  {/* Broadcast + private link */}
+                  {/* Group messages + private link */}
                   {(trip.status === "OPEN" || trip.status === "FULL") && (
                     <div className="flex gap-2 mt-2">
-                      <button type="button" onClick={() => broadcast(trip.id)}
+                      <button type="button" onClick={() => setBroadcastModal({ id: trip.id, title: trip.title })}
                         className="flex-1 text-center text-[11px] text-fg-muted border border-border rounded-lg py-1.5 hover:bg-surface-2 transition-colors">
-                        📢 הודעה לקבוצה
-                      </button>
-                      <button type="button" onClick={() => postpone(trip.id)}
-                        className="flex-1 text-center text-[11px] text-[#7A5010] border border-[#E8A020]/40 rounded-lg py-1.5 hover:bg-[#FDF6E8] transition-colors">
-                        ⏸ דחה
+                        📢 הודעות קבוצתיות
                       </button>
                       <a href={googleCalendarUrl({ title: trip.title, dateISO: trip.date, startTime: trip.startTime, location: trip.region })}
                         target="_blank" rel="noreferrer"
@@ -484,6 +460,14 @@ export default function GuideDashboard() {
           tripId={registrantsModal.id}
           tripTitle={registrantsModal.title}
           onClose={() => setRegistrantsModal(null)}
+        />
+      )}
+
+      {broadcastModal && (
+        <BroadcastModal
+          tripId={broadcastModal.id}
+          tripTitle={broadcastModal.title}
+          onClose={() => setBroadcastModal(null)}
         />
       )}
     </div>

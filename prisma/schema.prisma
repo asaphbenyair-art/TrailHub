@@ -497,11 +497,12 @@ model TripView {
 
 // Guide broadcast/announcement history (persisted, shown on the trip page).
 model Broadcast {
-  id        String   @id @default(cuid())
-  tripId    String
-  senderId  String
-  body      String   @db.Text
-  createdAt DateTime @default(now())
+  id             String   @id @default(cuid())
+  tripId         String
+  senderId       String
+  body           String   @db.Text
+  isCancellation Boolean  @default(false)
+  createdAt      DateTime @default(now())
 
   trip   Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
   sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)

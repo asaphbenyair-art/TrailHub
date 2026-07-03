@@ -15,14 +15,14 @@ export async function POST(
   const allowed = await canManageTrip(id, session.user.id!, (session.user as { role?: string }).role);
   if (!allowed) return NextResponse.json({ error: "אין הרשאה" }, { status: 403 });
 
-  const { message } = await req.json();
+  const { message, isCancellation } = await req.json();
   if (!message?.trim()) return NextResponse.json({ error: "הודעה ריקה" }, { status: 400 });
 
   const trip = await prisma.trip.findUnique({ where: { id }, select: { title: true } });
 
   // Persist the broadcast to history.
   await prisma.broadcast.create({
-    data: { tripId: id, senderId: session.user.id!, body: message.trim() },
+    data: { tripId: id, senderId: session.user.id!, body: message.trim(), isCancellation: !!isCancellation },
   });
 
   const registrants = await prisma.registration.findMany({
@@ -36,7 +36,7 @@ export async function POST(
         userId: r.userId,
         tripId: id,
         type: "TRIP_UPDATED" as const,
-        title: `הודעה מהמדריך · ${trip?.title ?? "טיול"}`,
+        title: isCancellation ? `⚠ ביטול טיול · ${trip?.title ?? "טיול"}` : `הודעה מהמדריך · ${trip?.title ?? "טיול"}`,
         body: message.trim(),
         link: `/trips/${id}#announcements`,
       })),
