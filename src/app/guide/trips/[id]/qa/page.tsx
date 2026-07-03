@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useDualDate } from "@/components/CalendarModeProvider";
+import { useTranslations } from "next-intl";
 
 interface QReply { id: string; body: string; createdAt: string; userId: string; user: { name: string | null; image: string | null } }
 interface Question {
@@ -35,6 +36,7 @@ export default function GuideQAPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const dd = useDualDate();
+  const tgq = useTranslations("guideQa");
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [tripTitle, setTripTitle] = useState("");
@@ -112,12 +114,12 @@ export default function GuideQAPage() {
           </svg>
         </button>
         <div>
-          <div className="text-sm font-semibold text-fg">שאלות ותשובות</div>
+          <div className="text-sm font-semibold text-fg">{tgq("title")}</div>
           {tripTitle && <div className="text-xs text-fg-faint">{tripTitle}</div>}
         </div>
         {unanswered.length > 0 && (
           <span className="mr-auto bg-red-100 text-red-600 text-[10px] font-semibold px-2 py-0.5 rounded-full">
-            {unanswered.length} ממתינות
+            {unanswered.length} {tgq("waiting")}
           </span>
         )}
       </div>
@@ -132,14 +134,14 @@ export default function GuideQAPage() {
 
       <div className="p-4 flex flex-col gap-4 max-w-xl mx-auto">
         {questions.length === 0 && (
-          <div className="py-16 text-center text-sm text-fg-faint">אין שאלות עדיין</div>
+          <div className="py-16 text-center text-sm text-fg-faint">{tgq("noQuestions")}</div>
         )}
 
         {/* Unanswered */}
         {unanswered.length > 0 && (
           <div>
             <div className="text-xs font-semibold text-fg-muted uppercase tracking-wider mb-2 px-1">
-              ממתינות לתשובה
+              {tgq("waitingForAnswer")}
             </div>
             {unanswered.map((q) => (
               <div key={q.id} className="bg-surface rounded-2xl p-4 mb-3 border border-orange-100">
@@ -152,8 +154,8 @@ export default function GuideQAPage() {
                   </div>
                   <span className="text-xs font-medium text-fg">{q.user.name ?? "מטייל"}</span>
                   {q.isPrivate
-                    ? <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(24,95,165,0.14)", color: "#185FA5" }}>🔒 פרטי</span>
-                    : <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(26,107,74,0.12)", color: "#1A6B4A" }}>🌐 גלוי</span>}
+                    ? <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(24,95,165,0.14)", color: "#185FA5" }}>🔒 {tgq("private")}</span>
+                    : <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(26,107,74,0.12)", color: "#1A6B4A" }}>🌐 {tgq("public")}</span>}
                   <span className="text-[10px] text-fg-faint mr-auto">
                     {dd(q.createdAt)}
                   </span>
@@ -162,7 +164,7 @@ export default function GuideQAPage() {
                 <textarea
                   value={answers[q.id] ?? ""}
                   onChange={(e) => setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))}
-                  placeholder="כתוב תשובה..."
+                  placeholder={tgq("answerPlaceholder")}
                   rows={2}
                   className="w-full border border-border rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:border-[#1A6B4A] mb-2"
                 />
@@ -172,7 +174,7 @@ export default function GuideQAPage() {
                   disabled={!answers[q.id]?.trim() || saving[q.id]}
                   className="w-full py-2 bg-[#1A6B4A] text-white text-sm rounded-xl disabled:opacity-50 hover:bg-[#155a3e] transition-colors"
                 >
-                  {saving[q.id] ? "שומר..." : "פרסם תשובה"}
+                  {saving[q.id] ? tgq("saving") : tgq("postAnswer")}
                 </button>
               </div>
             ))}
@@ -183,7 +185,7 @@ export default function GuideQAPage() {
         {answered.length > 0 && (
           <div>
             <div className="text-xs font-semibold text-fg-muted uppercase tracking-wider mb-2 px-1">
-              נענו
+              {tgq("answered")}
             </div>
             {answered.map((q) => (
               <div key={q.id} className="bg-surface rounded-2xl p-4 mb-3">

@@ -152,6 +152,18 @@
     "loginToAsk": "Log in to ask a question",
     "registerToAsk": "Only registered or interested hikers can ask"
   },
+  "guideQa": {
+    "title": "Q&A",
+    "waiting": "waiting",
+    "waitingForAnswer": "Awaiting answer",
+    "answered": "Answered",
+    "noQuestions": "No questions yet",
+    "answerPlaceholder": "Write an answer...",
+    "postAnswer": "Post answer",
+    "saving": "Saving...",
+    "private": "Private",
+    "public": "Public"
+  },
   "reviews": {
     "title": "Reviews",
     "mine": "Mine",

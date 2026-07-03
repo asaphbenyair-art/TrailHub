@@ -152,6 +152,18 @@
     "loginToAsk": "התחבר כדי לשאול שאלה",
     "registerToAsk": "רק נרשמים ומתעניינים יכולים לשאול"
   },
+  "guideQa": {
+    "title": "שאלות ותשובות",
+    "waiting": "ממתינות",
+    "waitingForAnswer": "ממתינות לתשובה",
+    "answered": "נענו",
+    "noQuestions": "אין שאלות עדיין",
+    "answerPlaceholder": "כתוב תשובה...",
+    "postAnswer": "פרסם תשובה",
+    "saving": "שומר...",
+    "private": "פרטי",
+    "public": "גלוי"
+  },
   "reviews": {
     "title": "ביקורות",
     "mine": "שלי",
