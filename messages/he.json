@@ -37,6 +37,20 @@
     "empty": "אין התראות",
     "markAllRead": "סמן הכל כנקרא"
   },
+  "home": {
+    "whatToday": "מה תרצה לעשות היום?",
+    "intentDate": "אני יודע מתי אני פנוי",
+    "intentDateSub": "בחר תאריך",
+    "intentFilter": "מחפש סוג טיול מסוים",
+    "intentFilterSub": "סינון לפי אופי",
+    "intentSoon": "מה יש בקרוב?",
+    "intentSoonSub": "לפי התאריך הקרוב",
+    "intentSurprise": "הפתיעו אותי",
+    "intentSurpriseSub": "לפי ההעדפות שלי",
+    "viewTrip": "צפה בטיול",
+    "viewGuide": "ראה פרופיל מדריך",
+    "readMore": "קרא עוד"
+  },
   "nav": {
     "search": "חיפוש",
     "myTrips": "הטיולים שלי",

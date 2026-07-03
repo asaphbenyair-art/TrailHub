@@ -37,6 +37,20 @@
     "empty": "No notifications",
     "markAllRead": "Mark all as read"
   },
+  "home": {
+    "whatToday": "What would you like to do today?",
+    "intentDate": "I know when I'm free",
+    "intentDateSub": "Pick a date",
+    "intentFilter": "Looking for a specific kind of trip",
+    "intentFilterSub": "Filter by type",
+    "intentSoon": "What's coming up soon?",
+    "intentSoonSub": "By nearest date",
+    "intentSurprise": "Surprise me",
+    "intentSurpriseSub": "Based on my preferences",
+    "viewTrip": "View trip",
+    "viewGuide": "View guide profile",
+    "readMore": "Read more"
+  },
   "nav": {
     "search": "Search",
     "myTrips": "My Trips",

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Bell, CalendarDays, SlidersHorizontal, Clock, Sparkles, Heart, ChevronLeft } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import LanguageToggle from "@/components/LanguageToggle";
@@ -38,14 +39,15 @@ interface Hero {
 const FALLBACK_IMG = "linear-gradient(150deg,#1c3a20,#0a0a0a)";
 
 const INTENT_CARDS = [
-  { label: "אני יודע מתי אני פנוי", sub: "בחר תאריך", Icon: CalendarDays, href: "/trips?intent=date" },
-  { label: "מחפש סוג טיול מסוים", sub: "סינון לפי אופי", Icon: SlidersHorizontal, href: "/trips?intent=filter" },
-  { label: "מה יש בקרוב?", sub: "לפי התאריך הקרוב", Icon: Clock, href: "/trips?intent=soon" },
-  { label: "הפתיעו אותי", sub: "לפי ההעדפות שלי", Icon: Sparkles, href: "/trips?intent=surprise" },
+  { key: "Date", Icon: CalendarDays, href: "/trips?intent=date" },
+  { key: "Filter", Icon: SlidersHorizontal, href: "/trips?intent=filter" },
+  { key: "Soon", Icon: Clock, href: "/trips?intent=soon" },
+  { key: "Surprise", Icon: Sparkles, href: "/trips?intent=surprise" },
 ] as const;
 
 export default function HikerHome() {
   const router = useRouter();
+  const th = useTranslations("home");
   const [trips, setTrips] = useState<HomeTrip[]>([]);
   const [regions, setRegions] = useState<string[]>([]);
   const [visit, setVisit] = useState(1);
@@ -97,7 +99,7 @@ export default function HikerHome() {
           title: top.g.user.name ?? "מדריך",
           subtitle: `${top.n} טיולים קרובים${top.g.rating > 0 ? ` · דירוג ${top.g.rating.toFixed(1)}` : ""}`,
           image: top.g.user.image ?? hikingPhoto(top.g.id),
-          cta: { label: "ראה פרופיל מדריך", href: `/guides/${top.g.id}` },
+          cta: { label: th("viewGuide"), href: `/guides/${top.g.id}` },
         };
       }
     }
@@ -121,7 +123,7 @@ export default function HikerHome() {
           title: near.title,
           subtitle: `${near.region} · ₪${near.price.toLocaleString("he-IL")}`,
           image: hikingPhoto(near.id, 0, { region: near.region, title: near.title }),
-          cta: { label: "צפה בטיול", href: `/trips/${near.id}` },
+          cta: { label: th("viewTrip"), href: `/trips/${near.id}` },
         };
       }
     }
@@ -140,7 +142,7 @@ export default function HikerHome() {
         title: featured.title,
         subtitle: parts.join(" · "),
         image: hikingPhoto(featured.id, 0, { region: featured.region, title: featured.title }),
-        cta: { label: "צפה בטיול", href: `/trips/${featured.id}` },
+        cta: { label: th("viewTrip"), href: `/trips/${featured.id}` },
       };
     }
 
@@ -224,18 +226,18 @@ export default function HikerHome() {
 
         {/* ── Intent question ── */}
         <section className="px-4 pt-7 pb-6">
-          <h2 className="font-display text-2xl text-fg mb-4">מה תרצה לעשות היום?</h2>
+          <h2 className="font-display text-2xl text-fg mb-4">{th("whatToday")}</h2>
           <div className="grid grid-cols-2 gap-3">
-            {INTENT_CARDS.map(({ label, sub, Icon, href }) => (
-              <Link key={label} href={href}
+            {INTENT_CARDS.map(({ key, Icon, href }) => (
+              <Link key={key} href={href}
                 className="rounded-2xl p-4 border border-border bg-surface flex flex-col gap-6 active:scale-[0.98] transition-transform overflow-hidden relative"
                 style={{ minHeight: 130, borderTop: "3px solid var(--accent)" }}>
                 <span className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "var(--surface-2)" }}>
                   <Icon size={19} style={{ color: "var(--accent)" }} strokeWidth={1.9} />
                 </span>
                 <span className="mt-auto">
-                  <span className="block text-sm font-semibold text-fg leading-snug">{label}</span>
-                  <span className="block text-[11px] text-fg-faint mt-0.5">{sub}</span>
+                  <span className="block text-sm font-semibold text-fg leading-snug">{th(`intent${key}`)}</span>
+                  <span className="block text-[11px] text-fg-faint mt-0.5">{th(`intent${key}Sub`)}</span>
                 </span>
               </Link>
             ))}
