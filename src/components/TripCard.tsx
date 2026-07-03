@@ -102,10 +102,6 @@ export default function TripCard({
         {/* Top row: badges + favorite */}
         <div className="absolute top-3 inset-x-3 flex items-start justify-between">
           <div className="flex gap-1.5 items-center">
-            {trip.cardLogo && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={trip.cardLogo} alt="" className="w-6 h-6 rounded-md bg-white object-contain p-0.5 shadow" />
-            )}
             {isJourney && (
               <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold text-white backdrop-blur-sm" style={{ background: "rgba(200,137,58,0.92)" }}>
                 מסע · {trip.dayCount} ימים
@@ -132,6 +128,12 @@ export default function TripCard({
           <span className="absolute top-1/2 right-3 -translate-y-1/2 px-2.5 py-1 rounded-full text-[11px] font-semibold text-white bg-danger">
             מלא
           </span>
+        )}
+
+        {/* Company/organization logo — bottom-left, on the gradient */}
+        {trip.cardLogo && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={trip.cardLogo} alt="" className="absolute bottom-3 left-3 w-10 h-10 rounded-lg bg-white object-contain p-1 shadow-md z-20" />
         )}
 
         {/* Bottom of image: title + guide */}

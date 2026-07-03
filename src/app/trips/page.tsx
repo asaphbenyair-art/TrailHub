@@ -883,7 +883,7 @@ export default function TripsPage() {
                     </button>
                     {trip.cardLogo && (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={trip.cardLogo} alt="" className="absolute top-11 left-2.5 w-7 h-7 rounded-md bg-white object-contain p-0.5 shadow z-10" />
+                      <img src={trip.cardLogo} alt="" className="absolute bottom-2.5 left-2.5 w-10 h-10 rounded-lg bg-white object-contain p-1 shadow-md z-20" />
                     )}
                     <div className="absolute bottom-0 left-0 right-0 px-3 py-2.5 z-10"
                       style={{ background: "linear-gradient(to top,rgba(0,0,0,0.68),transparent)" }}>
