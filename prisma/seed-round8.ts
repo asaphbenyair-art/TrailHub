@@ -65,15 +65,16 @@ function waypoints(seed: string, region: string, withAudio = false) {
     const wig = Math.sin(t * Math.PI * (1.3 + rng())) * span * 0.18;
     const lat = +(oLat + Math.cos(angle) * span * t + Math.cos(angle + Math.PI / 2) * wig).toFixed(5);
     const lng = +(oLng + Math.sin(angle) * span * t + Math.sin(angle + Math.PI / 2) * wig).toFixed(5);
-    const wp: Record<string, unknown> = { name, description, lat, lng };
-    if (withAudio) {
-      wp.navInstructions = "המשיכו בשביל המסומן.";
-      wp.guidance = description;
-      wp.audioUrl = `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${(i % 16) + 1}.mp3`;
-      wp.audioName = `הדרכה קולית — ${name}.mp3`;
-      wp.audioDuration = 0;
-    }
-    return wp;
+    return {
+      name, description, lat, lng,
+      ...(withAudio ? {
+        navInstructions: "המשיכו בשביל המסומן.",
+        guidance: description,
+        audioUrl: `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${(i % 16) + 1}.mp3`,
+        audioName: `הדרכה קולית — ${name}.mp3`,
+        audioDuration: 0,
+      } : {}),
+    };
   });
 }
 
