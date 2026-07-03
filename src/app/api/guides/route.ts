@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
 
 // Derive specialty tags from a guide's headline + bio for the directory filter.
 const SPECIALTY_MAP: [RegExp, string][] = [
@@ -34,6 +35,17 @@ export async function GET() {
     },
   });
 
+  // Which of these guides does the logged-in user follow?
+  const session = await auth();
+  let followed = new Set<string>();
+  if (session?.user) {
+    const follows = await prisma.guideFollow.findMany({
+      where: { userId: session.user.id!, guideId: { in: guides.map((g) => g.id) } },
+      select: { guideId: true },
+    });
+    followed = new Set(follows.map((f) => f.guideId));
+  }
+
   const list = guides.map((g) => ({
     id: g.id,
     name: g.user.name,
@@ -45,6 +57,7 @@ export async function GET() {
     reviewCount: g.reviewCount,
     upcomingTrips: g._count.trips,
     specialties: specialtiesFor(`${g.headline ?? ""} ${g.bio ?? ""}`),
+    following: followed.has(g.id),
   }));
 
   // Most active / highest rated first

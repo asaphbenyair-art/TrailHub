@@ -67,7 +67,7 @@ function accessRemaining(iso: string | null | undefined): { text: string; color:
 interface GuideCard {
   id: string; name: string | null; image: string | null; headline: string | null;
   specialtyRegions: string[]; rating: number; reviewCount: number;
-  upcomingTrips: number; specialties: string[];
+  upcomingTrips: number; specialties: string[]; following?: boolean;
 }
 
 interface Trip {
@@ -233,6 +233,13 @@ export default function TripsPage() {
     } catch { setGuides([]); }
     finally { setGuidesLoaded(true); }
   }, []);
+
+  // Follow/unfollow a guide directly from the directory card (optimistic).
+  async function toggleFollowGuide(guideId: string, currentlyFollowing: boolean) {
+    if (!session) { router.push("/auth/login"); return; }
+    setGuides((prev) => prev.map((g) => (g.id === guideId ? { ...g, following: !currentlyFollowing } : g)));
+    await fetch(`/api/guides/${guideId}/follow`, { method: currentlyFollowing ? "DELETE" : "POST" }).catch(() => {});
+  }
 
   async function toggleFav(tripId: string) {
     if (!session) { router.push("/auth/login"); return; }
@@ -610,6 +617,12 @@ export default function TripsPage() {
                     <div className="text-[11px] text-[#0F5038] bg-[#D6EDE3] rounded-full px-2 py-0.5 mt-1.5">
                       {g.upcomingTrips} טיולים קרובים
                     </div>
+                    <button type="button"
+                      onClick={(e) => { e.stopPropagation(); toggleFollowGuide(g.id, !!g.following); }}
+                      className={`mt-2 w-full text-[11px] rounded-full px-2 py-1.5 font-medium border transition-colors ${
+                        g.following ? "bg-[#D6EDE3] text-[#0F5038] border-[#1A6B4A]/30" : "bg-[#1A6B4A] text-white border-[#1A6B4A]"}`}>
+                      {g.following ? "עוקב ✓" : "+ עקוב"}
+                    </button>
                   </div>
                 ))}
               </div>
