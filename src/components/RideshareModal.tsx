@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X, MapPin, ArrowLeftRight, Coins, MessageCircle, UserSearch, Plus, Check, Car, Phone } from "lucide-react";
+import { useDualDate } from "@/components/CalendarModeProvider";
 
 interface Claim { id: string; userId: string; user: { id: string; name: string | null; phone: string | null } }
 interface Offer {
@@ -66,7 +67,8 @@ export default function RideshareModal({
   }
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [tripId]);
 
-  const dateLabel = tripDate ? new Date(tripDate).toLocaleDateString("he-IL", { day: "numeric", month: "short" }) : "";
+  const dd = useDualDate();
+  const dateLabel = tripDate ? dd(tripDate) : "";
 
   async function toggleLooking() {
     setLooking((v) => !v);

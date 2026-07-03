@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useDualDate } from "@/components/CalendarModeProvider";
 
 interface RegField { id: string; label: string; type: string; required: boolean; options: string[] }
 interface Registrant {
@@ -36,6 +37,7 @@ const PAY_UI: Record<string, string> = {
 export default function RegistrantsPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const dd = useDualDate();
   const [fields, setFields] = useState<RegField[]>([]);
   const [regs, setRegs] = useState<Registrant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -126,7 +128,7 @@ export default function RegistrantsPage() {
             <div className="flex flex-col gap-2">
               {broadcasts.map((b) => (
                 <div key={b.id} className="border-b border-border last:border-0 pb-2 last:pb-0">
-                  <div className="text-[10px] text-fg-faint mb-0.5">{new Date(b.createdAt).toLocaleString("he-IL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</div>
+                  <div className="text-[10px] text-fg-faint mb-0.5">{dd(b.createdAt, { time: true })}</div>
                   <p className="text-xs text-fg-muted whitespace-pre-wrap">{b.body}</p>
                 </div>
               ))}

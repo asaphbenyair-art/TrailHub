@@ -28,6 +28,8 @@ interface RegistrationTrip {
   meetingPoint: string | null;
   cancellationPolicy: string | null;
   guide: { user: { name: string | null } };
+  qaCount?: number;
+  qaOpen?: number;
 }
 
 // Compute the refund the hiker would get if they cancel right now, based on the
@@ -114,6 +116,19 @@ function TripCard({
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
+  // Q&A indicator: amber+count for unread answers, grey+count for open questions.
+  const qaTotal = trip.qaCount ?? 0;
+  const qaOpen = trip.qaOpen ?? 0;
+  const qaAnswered = Math.max(qaTotal - qaOpen, 0);
+  const [qaSeenAns, setQaSeenAns] = useState(0);
+  useEffect(() => {
+    try { setQaSeenAns(parseInt(window.localStorage.getItem(`qa-ans-seen-${trip.id}`) ?? "0") || 0); } catch {}
+  }, [trip.id]);
+  const qaUnread = Math.max(qaAnswered - qaSeenAns, 0);
+  const qaState = qaUnread > 0 ? "unread" : qaOpen > 0 ? "open" : "read";
+  const qaColor = qaState === "unread" ? "#C8893A" : "#9ca3af";
+  const showQa = qaTotal > 0 && !isCancelled && !isPast;
+
   async function doCancel() {
     setCancelling(true);
     try {
@@ -197,7 +212,19 @@ function TripCard({
               : `₪${reg.totalPrice.toLocaleString()}`}
           </span>
         )}
-        <div className="flex gap-1.5">
+        <div className="flex gap-1.5 items-center flex-wrap">
+          {showQa && (
+            <button type="button"
+              onClick={() => {
+                try { window.localStorage.setItem(`qa-ans-seen-${trip.id}`, String(qaAnswered)); } catch {}
+                router.push(`/trips/${trip.id}?scroll=qa-section`);
+              }}
+              className="px-2.5 py-1 rounded-full text-[11px] font-medium flex items-center gap-1"
+              style={{ color: qaColor, border: `1px solid ${qaColor}55` }}
+              title="שאלות ותשובות">
+              💬 שו״ת{qaState === "unread" ? ` ${qaUnread}` : qaState === "open" ? ` ${qaOpen}` : ""}
+            </button>
+          )}
           {isPast && !isCancelled && (
             <>
               <button type="button" onClick={() => router.push(`/trips/${trip.id}`)}

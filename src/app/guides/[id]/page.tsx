@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useDualDate } from "@/components/CalendarModeProvider";
 
 const DIFF_LABEL: Record<string, string> = { EASY: "קל", MEDIUM: "בינוני", HARD: "קשה", EXTREME: "קיצוני" };
 
@@ -43,6 +44,7 @@ export default function GuideProfilePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { data: session } = useSession();
+  const dd = useDualDate();
   const [data, setData] = useState<GuideProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"trips" | "reviews">("trips");
@@ -206,7 +208,7 @@ export default function GuideProfilePage() {
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium text-fg truncate">{t.title}</div>
                         <div className="text-[11px] text-fg-muted mt-0.5">
-                          📍 {t.region} · {DIFF_LABEL[t.difficulty]} · {new Date(t.date).toLocaleDateString("he-IL", { day: "numeric", month: "short" })}
+                          📍 {t.region} · {DIFF_LABEL[t.difficulty]} · {dd(t.date)}
                         </div>
                         <div className="text-[11px] text-fg-faint mt-0.5">₪{t.price} · {Math.max(t.maxSpots - t.spotsBooked, 0)} מקומות</div>
                       </div>

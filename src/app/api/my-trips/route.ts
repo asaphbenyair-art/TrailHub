@@ -18,5 +18,21 @@ export async function GET() {
     orderBy: { trip: { date: "asc" } },
   });
 
-  return NextResponse.json(registrations);
+  // Public Q&A counts per trip, for the card Q&A indicator.
+  const tripIds = [...new Set(registrations.map((r) => r.tripId))];
+  const [qaAll, qaOpen] = await Promise.all([
+    prisma.tripQuestion.groupBy({ by: ["tripId"], where: { tripId: { in: tripIds }, isPrivate: false }, _count: { _all: true } }),
+    prisma.tripQuestion.groupBy({ by: ["tripId"], where: { tripId: { in: tripIds }, isPrivate: false, answer: null }, _count: { _all: true } }),
+  ]);
+  const qaCountByTrip: Record<string, number> = {};
+  for (const g of qaAll) qaCountByTrip[g.tripId] = g._count._all;
+  const qaOpenByTrip: Record<string, number> = {};
+  for (const g of qaOpen) qaOpenByTrip[g.tripId] = g._count._all;
+
+  const withQa = registrations.map((r) => ({
+    ...r,
+    trip: { ...r.trip, qaCount: qaCountByTrip[r.tripId] ?? 0, qaOpen: qaOpenByTrip[r.tripId] ?? 0 },
+  }));
+
+  return NextResponse.json(withQa);
 }

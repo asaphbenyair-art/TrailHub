@@ -122,30 +122,34 @@ function RideshareIndicator({ trip, hasAccess, onOpen }: { trip: Trip; hasAccess
 }
 
 // Q&A indicator for the trip-card stats row — visible only to registered/interested.
-// 3 states: unread activity (amber + count) → open unanswered (grey + count) →
-// all seen/answered (grey icon, no badge). No questions at all → hidden entirely.
+// States (per spec):
+//  • amber + count → unread ANSWERS the hiker hasn't seen yet
+//  • grey  + count → open (unanswered) questions
+//  • grey icon, no count → caught up (questions exist, all seen & answered)
+//  • hidden → no questions at all
 function QAIndicator({ trip, hasAccess, onOpen }: { trip: Trip; hasAccess: boolean; onOpen: () => void }) {
   const total = trip.qaCount ?? 0;
   const open = trip.qaOpen ?? 0;
-  const [seen, setSeen] = useState<number>(total);
+  const answered = Math.max(total - open, 0);
+  const [seenAns, setSeenAns] = useState<number>(0);
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const v = window.localStorage.getItem(`qa-seen-${trip.id}`);
-    setSeen(v != null ? parseInt(v) || 0 : 0);
+    const v = window.localStorage.getItem(`qa-ans-seen-${trip.id}`);
+    setSeenAns(v != null ? parseInt(v) || 0 : 0);
   }, [trip.id]);
 
   if (!hasAccess || total === 0) return null;
-  const unread = Math.max(total - seen, 0);
+  const unreadAns = Math.max(answered - seenAns, 0);
   const AMBER = "#C8893A", MUTED = "#9ca3af";
-  const state = unread > 0 ? "unread" : open > 0 ? "open" : "read";
-  const color = state === "unread" ? AMBER : MUTED;
+  const state = unreadAns > 0 ? "unread" : open > 0 ? "open" : "read";
+  const color = state === "read" ? MUTED : state === "unread" ? AMBER : MUTED;
 
   return (
     <button type="button" onClick={(e) => { e.stopPropagation(); onOpen(); }} className="flex flex-col items-end shrink-0" title="שאלות ותשובות">
       <span className="text-[9px] leading-none mb-1" style={{ color }}>שו״ת</span>
       <span className="flex items-center gap-0.5 text-[10px] font-semibold" style={{ color }}>
         <MessageCircle size={13} />
-        {state === "unread" ? unread : state === "open" ? open : null}
+        {state === "unread" ? unreadAns : state === "open" ? open : null}
       </span>
     </button>
   );
@@ -993,7 +997,10 @@ export default function TripsPage() {
                             trip={trip}
                             hasAccess={!!myStatus && myStatus !== "CANCELLED"}
                             onOpen={() => {
-                              try { window.localStorage.setItem(`qa-seen-${trip.id}`, String(trip.qaCount ?? 0)); } catch {}
+                              try {
+                                const answered = Math.max((trip.qaCount ?? 0) - (trip.qaOpen ?? 0), 0);
+                                window.localStorage.setItem(`qa-ans-seen-${trip.id}`, String(answered));
+                              } catch {}
                               router.push(`/trips/${trip.id}?scroll=qa-section`);
                             }}
                           />

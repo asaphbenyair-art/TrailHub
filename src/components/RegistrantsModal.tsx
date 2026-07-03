@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { X, Users, Mars, Venus } from "lucide-react";
+import { useDualDate } from "@/components/CalendarModeProvider";
 
 interface Registrant {
   id: string; name: string | null; image: string | null; gender: string | null;
@@ -28,6 +29,7 @@ function initials(name: string | null) {
 }
 
 function Row({ r }: { r: Registrant }) {
+  const dd = useDualDate();
   return (
     <div className="flex items-center gap-2.5 py-2.5 border-b border-border last:border-b-0">
       {r.image && !r.anonymous ? (
@@ -47,7 +49,7 @@ function Row({ r }: { r: Registrant }) {
         {r.slogan && <div className="text-[11px] text-fg-faint truncate">{r.slogan}</div>}
       </div>
       <span className="text-[10px] text-fg-faint shrink-0">
-        {new Date(r.createdAt).toLocaleDateString("he-IL", { day: "numeric", month: "short" })}
+        {dd(r.createdAt)}
       </span>
     </div>
   );

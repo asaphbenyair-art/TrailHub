@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { formatDatePref, type CalendarMode } from "@/lib/hebrewDate";
+import { formatDatePref, formatDualDate, type CalendarMode } from "@/lib/hebrewDate";
 
 interface Ctx {
   mode: CalendarMode;
@@ -56,6 +56,26 @@ export function useDateFmt() {
   return useCallback(
     (date: string | Date, opts: { long?: boolean; weekday?: boolean; greg?: Intl.DateTimeFormatOptions } = {}) =>
       formatDatePref(date, mode, opts),
+    [mode]
+  );
+}
+
+/**
+ * Returns a formatter showing BOTH the Gregorian and Hebrew date together,
+ * ordered by the user's active calendar preference — e.g. "10 יולי (כ׳ תמוז)".
+ * Optionally append a clock time.
+ */
+export function useDualDate() {
+  const { mode } = useContext(CalendarCtx);
+  return useCallback(
+    (date: string | Date, opts: { time?: boolean } = {}) => {
+      const base = formatDualDate(date, mode);
+      if (opts.time) {
+        const d = new Date(date);
+        if (!isNaN(d.getTime())) return `${base} · ${d.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}`;
+      }
+      return base;
+    },
     [mode]
   );
 }

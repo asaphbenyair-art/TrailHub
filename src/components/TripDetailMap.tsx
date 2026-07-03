@@ -34,6 +34,8 @@ interface Props {
   height?: number;
   liveLocation?: boolean;
   focusWaypoint?: number | null;
+  /** Coordinate to highlight with a moving marker (e.g. elevation-chart hover). */
+  hoverCoord?: [number, number] | null;
 }
 
 export default function TripDetailMap({
@@ -44,12 +46,14 @@ export default function TripDetailMap({
   height = 160,
   liveLocation = false,
   focusWaypoint = null,
+  hoverCoord = null,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markerRefs = useRef<(L.Marker | null)[]>([]);
   const routeLineRef = useRef<L.Polyline | null>(null);
   const dotRef = useRef<L.CircleMarker | null>(null);
+  const hoverRef = useRef<L.CircleMarker | null>(null);
   const wpKeyRef = useRef<string>("");
   const [ready, setReady] = useState(false);
 
@@ -154,6 +158,23 @@ export default function TripDetailMap({
     const marker = markerRefs.current[focusWaypoint];
     if (marker) marker.openPopup();
   }, [focusWaypoint, ready, waypoints]);
+
+  // Moving marker driven by elevation-chart hover — follows the route position.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    if (!hoverCoord) {
+      if (hoverRef.current) { hoverRef.current.remove(); hoverRef.current = null; }
+      return;
+    }
+    if (!hoverRef.current) {
+      hoverRef.current = L.circleMarker(hoverCoord, {
+        radius: 7, color: "#fff", weight: 3, fillColor: "#1A6B4A", fillOpacity: 1,
+      }).addTo(map);
+    } else {
+      hoverRef.current.setLatLng(hoverCoord);
+    }
+  }, [hoverCoord, ready]);
 
   // Live "blue dot" of the user's own GPS position (personal only, not shared)
   useEffect(() => {

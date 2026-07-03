@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useDualDate } from "@/components/CalendarModeProvider";
 
 interface QReply { id: string; body: string; createdAt: string; userId: string; user: { name: string | null; image: string | null } }
 interface Question {
@@ -33,6 +34,7 @@ export default function GuideQAPage() {
   const { id: tripId } = useParams<{ id: string }>();
   const router = useRouter();
   const { data: session, status } = useSession();
+  const dd = useDualDate();
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [view, setView] = useState<"public" | "private">("public");
@@ -153,7 +155,7 @@ export default function GuideQAPage() {
                   </div>
                   <span className="text-xs font-medium text-fg">{q.user.name ?? "מטייל"}</span>
                   <span className="text-[10px] text-fg-faint mr-auto">
-                    {new Date(q.createdAt).toLocaleDateString("he-IL")}
+                    {dd(q.createdAt)}
                   </span>
                 </div>
                 <p className="text-sm text-fg mb-3">{q.body}</p>
@@ -207,7 +209,7 @@ export default function GuideQAPage() {
                         <div className="flex items-center gap-1.5">
                           <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-medium text-white" style={{ background: avatarColor(rp.user.name) }}>{initials(rp.user.name)}</div>
                           <span className="text-[11px] font-medium text-fg">{rp.userId === meId ? "אתה" : (rp.user.name ?? "מטייל")}</span>
-                          <span className="text-[9px] text-fg-faint mr-auto">{new Date(rp.createdAt).toLocaleDateString("he-IL")}</span>
+                          <span className="text-[9px] text-fg-faint mr-auto">{dd(rp.createdAt)}</span>
                         </div>
                         <p className="text-xs text-fg-muted pr-6 mt-0.5">{rp.body}</p>
                       </div>

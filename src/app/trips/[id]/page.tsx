@@ -9,7 +9,7 @@ import RideshareModal from "@/components/RideshareModal";
 import { TAG_LABEL } from "@/lib/tripTags";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { coverImages } from "@/lib/tripImage";
-import { useDateFmt } from "@/components/CalendarModeProvider";
+import { useDateFmt, useDualDate } from "@/components/CalendarModeProvider";
 import {
   ArrowRight, Heart, Share2, Bell, Star, UserPlus, Check, MapPin, Navigation,
   Clock, Mountain, Users, Calendar, Backpack, Copy, BookOpen, MessageCircle,
@@ -107,42 +107,153 @@ function HeroSlideshow({ images, title }: { images: string[]; title: string }) {
 }
 
 // ── Elevation profile from GPX ──
-function parseElevations(gpx: string | null | undefined): number[] {
+interface TrackPt { lat: number; lon: number; ele: number }
+
+/** Parse GPX <trkpt lat lon><ele> into points with coordinates + elevation. */
+function parseTrack(gpx: string | null | undefined): TrackPt[] {
   if (!gpx) return [];
-  const eles: number[] = [];
-  const re = /<ele>\s*(-?[\d.]+)\s*<\/ele>/g;
+  const pts: TrackPt[] = [];
+  const re = /<(?:trkpt|rtept|wpt)[^>]*\blat="(-?[\d.]+)"[^>]*\blon="(-?[\d.]+)"[^>]*>([\s\S]*?)<\/(?:trkpt|rtept|wpt)>/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(gpx)) !== null) {
-    const v = parseFloat(m[1]);
-    if (!Number.isNaN(v)) eles.push(v);
+    const lat = parseFloat(m[1]), lon = parseFloat(m[2]);
+    const em = /<ele>\s*(-?[\d.]+)\s*<\/ele>/.exec(m[3]);
+    const ele = em ? parseFloat(em[1]) : NaN;
+    if (!Number.isNaN(lat) && !Number.isNaN(lon) && !Number.isNaN(ele)) pts.push({ lat, lon, ele });
   }
-  return eles;
+  return pts;
 }
 
-function ElevationChart({ points }: { points: number[] }) {
-  if (points.length < 2) return null;
-  const W = 320, H = 90, pad = 4;
-  const N = Math.min(points.length, 90);
-  const stride = points.length / N;
-  const sampled = Array.from({ length: N }, (_, i) => points[Math.floor(i * stride)]);
-  const min = Math.min(...sampled), max = Math.max(...sampled);
-  const range = max - min || 1;
-  const xs = (i: number) => pad + (i / (N - 1)) * (W - 2 * pad);
-  const ys = (v: number) => pad + (1 - (v - min) / range) * (H - 2 * pad);
-  const line = sampled.map((v, i) => `${xs(i).toFixed(1)},${ys(v).toFixed(1)}`).join(" ");
-  const area = `${pad},${H - pad} ${line} ${W - pad},${H - pad}`;
-  let gain = 0;
-  for (let i = 1; i < points.length; i++) { const d = points[i] - points[i - 1]; if (d > 0) gain += d; }
+function haversine(a: TrackPt, b: TrackPt): number {
+  const R = 6371, dLat = ((b.lat - a.lat) * Math.PI) / 180, dLon = ((b.lon - a.lon) * Math.PI) / 180;
+  const s = Math.sin(dLat / 2) ** 2 + Math.cos((a.lat * Math.PI) / 180) * Math.cos((b.lat * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s)); // km
+}
+
+/**
+ * Interactive elevation profile: stats row (distance, min/max, ascent/descent),
+ * filled green area chart, numbered waypoint dots + labels, and a hover tooltip
+ * that also drives a moving marker on the map (via onHover).
+ */
+function ElevationChart({
+  track,
+  waypoints,
+  onHover,
+}: {
+  track: TrackPt[];
+  waypoints: Array<{ lat: number; lng: number; label: string }>;
+  onHover?: (coord: [number, number] | null) => void;
+}) {
+  const [hoverX, setHoverX] = useState<number | null>(null);
+  if (track.length < 2) return null;
+
+  const W = 320, H = 100, padX = 6, padTop = 8, padBot = 6;
+  // Cumulative distance per track point.
+  const cum: number[] = [0];
+  for (let i = 1; i < track.length; i++) cum.push(cum[i - 1] + haversine(track[i - 1], track[i]));
+  const totalKm = cum[cum.length - 1] || 0.001;
+  const eles = track.map((p) => p.ele);
+  const min = Math.min(...eles), max = Math.max(...eles), range = max - min || 1;
+  let ascent = 0, descent = 0;
+  for (let i = 1; i < eles.length; i++) { const d = eles[i] - eles[i - 1]; if (d > 0) ascent += d; else descent -= d; }
+
+  const xOf = (km: number) => padX + (km / totalKm) * (W - 2 * padX);
+  const yOf = (e: number) => padTop + (1 - (e - min) / range) * (H - padTop - padBot);
+
+  // Downsample the drawn line for smoothness.
+  const N = Math.min(track.length, 120), stride = track.length / N;
+  const pathPts = Array.from({ length: N }, (_, i) => {
+    const idx = Math.min(Math.floor(i * stride), track.length - 1);
+    return { x: xOf(cum[idx]), y: yOf(eles[idx]) };
+  });
+  const line = pathPts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  const area = `${xOf(0).toFixed(1)},${(H - padBot).toFixed(1)} ${line} ${xOf(totalKm).toFixed(1)},${(H - padBot).toFixed(1)}`;
+
+  // Map each waypoint to the nearest track point → its distance along the route.
+  const wpMarks = waypoints.map((w, i) => {
+    let best = 0, bd = Infinity;
+    for (let k = 0; k < track.length; k++) {
+      const d = (track[k].lat - w.lat) ** 2 + (track[k].lon - w.lng) ** 2;
+      if (d < bd) { bd = d; best = k; }
+    }
+    return { i, km: cum[best], ele: eles[best], label: w.label };
+  });
+
+  // Resolve hover → nearest track index for tooltip + map marker.
+  let hover: { km: number; ele: number; x: number; y: number } | null = null;
+  if (hoverX != null) {
+    const km = (Math.max(padX, Math.min(W - padX, hoverX)) - padX) / (W - 2 * padX) * totalKm;
+    let best = 0, bd = Infinity;
+    for (let k = 0; k < track.length; k++) { const d = Math.abs(cum[k] - km); if (d < bd) { bd = d; best = k; } }
+    hover = { km: cum[best], ele: eles[best], x: xOf(cum[best]), y: yOf(eles[best]) };
+  }
+
+  const stat = (label: string, value: string) => (
+    <div className="flex flex-col items-center flex-1">
+      <span className="text-[13px] font-semibold text-fg tabular-nums">{value}</span>
+      <span className="text-[9px] text-fg-faint">{label}</span>
+    </div>
+  );
+
   return (
     <div className="rounded-2xl p-3.5 border border-border bg-surface">
-      <div className="flex justify-between text-[11px] text-fg-faint mb-1">
-        <span className="flex items-center gap-1"><TrendingUp size={12} /> פרופיל גובה</span>
-        <span>{Math.round(min)}–{Math.round(max)} מ׳ · טיפוס {Math.round(gain)} מ׳</span>
+      <div className="flex items-center gap-1 text-[11px] text-fg-faint mb-2">
+        <TrendingUp size={12} /> פרופיל גובה
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 80 }} preserveAspectRatio="none">
-        <polygon points={area} fill="var(--accent)" opacity={0.18} />
-        <polyline points={line} fill="none" stroke="var(--accent)" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
-      </svg>
+      {/* Stats row */}
+      <div className="flex items-stretch mb-2 divide-x divide-x-reverse divide-border" dir="rtl">
+        {stat("מרחק", `${totalKm.toFixed(1)} ק״מ`)}
+        {stat("טיפוס", `${Math.round(ascent)} מ׳`)}
+        {stat("ירידה", `${Math.round(descent)} מ׳`)}
+        {stat("גובה", `${Math.round(min)}–${Math.round(max)} מ׳`)}
+      </div>
+      {/* Chart */}
+      <div className="relative" style={{ direction: "ltr" }}>
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full block" style={{ height: 100 }} preserveAspectRatio="none"
+          onMouseLeave={() => { setHoverX(null); onHover?.(null); }}
+          onMouseMove={(e) => {
+            const r = (e.currentTarget as SVGSVGElement).getBoundingClientRect();
+            const x = ((e.clientX - r.left) / r.width) * W;
+            setHoverX(x);
+            const km = (Math.max(padX, Math.min(W - padX, x)) - padX) / (W - 2 * padX) * totalKm;
+            let best = 0, bd = Infinity;
+            for (let k = 0; k < track.length; k++) { const d = Math.abs(cum[k] - km); if (d < bd) { bd = d; best = k; } }
+            onHover?.([track[best].lat, track[best].lon]);
+          }}
+        >
+          <defs>
+            <linearGradient id="elevGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.35} />
+              <stop offset="100%" stopColor="var(--accent)" stopOpacity={0.02} />
+            </linearGradient>
+          </defs>
+          <polygon points={area} fill="url(#elevGrad)" />
+          <polyline points={line} fill="none" stroke="var(--accent)" strokeWidth={1.6} vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+          {/* Waypoint dots */}
+          {wpMarks.map((w) => (
+            <circle key={w.i} cx={xOf(w.km)} cy={yOf(w.ele)} r={2.6} fill="var(--accent)" stroke="#fff" strokeWidth={1} vectorEffect="non-scaling-stroke" />
+          ))}
+          {/* Hover crosshair + point */}
+          {hover && (
+            <>
+              <line x1={hover.x} y1={padTop} x2={hover.x} y2={H - padBot} stroke="var(--fg-faint)" strokeWidth={0.6} strokeDasharray="2 2" vectorEffect="non-scaling-stroke" />
+              <circle cx={hover.x} cy={hover.y} r={3.2} fill="#fff" stroke="var(--accent)" strokeWidth={1.6} vectorEffect="non-scaling-stroke" />
+            </>
+          )}
+        </svg>
+        {/* Waypoint number labels under their dots */}
+        {wpMarks.map((w) => (
+          <span key={w.i} className="absolute -translate-x-1/2 text-[8px] font-semibold text-fg-faint"
+            style={{ left: `${(xOf(w.km) / W) * 100}%`, top: 2 }}>{w.i + 1}</span>
+        ))}
+        {/* Hover tooltip */}
+        {hover && (
+          <div className="absolute pointer-events-none px-2 py-1 rounded-lg text-[10px] font-medium text-white shadow-lg whitespace-nowrap"
+            style={{ left: `${Math.min(Math.max((hover.x / W) * 100, 12), 88)}%`, top: -2, transform: "translateX(-50%)", background: "rgba(0,0,0,0.82)" }}>
+            {Math.round(hover.ele)} מ׳ · {hover.km.toFixed(1)} ק״מ
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -230,6 +341,7 @@ interface Registrant { id: string; name: string | null; anonymous: boolean; part
 
 // Fellow-registrants list — visible to registrants/interested; respects anonymity.
 function RegistrantsSection({ tripId }: { tripId: string }) {
+  const dd = useDualDate();
   const [data, setData] = useState<{ confirmed: Registrant[]; waitlist: Registrant[] } | null>(null);
   useEffect(() => {
     fetch(`/api/trips/${tripId}/registrants`).then((r) => (r.ok ? r.json() : null)).then(setData).catch(() => {});
@@ -244,7 +356,7 @@ function RegistrantsSection({ tripId }: { tripId: string }) {
       <span className="text-sm text-fg">
         {r.anonymous ? "משתתף אנונימי" : (r.name ?? "מטייל")}{r.participantCount > 1 ? ` +${r.participantCount - 1}` : ""}
       </span>
-      <span className="text-[10px] text-fg-faint mr-auto">{new Date(r.createdAt).toLocaleDateString("he-IL", { day: "numeric", month: "short" })}</span>
+      <span className="text-[10px] text-fg-faint mr-auto">{dd(r.createdAt)}</span>
     </div>
   );
   return (
@@ -266,6 +378,7 @@ function RegistrantsSection({ tripId }: { tripId: string }) {
 export default function TripDetailPage() {
   const { id } = useParams<{ id: string }>();
   const dfmt = useDateFmt();
+  const dd = useDualDate();
   const router = useRouter();
   const { data: session } = useSession();
   const [trip, setTrip] = useState<Trip | null>(null);
@@ -282,6 +395,7 @@ export default function TripDetailPage() {
   const [purchase, setPurchase] = useState<{ purchased: boolean; expired?: boolean } | null>(null);
   const [showLoc, setShowLoc] = useState(false);
   const [focusWp, setFocusWp] = useState<number | null>(null);
+  const [hoverCoord, setHoverCoord] = useState<[number, number] | null>(null);
   const mapWrapRef = useRef<HTMLDivElement>(null);
 
   async function cancelRegistration() {
@@ -406,10 +520,10 @@ export default function TripDetailPage() {
       .then((data) => {
         if (Array.isArray(data)) {
           setQuestions(data);
-          // Mark public Q&A as "seen" so the card indicator clears its unread badge.
+          // Mark public answered Q&A as "seen" so the card indicator clears its unread badge.
           try {
-            const publicCount = data.filter((q: { isPrivate?: boolean }) => !q.isPrivate).length;
-            window.localStorage.setItem(`qa-seen-${id}`, String(publicCount));
+            const answered = data.filter((q: { isPrivate?: boolean; answer?: string | null }) => !q.isPrivate && q.answer).length;
+            window.localStorage.setItem(`qa-ans-seen-${id}`, String(answered));
           } catch {}
         }
       }).catch(() => {});
@@ -498,7 +612,7 @@ export default function TripDetailPage() {
   }
 
   const cancellationLines = trip.cancellationPolicy ? trip.cancellationPolicy.split("\n").filter(Boolean) : [];
-  const elevations = parseElevations(trip.routeGpx);
+  const track = parseTrack(trip.routeGpx);
 
   // All guides, shown equally (no primary/secondary distinction — finalized spec)
   const allGuides: { id?: string; name: string | null; image?: string | null; rating?: number; reviewCount?: number }[] = [
@@ -745,7 +859,7 @@ export default function TripDetailPage() {
           <div>
             <Heading icon={MapPin}>{isSelfGuided ? "מסלול" : "מסלול ותחנות"}</Heading>
             <div ref={mapWrapRef} className="rounded-2xl overflow-hidden border border-border">
-              <TripDetailMap region={trip.region} meetingPoint={trip.meetingPoint} waypoints={parsedWaypoints} height={190} liveLocation={showLoc} focusWaypoint={focusWp} />
+              <TripDetailMap region={trip.region} meetingPoint={trip.meetingPoint} waypoints={parsedWaypoints} height={190} liveLocation={showLoc} focusWaypoint={focusWp} hoverCoord={hoverCoord} />
             </div>
             <button type="button" onClick={() => setShowLoc((v) => !v)}
               className="mt-2 text-xs rounded-full px-3 py-1.5 inline-flex items-center gap-1.5"
@@ -805,7 +919,7 @@ export default function TripDetailPage() {
           </div>
 
           {/* ── 11. Elevation chart ── */}
-          {elevations.length >= 2 && <ElevationChart points={elevations} />}
+          {track.length >= 2 && <ElevationChart track={track} waypoints={parsedWaypoints} onHover={setHoverCoord} />}
 
           {/* ── 12. Equipment + copy list ── */}
           {equipment.length > 0 && (
@@ -859,7 +973,7 @@ export default function TripDetailPage() {
                   <div key={a.id} className="rounded-2xl p-3.5 border border-border bg-surface">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-xs font-medium text-accent">{a.sender.name ?? "המדריך"}</span>
-                      <span className="text-[10px] text-fg-faint">{new Date(a.createdAt).toLocaleString("he-IL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                      <span className="text-[10px] text-fg-faint">{dd(a.createdAt, { time: true })}</span>
                     </div>
                     <p className="text-sm text-fg-muted whitespace-pre-wrap leading-relaxed">{a.body}</p>
                   </div>
@@ -882,7 +996,7 @@ export default function TripDetailPage() {
                       <div className="flex items-center gap-2 mb-1">
                         <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-medium text-white" style={{ background: avatarColor(q.user.name) }}>{initials(q.user.name)}</div>
                         <span className="text-xs font-medium text-fg">{q.user.name ?? "מטייל"}</span>
-                        <span className="text-[10px] text-fg-faint mr-auto">{new Date(q.createdAt).toLocaleDateString("he-IL")}</span>
+                        <span className="text-[10px] text-fg-faint mr-auto">{dd(q.createdAt)}</span>
                       </div>
                       <p className="text-sm text-fg mb-1">{q.body}</p>
                       {q.answer && (
@@ -899,7 +1013,7 @@ export default function TripDetailPage() {
                               <div className="flex items-center gap-1.5">
                                 <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-medium text-white" style={{ background: avatarColor(rp.user.name) }}>{initials(rp.user.name)}</div>
                                 <span className="text-[11px] font-medium text-fg">{rp.user.name ?? "מטייל"}</span>
-                                <span className="text-[9px] text-fg-faint mr-auto">{new Date(rp.createdAt).toLocaleDateString("he-IL")}</span>
+                                <span className="text-[9px] text-fg-faint mr-auto">{dd(rp.createdAt)}</span>
                               </div>
                               <p className="text-xs text-fg-muted pr-6 mt-0.5">{rp.body}</p>
                             </div>

@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { coverImages } from "@/lib/tripImage";
 import AvatarMenu from "@/components/AvatarMenu";
+import { useDualDate } from "@/components/CalendarModeProvider";
 
 const STATUS_LABEL: Record<string, { t: string; bg: string; c: string }> = {
   OPEN: { t: "פתוח", bg: "#D6EDE3", c: "#0F5038" },
@@ -30,6 +31,7 @@ interface MTrip {
 export default function ManagerDashboard() {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const dd = useDualDate();
   const [trips, setTrips] = useState<MTrip[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -95,7 +97,7 @@ export default function ManagerDashboard() {
                       </div>
                       <div className="text-[11px] text-fg-muted mt-0.5">
                         👤 {t.guide?.user?.name ?? "מדריך"} · 📍 {t.region}
-                        {t.tripType !== "SELF_GUIDED" && t.date ? ` · 📅 ${new Date(t.date).toLocaleDateString("he-IL", { day: "numeric", month: "short" })}` : ""}
+                        {t.tripType !== "SELF_GUIDED" && t.date ? ` · 📅 ${dd(t.date)}` : ""}
                       </div>
                       {t.tripType !== "SELF_GUIDED" && (
                         <div className="mt-2">
