@@ -152,6 +152,14 @@
     "loginToAsk": "Log in to ask a question",
     "registerToAsk": "Only registered or interested hikers can ask"
   },
+  "registrants": {
+    "title": "Participants",
+    "anonymous": "Anonymous participant",
+    "accessNote": "The participant list is available to registered and interested hikers",
+    "none": "No registrants yet",
+    "waitlist": "Waitlist",
+    "registered": "Registered"
+  },
   "rideshare": {
     "title": "Rideshare board",
     "accessNote": "The rideshare board is available to registered and interested hikers",

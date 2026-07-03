@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { X, Users, Mars, Venus } from "lucide-react";
 import { useDualDate } from "@/components/CalendarModeProvider";
+import { useTranslations } from "next-intl";
 
 interface Registrant {
   id: string; name: string | null; image: string | null; gender: string | null;
@@ -30,6 +31,7 @@ function initials(name: string | null) {
 
 function Row({ r }: { r: Registrant }) {
   const dd = useDualDate();
+  const trg = useTranslations("registrants");
   return (
     <div className="flex items-center gap-2.5 py-2.5 border-b border-border last:border-b-0">
       {r.image && !r.anonymous ? (
@@ -43,7 +45,7 @@ function Row({ r }: { r: Registrant }) {
       )}
       <div className="flex-1 min-w-0">
         <div className="text-sm text-fg flex items-center gap-1">
-          <span className="truncate">{r.anonymous ? "משתתף אנונימי" : (r.name ?? "מטייל")}{r.participantCount > 1 ? ` +${r.participantCount - 1}` : ""}</span>
+          <span className="truncate">{r.anonymous ? trg("anonymous") : (r.name ?? "מטייל")}{r.participantCount > 1 ? ` +${r.participantCount - 1}` : ""}</span>
           {!r.anonymous && <GenderIcon gender={r.gender} />}
         </div>
         {r.slogan && <div className="text-[11px] text-fg-faint truncate">{r.slogan}</div>}
@@ -60,6 +62,7 @@ export default function RegistrantsModal({
 }: {
   tripId: string; tripTitle: string; onClose: () => void;
 }) {
+  const trg = useTranslations("registrants");
   const [data, setData] = useState<{ confirmed: Registrant[]; waitlist: Registrant[] } | null>(null);
   const [allowed, setAllowed] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -79,7 +82,7 @@ export default function RegistrantsModal({
         <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
           <button type="button" onClick={onClose} className="text-fg-faint hover:text-fg-muted order-first"><X size={20} /></button>
           <div className="flex-1 text-sm text-fg truncate">
-            <span className="inline-flex items-center gap-1.5"><Users size={15} className="text-[#1A6B4A]" /> משתתפים</span>
+            <span className="inline-flex items-center gap-1.5"><Users size={15} className="text-[#1A6B4A]" /> {trg("title")}</span>
             <span className="text-fg-faint"> — {tripTitle}</span>
           </div>
         </div>
@@ -88,17 +91,17 @@ export default function RegistrantsModal({
           {loading ? (
             <div className="text-center py-8 text-fg-faint text-xs">טוען…</div>
           ) : !allowed ? (
-            <div className="text-center py-8 text-fg-faint text-sm">רשימת המשתתפים זמינה לנרשמים ומתעניינים בטיול</div>
+            <div className="text-center py-8 text-fg-faint text-sm">{trg("accessNote")}</div>
           ) : (
             <>
-              <div className="text-xs font-semibold text-fg-muted mb-1">רשומים ({data?.confirmed.length ?? 0})</div>
+              <div className="text-xs font-semibold text-fg-muted mb-1">{trg("registered")} ({data?.confirmed.length ?? 0})</div>
               {data && data.confirmed.length > 0
                 ? data.confirmed.map((r) => <Row key={r.id} r={r} />)
-                : <div className="text-xs text-fg-faint py-2">אין נרשמים עדיין</div>}
+                : <div className="text-xs text-fg-faint py-2">{trg("none")}</div>}
 
               {data && data.waitlist.length > 0 && (
                 <div className="mt-4 pt-4 border-t-2 border-dashed border-border">
-                  <div className="text-xs font-semibold text-[#185FA5] mb-1 flex items-center gap-1">⏰ רשימת המתנה ({data.waitlist.length})</div>
+                  <div className="text-xs font-semibold text-[#185FA5] mb-1 flex items-center gap-1">⏰ {trg("waitlist")} ({data.waitlist.length})</div>
                   {data.waitlist.map((r) => <Row key={r.id} r={r} />)}
                 </div>
               )}
