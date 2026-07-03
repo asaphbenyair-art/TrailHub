@@ -9,6 +9,7 @@ import AvatarMenu from "@/components/AvatarMenu";
 import Brand from "@/components/Brand";
 import ThemeToggle from "@/components/ThemeToggle";
 import ModeIndicator from "@/components/ModeIndicator";
+import SharedTripCard, { type TripCardData } from "@/components/TripCard";
 import { useDateFmt, useCalendarMode } from "@/components/CalendarModeProvider";
 import { formatDualDate } from "@/lib/hebrewDate";
 
@@ -329,8 +330,9 @@ export default function MyTripsPage() {
   const router = useRouter();
   const [regs, setRegs] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"upcoming" | "interested" | "past" | "selfguided">("upcoming");
+  const [activeTab, setActiveTab] = useState<"upcoming" | "interested" | "favorites" | "past" | "selfguided">("upcoming");
   const [purchases, setPurchases] = useState<Array<{ id: string; accessExpiresAt: string | null; trip: { id: string; title: string; region: string; images: string[] } }>>([]);
+  const [favorites, setFavorites] = useState<TripCardData[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -342,8 +344,14 @@ export default function MyTripsPage() {
       const data: Registration[] = await res.json();
       setRegs(Array.isArray(data) ? data : []);
       fetch("/api/my-purchases").then((r) => r.ok ? r.json() : []).then((p) => setPurchases(Array.isArray(p) ? p : [])).catch(() => {});
+      fetch("/api/favorites?full=1").then((r) => r.ok ? r.json() : { trips: [] }).then((d) => setFavorites(Array.isArray(d.trips) ? d.trips : [])).catch(() => {});
     } finally { setLoading(false); }
   }, [router]);
+
+  async function unfavorite(tripId: string) {
+    setFavorites((prev) => prev.filter((t) => t.id !== tripId));
+    await fetch("/api/favorites", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tripId }) }).catch(() => {});
+  }
 
   useEffect(() => { load(); }, [load]);
 
@@ -362,6 +370,7 @@ export default function MyTripsPage() {
   const tabs = [
     { key: "upcoming" as const, label: "קרובים", count: upcoming.length },
     { key: "interested" as const, label: "מתעניין", count: interested.length },
+    { key: "favorites" as const, label: "מועדפים", count: favorites.length },
     { key: "past" as const, label: "היסטוריה", count: past.length },
     { key: "selfguided" as const, label: "עצמאיים", count: purchases.length },
   ];
@@ -443,6 +452,20 @@ export default function MyTripsPage() {
                   </div>
                 );
               })}
+            </div>
+          )
+        ) : activeTab === "favorites" ? (
+          favorites.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-3xl mb-3">🤍</div>
+              <div className="text-fg-muted text-sm">עוד לא שמרת טיולים למועדפים</div>
+              <Link href="/trips" className="inline-block mt-3 text-[#1A6B4A] text-sm border border-[#1A6B4A] rounded-full px-4 py-1.5">גלה טיולים</Link>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {favorites.map((t) => (
+                <SharedTripCard key={t.id} trip={t} favorite onToggleFavorite={() => unfavorite(t.id)} onClick={() => router.push(`/trips/${t.id}`)} />
+              ))}
             </div>
           )
         ) : currentList.length === 0 ? (
