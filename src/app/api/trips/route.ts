@@ -80,7 +80,7 @@ export async function GET(request: Request) {
   // Rideshare summary per trip for the card indicator: available seats across
   // open offers + number of "looking for a ride" seekers.
   const ids = filtered.map((t) => t.id);
-  const [offers, seekerGroups] = await Promise.all([
+  const [offers, seekerGroups, qaAll, qaOpen] = await Promise.all([
     prisma.rideshareOffer.findMany({
       where: { tripId: { in: ids }, isCancelled: false },
       select: { tripId: true, spots: true, _count: { select: { claims: true } } },
@@ -90,11 +90,26 @@ export async function GET(request: Request) {
       where: { tripId: { in: ids } },
       _count: { _all: true },
     }),
+    // Public Q&A only (private questions are visible to asker/manager alone).
+    prisma.tripQuestion.groupBy({
+      by: ["tripId"],
+      where: { tripId: { in: ids }, isPrivate: false },
+      _count: { _all: true },
+    }),
+    prisma.tripQuestion.groupBy({
+      by: ["tripId"],
+      where: { tripId: { in: ids }, isPrivate: false, answer: null },
+      _count: { _all: true },
+    }),
   ]);
   const spotsByTrip: Record<string, number> = {};
   for (const o of offers) spotsByTrip[o.tripId] = (spotsByTrip[o.tripId] ?? 0) + Math.max(o.spots - o._count.claims, 0);
   const seekersByTrip: Record<string, number> = {};
   for (const g of seekerGroups) seekersByTrip[g.tripId] = g._count._all;
+  const qaCountByTrip: Record<string, number> = {};
+  for (const g of qaAll) qaCountByTrip[g.tripId] = g._count._all;
+  const qaOpenByTrip: Record<string, number> = {};
+  for (const g of qaOpen) qaOpenByTrip[g.tripId] = g._count._all;
 
   const withRideshare = filtered.map((t) => {
     // Trip-manager logo takes priority over the guide's; else none.
@@ -104,6 +119,8 @@ export async function GET(request: Request) {
       ...t,
       rideSpots: spotsByTrip[t.id] ?? 0,
       rideSeekers: seekersByTrip[t.id] ?? 0,
+      qaCount: qaCountByTrip[t.id] ?? 0,
+      qaOpen: qaOpenByTrip[t.id] ?? 0,
       cardLogo: managerLogo ?? guideLogo ?? null,
     };
   });

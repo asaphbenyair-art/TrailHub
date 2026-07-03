@@ -403,7 +403,16 @@ export default function TripDetailPage() {
 
   function loadQuestions() {
     fetch(`/api/trips/${id}/questions`).then((r) => r.json())
-      .then((data) => { if (Array.isArray(data)) setQuestions(data); }).catch(() => {});
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setQuestions(data);
+          // Mark public Q&A as "seen" so the card indicator clears its unread badge.
+          try {
+            const publicCount = data.filter((q: { isPrivate?: boolean }) => !q.isPrivate).length;
+            window.localStorage.setItem(`qa-seen-${id}`, String(publicCount));
+          } catch {}
+        }
+      }).catch(() => {});
   }
   useEffect(() => { loadQuestions(); }, [id]);
 

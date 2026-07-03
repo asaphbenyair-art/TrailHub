@@ -15,7 +15,7 @@ import { coverImages } from "@/lib/tripImage";
 import RideshareModal from "@/components/RideshareModal";
 import RegistrantsModal from "@/components/RegistrantsModal";
 import { useCalendarMode, useDateFmt } from "@/components/CalendarModeProvider";
-import { Car, Lock, UserSearch } from "lucide-react";
+import { Car, Lock, UserSearch, MessageCircle } from "lucide-react";
 
 const REGIONS = ["גליל עליון","גליל תחתון","כרמל","ירושלים","שפלה","נגב","ערבה","גולן","עמק יזרעאל", "אפרים ומנשה", "ארץ בנימין", "יהודה"];
 const DIFFICULTIES = [
@@ -74,7 +74,7 @@ interface Trip {
   date: string; startTime: string; durationMin: number; distanceKm: number;
   price: number; maxSpots: number; spotsBooked: number; images: string[];
   tripType?: string; endDate?: string | null; _count?: { days: number }; accessWindowDays?: number | null;
-  rideSpots?: number; rideSeekers?: number; cardLogo?: string | null;
+  rideSpots?: number; rideSeekers?: number; qaCount?: number; qaOpen?: number; cardLogo?: string | null;
   guide: { rating: number; user: { name: string | null } };
   guides?: { role: string; guide: { user: { name: string | null } } }[];
 }
@@ -117,6 +117,36 @@ function RideshareIndicator({ trip, hasAccess, onOpen }: { trip: Trip; hasAccess
         // State 2 — registered, no rides yet
         <span className="flex items-center gap-0.5 text-[10px]" style={{ color: MUTED }}><Car size={13} />אין עדיין</span>
       )}
+    </button>
+  );
+}
+
+// Q&A indicator for the trip-card stats row — visible only to registered/interested.
+// 3 states: unread activity (amber + count) → open unanswered (grey + count) →
+// all seen/answered (grey icon, no badge). No questions at all → hidden entirely.
+function QAIndicator({ trip, hasAccess, onOpen }: { trip: Trip; hasAccess: boolean; onOpen: () => void }) {
+  const total = trip.qaCount ?? 0;
+  const open = trip.qaOpen ?? 0;
+  const [seen, setSeen] = useState<number>(total);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const v = window.localStorage.getItem(`qa-seen-${trip.id}`);
+    setSeen(v != null ? parseInt(v) || 0 : 0);
+  }, [trip.id]);
+
+  if (!hasAccess || total === 0) return null;
+  const unread = Math.max(total - seen, 0);
+  const AMBER = "#C8893A", MUTED = "#9ca3af";
+  const state = unread > 0 ? "unread" : open > 0 ? "open" : "read";
+  const color = state === "unread" ? AMBER : MUTED;
+
+  return (
+    <button type="button" onClick={(e) => { e.stopPropagation(); onOpen(); }} className="flex flex-col items-end shrink-0" title="שאלות ותשובות">
+      <span className="text-[9px] leading-none mb-1" style={{ color }}>שו״ת</span>
+      <span className="flex items-center gap-0.5 text-[10px] font-semibold" style={{ color }}>
+        <MessageCircle size={13} />
+        {state === "unread" ? unread : state === "open" ? open : null}
+      </span>
     </button>
   );
 }
@@ -958,11 +988,21 @@ export default function TripsPage() {
                         ))}
                       </div>
                       {!isSG && (
-                        <RideshareIndicator
-                          trip={trip}
-                          hasAccess={!!myStatus && myStatus !== "CANCELLED"}
-                          onOpen={() => setRideDrawer(trip.id)}
-                        />
+                        <div className="flex items-start gap-3 shrink-0">
+                          <QAIndicator
+                            trip={trip}
+                            hasAccess={!!myStatus && myStatus !== "CANCELLED"}
+                            onOpen={() => {
+                              try { window.localStorage.setItem(`qa-seen-${trip.id}`, String(trip.qaCount ?? 0)); } catch {}
+                              router.push(`/trips/${trip.id}?scroll=qa-section`);
+                            }}
+                          />
+                          <RideshareIndicator
+                            trip={trip}
+                            hasAccess={!!myStatus && myStatus !== "CANCELLED"}
+                            onOpen={() => setRideDrawer(trip.id)}
+                          />
+                        </div>
                       )}
                     </div>
                     {!isSG && (

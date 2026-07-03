@@ -85,10 +85,9 @@ export default function Brand({
         <BrandSlogan className="text-base sm:text-lg leading-snug" />
         <BrandTrail className="max-w-[320px]" />
       </span>
-    ) : variant === "word" ? (
-      <BrandWord className="text-lg" />
     ) : (
-      <BrandSlogan twoLine className="text-[11px] sm:text-xs" />
+      // Nav ("bar"/"word"): just the single word "בִּשְׁבִילִי", nikud, green bold, right-aligned.
+      <BrandWord className="text-lg text-right" />
     );
 
   if (href === null) return <span className={className}>{content}</span>;
