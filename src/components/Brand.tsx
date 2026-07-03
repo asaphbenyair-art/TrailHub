@@ -19,10 +19,11 @@ export function BrandSlogan({
   const green = (t: string) => <span style={{ color: GREEN, fontWeight: 700 }}>{t}</span>;
   if (twoLine) {
     // Nav: stacked over two lines — "בשבילי נברא העולם" / "אנוכי עפר ואפר".
+    // RTL, right-aligned so both lines line up on the right edge.
     return (
-      <span className={`inline-flex flex-col leading-tight ${className}`} style={{ fontWeight: 300, color: "var(--fg)", ...style }}>
-        <span className="whitespace-nowrap">{green("בשבילי")} נברא העולם</span>
-        <span className="whitespace-nowrap">אנוכי {green("עפר")} ואפר</span>
+      <span dir="rtl" className={`inline-block text-right leading-tight ${className}`} style={{ fontWeight: 300, color: "var(--fg)", textAlign: "right", ...style }}>
+        <span className="block whitespace-nowrap">{green("בשבילי")} נברא העולם</span>
+        <span className="block whitespace-nowrap">אנוכי {green("עפר")} ואפר</span>
       </span>
     );
   }
