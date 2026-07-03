@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useCalendarMode } from "@/components/CalendarModeProvider";
-import ModeSwitch from "@/components/ModeSwitch";
+import ModeIndicator from "@/components/ModeIndicator";
 import { SignOutButton } from "@/components/SignOutButton";
 
 const REGIONS = ["גליל עליון", "גליל תחתון", "כרמל", "ירושלים", "שפלה", "נגב", "ערבה", "גולן", "עמק יזרעאל"];
@@ -583,7 +583,7 @@ export default function ProfilePage() {
         <div className="bg-surface rounded-2xl border border-border shadow-sm p-5 flex items-center justify-between">
           <span className="text-sm font-medium text-fg">חשבון</span>
           <div className="flex items-center gap-3">
-            <ModeSwitch current="hiker" />
+            <ModeIndicator />
             <SignOutButton />
           </div>
         </div>

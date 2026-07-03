@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import NotificationBell from "@/components/NotificationBell";
-import ModeSwitch from "@/components/ModeSwitch";
+import ModeIndicator from "@/components/ModeIndicator";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { coverImages } from "@/lib/tripImage";
 import { useDateFmt } from "@/components/CalendarModeProvider";
@@ -156,7 +156,7 @@ export default function GuideDashboard() {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <ModeSwitch current="guide" />
+            <ModeIndicator mode="guide" />
             <NotificationBell />
             <Link
               href={tab === "selfguided" ? "/guide/trips/new?type=self_guided" : "/guide/trips/new"}

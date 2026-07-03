@@ -8,6 +8,7 @@ import { coverImages } from "@/lib/tripImage";
 import AvatarMenu from "@/components/AvatarMenu";
 import Brand from "@/components/Brand";
 import ThemeToggle from "@/components/ThemeToggle";
+import ModeIndicator from "@/components/ModeIndicator";
 import { useDateFmt } from "@/components/CalendarModeProvider";
 
 const DIFF_LABEL: Record<string, string> = { EASY: "קל", MEDIUM: "בינוני", HARD: "קשה", EXTREME: "קיצוני" };
@@ -342,6 +343,7 @@ export default function MyTripsPage() {
           <Brand href="/trips" />
           <ThemeToggle className="flex-shrink-0" />
           <span className="text-sm font-medium text-fg flex-1 text-center">הטיולים שלי</span>
+          <ModeIndicator mode="hiker" />
           <AvatarMenu />
         </div>
 
