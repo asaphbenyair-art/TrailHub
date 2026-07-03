@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import NotificationBell from "@/components/NotificationBell";
 import ModeIndicator from "@/components/ModeIndicator";
+import AvatarMenu from "@/components/AvatarMenu";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { coverImages } from "@/lib/tripImage";
 import { useDateFmt } from "@/components/CalendarModeProvider";
@@ -143,6 +144,7 @@ export default function GuideDashboard() {
             >
               {tab === "selfguided" ? "+ טיול עצמאי" : "+ טיול חדש"}
             </Link>
+            <AvatarMenu />
           </div>
         </div>
 
