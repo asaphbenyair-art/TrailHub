@@ -1000,7 +1000,7 @@ export default function TripDetailPage() {
             );
 
             return (
-              <div>
+              <div id="reviews" style={{ scrollMarginTop: 80 }}>
                 <Heading icon={Star} right={eligible ? <SelfOthersToggle view={reviewView} onChange={(v) => { setReviewView(v); setEditingReview(false); }} /> : undefined}>
                   ביקורות ({trip.reviews.length})
                 </Heading>

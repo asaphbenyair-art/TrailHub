@@ -9,7 +9,6 @@ import AvatarMenu from "@/components/AvatarMenu";
 import Brand from "@/components/Brand";
 import ThemeToggle from "@/components/ThemeToggle";
 import ModeIndicator from "@/components/ModeIndicator";
-import SharedTripCard, { type TripCardData } from "@/components/TripCard";
 import QAModal from "@/components/QAModal";
 import { useDateFmt, useCalendarMode } from "@/components/CalendarModeProvider";
 import { formatDualDate } from "@/lib/hebrewDate";
@@ -227,16 +226,10 @@ function TripCard({
             </button>
           )}
           {isPast && !isCancelled && (
-            <>
-              <button type="button" onClick={() => router.push(`/trips/${trip.id}`)}
-                className="px-2.5 py-1 border border-border rounded-full text-[11px] text-fg-muted">
-                כתוב ביקורת
-              </button>
-              <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)}
-                className="px-2.5 py-1 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">
-                הרשם שוב
-              </button>
-            </>
+            <button type="button" onClick={() => router.push(`/trips/${trip.id}?scroll=reviews`)}
+              className="px-2.5 py-1 border border-border rounded-full text-[11px] text-fg-muted">
+              כתוב ביקורת
+            </button>
           )}
           {isPending && !isPast && (
             <>
@@ -276,12 +269,6 @@ function TripCard({
                 ביטול
               </button>
             </>
-          )}
-          {isCancelled && (
-            <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)}
-              className="px-2.5 py-1 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">
-              הרשם שוב
-            </button>
           )}
         </div>
       </div>
@@ -330,9 +317,8 @@ export default function MyTripsPage() {
   const router = useRouter();
   const [regs, setRegs] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"upcoming" | "interested" | "favorites" | "past" | "selfguided">("upcoming");
+  const [activeTab, setActiveTab] = useState<"registered" | "waitlist" | "interested" | "selfguided" | "history" | "cancelled">("registered");
   const [purchases, setPurchases] = useState<Array<{ id: string; accessExpiresAt: string | null; trip: { id: string; title: string; region: string; images: string[]; price?: number } }>>([]);
-  const [favorites, setFavorites] = useState<TripCardData[]>([]);
   const [qaModal, setQaModal] = useState<{ id: string; title: string } | null>(null);
 
   const load = useCallback(async () => {
@@ -345,14 +331,8 @@ export default function MyTripsPage() {
       const data: Registration[] = await res.json();
       setRegs(Array.isArray(data) ? data : []);
       fetch("/api/my-purchases").then((r) => r.ok ? r.json() : []).then((p) => setPurchases(Array.isArray(p) ? p : [])).catch(() => {});
-      fetch("/api/favorites?full=1").then((r) => r.ok ? r.json() : { trips: [] }).then((d) => setFavorites(Array.isArray(d.trips) ? d.trips : [])).catch(() => {});
     } finally { setLoading(false); }
   }, [router]);
-
-  async function unfavorite(tripId: string) {
-    setFavorites((prev) => prev.filter((t) => t.id !== tripId));
-    await fetch("/api/favorites", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tripId }) }).catch(() => {});
-  }
 
   useEffect(() => { load(); }, [load]);
 
@@ -360,23 +340,27 @@ export default function MyTripsPage() {
     setRegs((prev) => prev.filter((r) => r.id !== id));
   }
 
-  const upcoming = regs.filter((r) =>
-    (r.status === "CONFIRMED" || r.status === "WAITLIST") && new Date(r.trip.date) >= now
-  );
+  const registered = regs.filter((r) => r.status === "CONFIRMED" && new Date(r.trip.date) >= now);
+  const waitlist = regs.filter((r) => r.status === "WAITLIST" && new Date(r.trip.date) >= now);
   const interested = regs.filter((r) => r.status === "PENDING" && new Date(r.trip.date) >= now);
-  const past = regs.filter((r) =>
-    new Date(r.trip.date) < now || r.status === "CANCELLED"
-  );
+  const history = regs.filter((r) => r.status !== "CANCELLED" && new Date(r.trip.date) < now);
+  const cancelled = regs.filter((r) => r.status === "CANCELLED");
 
   const tabs = [
-    { key: "upcoming" as const, label: "קרובים", count: upcoming.length },
+    { key: "registered" as const, label: "רשומים", count: registered.length },
+    { key: "waitlist" as const, label: "בהמתנה", count: waitlist.length },
     { key: "interested" as const, label: "מתעניין", count: interested.length },
-    { key: "favorites" as const, label: "מועדפים", count: favorites.length },
-    { key: "past" as const, label: "היסטוריה", count: past.length },
     { key: "selfguided" as const, label: "עצמאיים", count: purchases.length },
+    { key: "history" as const, label: "היסטוריה", count: history.length },
+    { key: "cancelled" as const, label: "בוטלו", count: cancelled.length },
   ];
 
-  const currentList = activeTab === "upcoming" ? upcoming : activeTab === "interested" ? interested : past;
+  const currentList =
+    activeTab === "registered" ? registered
+    : activeTab === "waitlist" ? waitlist
+    : activeTab === "interested" ? interested
+    : activeTab === "cancelled" ? cancelled
+    : history;
 
   return (
     <div dir="rtl" className="min-h-screen bg-bg">
@@ -458,28 +442,16 @@ export default function MyTripsPage() {
               })}
             </div>
           )
-        ) : activeTab === "favorites" ? (
-          favorites.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-3xl mb-3">🤍</div>
-              <div className="text-fg-muted text-sm">עוד לא שמרת טיולים למועדפים</div>
-              <Link href="/trips" className="inline-block mt-3 text-[#1A6B4A] text-sm border border-[#1A6B4A] rounded-full px-4 py-1.5">גלה טיולים</Link>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {favorites.map((t) => (
-                <SharedTripCard key={t.id} trip={t} favorite onToggleFavorite={() => unfavorite(t.id)} onClick={() => router.push(`/trips/${t.id}`)} />
-              ))}
-            </div>
-          )
         ) : currentList.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-3xl mb-3">
-              {activeTab === "upcoming" ? "🏕" : activeTab === "interested" ? "👀" : "📋"}
+              {activeTab === "registered" ? "🏕" : activeTab === "waitlist" ? "⏳" : activeTab === "interested" ? "👀" : activeTab === "cancelled" ? "🚫" : "📋"}
             </div>
             <div className="text-fg-muted text-sm">
-              {activeTab === "upcoming" ? "אין טיולים קרובים" :
+              {activeTab === "registered" ? "אין טיולים רשומים" :
+               activeTab === "waitlist" ? "אינך ברשימת המתנה" :
                activeTab === "interested" ? "לא מתעניין באף טיול כרגע" :
+               activeTab === "cancelled" ? "אין טיולים שבוטלו" :
                "אין היסטוריה עדיין"}
             </div>
             <Link href="/trips"

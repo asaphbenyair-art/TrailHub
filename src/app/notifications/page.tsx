@@ -70,7 +70,11 @@ export default function NotificationsPage() {
   // Every notification is tappable → its deep link (or the trip page). No dead ends.
   function open(n: Notif) {
     markOne(n.id);
-    const dest = n.link ?? (n.tripId ? `/trips/${n.tripId}` : null);
+    let dest = n.link ?? (n.tripId ? `/trips/${n.tripId}` : null);
+    // Rideshare notifications must always land on the trip's rideshare modal —
+    // a cancelled ride no longer exists, so never deep-link to a specific offer
+    // (normalizes any stale/broken links too).
+    if (n.type === "RIDESHARE_UPDATE" && n.tripId) dest = `/trips/${n.tripId}?modal=rideshare`;
     if (dest) router.push(dest);
   }
 
