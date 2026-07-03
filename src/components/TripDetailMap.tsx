@@ -36,6 +36,12 @@ interface Props {
   focusWaypoint?: number | null;
   /** Coordinate to highlight with a moving marker (e.g. elevation-chart hover). */
   hoverCoord?: [number, number] | null;
+  /** Actual GPX route line (lat,lng pairs) — drawn as the green trail. */
+  routeLine?: [number, number][];
+  /** Whether to render numbered waypoint pins (hidden before self-guided purchase). */
+  showWaypoints?: boolean;
+  /** Called with the waypoint index when its pin is tapped (opens a drawer). */
+  onWaypointClick?: (index: number) => void;
 }
 
 export default function TripDetailMap({
@@ -47,6 +53,9 @@ export default function TripDetailMap({
   liveLocation = false,
   focusWaypoint = null,
   hoverCoord = null,
+  routeLine,
+  showWaypoints = true,
+  onWaypointClick,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -99,7 +108,7 @@ export default function TripDetailMap({
 
     // Only rebuild when the waypoint data actually changes (the parent passes a
     // fresh array each render — without this the view would reset every render).
-    const key = waypoints.map((w) => `${w.lat},${w.lng},${w.label}`).join("|");
+    const key = `${showWaypoints}|${(routeLine ?? []).length}|` + waypoints.map((w) => `${w.lat},${w.lng},${w.label}`).join("|");
     if (key === wpKeyRef.current) return;
     wpKeyRef.current = key;
 
@@ -113,16 +122,20 @@ export default function TripDetailMap({
 
     const validPts: [number, number][] = [];
 
-    // Route line connecting all valid waypoints in order
-    const linePts = waypoints.filter(hasCoord).map((wp) => [wp.lat, wp.lng] as [number, number]);
-    if (linePts.length >= 2) {
-      routeLineRef.current = L.polyline(linePts, {
-        color: "#1A6B4A", weight: 3, opacity: 0.75, dashArray: "6 8",
-      }).addTo(map);
+    // Route line: prefer the actual GPX trail; fall back to connecting waypoints.
+    const gpxPts = (routeLine ?? []).filter((p) => Number.isFinite(p[0]) && Number.isFinite(p[1]));
+    if (gpxPts.length >= 2) {
+      routeLineRef.current = L.polyline(gpxPts, { color: "#1A6B4A", weight: 4, opacity: 0.85 }).addTo(map);
+      for (const p of gpxPts) validPts.push(p);
+    } else {
+      const linePts = waypoints.filter(hasCoord).map((wp) => [wp.lat, wp.lng] as [number, number]);
+      if (linePts.length >= 2) {
+        routeLineRef.current = L.polyline(linePts, { color: "#1A6B4A", weight: 3, opacity: 0.75, dashArray: "6 8" }).addTo(map);
+      }
     }
 
-    // One numbered pin per waypoint (index aligned to the list below the map)
-    markerRefs.current = waypoints.map((wp, i) => {
+    // One numbered pin per waypoint (only when waypoints are visible for this viewer)
+    markerRefs.current = !showWaypoints ? [] : waypoints.map((wp, i) => {
       if (!hasCoord(wp)) return null;
       const isFirst = i === 0;
       const isLast = i === waypoints.length - 1;
@@ -135,18 +148,21 @@ export default function TripDetailMap({
         popupAnchor: [0, -14],
       });
       validPts.push([wp.lat, wp.lng]);
-      return L.marker([wp.lat, wp.lng], { icon })
+      const marker = L.marker([wp.lat, wp.lng], { icon })
         .bindPopup(`<div dir="rtl" style="font-size:12px"><b>${i + 1}. ${wp.label || `נקודה ${i + 1}`}</b></div>`)
         .addTo(map);
+      if (onWaypointClick) marker.on("click", () => onWaypointClick(i));
+      return marker;
     });
 
-    // Zoom the map to show all waypoints at once
+    // Zoom the map to show the whole route/waypoints at once
     if (validPts.length >= 2) {
       map.fitBounds(L.latLngBounds(validPts), { padding: [32, 32], maxZoom: 15 });
     } else if (validPts.length === 1) {
       map.setView(validPts[0], 14);
     }
-  }, [waypoints, ready]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [waypoints, ready, showWaypoints, routeLine]);
 
   // Pan/zoom to a waypoint when its card is tapped (self-guided content view)
   useEffect(() => {

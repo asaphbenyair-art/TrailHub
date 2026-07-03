@@ -492,6 +492,17 @@ export default function TripDetailPage() {
 
   const cancellationLines = trip.cancellationPolicy ? trip.cancellationPolicy.split("\n").filter(Boolean) : [];
   const track = parseTrack(trip.routeGpx);
+  const gpxLine = track.map((p) => [p.lat, p.lon] as [number, number]);
+
+  // Self-guided access levels (spec — Before vs After Purchase):
+  //  • before purchase → route line only, NO waypoint markers, content/sources locked
+  //  • purchased & in-window (or free) → full: waypoints + content + audio + GPS + TTS
+  //  • purchased & expired → waypoints visible on map, but content/sources locked
+  const sgFree = isSelfGuided && trip.price === 0;
+  const sgPurchased = !!purchase?.purchased;
+  const sgExpired = !!purchase?.expired;
+  const waypointsVisible = !isSelfGuided || sgFree || sgPurchased;
+  const contentUnlocked = !isSelfGuided || sgFree || (sgPurchased && !sgExpired);
 
   // All guides, shown equally (no primary/secondary distinction — finalized spec)
   const allGuides: { id?: string; name: string | null; image?: string | null; rating?: number; reviewCount?: number }[] = [
@@ -501,7 +512,11 @@ export default function TripDetailPage() {
       .map((g) => ({ id: g.guide.id, name: g.guide.user.name, image: g.guide.user.image, rating: g.guide.rating, reviewCount: g.guide.reviewCount }))),
   ];
 
-  const sourcesVisible = trip.sourceMaterialsVisibility === "preview" || !!myRegStatus || purchase?.purchased;
+  // For self-guided, source materials follow the content lock (blocked before
+  // purchase and after expiry). For guided trips, the guide's preview setting.
+  const sourcesVisible = isSelfGuided
+    ? contentUnlocked
+    : (trip.sourceMaterialsVisibility === "preview" || !!myRegStatus || !!purchase?.purchased);
 
   // Reviews unlock 1h before the estimated end time (self-guided purchases: always open).
   const reviewUnlocked = (() => {
@@ -742,15 +757,25 @@ export default function TripDetailPage() {
           <div>
             <Heading icon={MapPin}>{isSelfGuided ? "מסלול" : "מסלול ותחנות"}</Heading>
             <div ref={mapWrapRef} className="rounded-2xl overflow-hidden border border-border">
-              <TripDetailMap region={trip.region} meetingPoint={trip.meetingPoint} waypoints={parsedWaypoints} height={190} liveLocation={showLoc} focusWaypoint={focusWp} hoverCoord={hoverCoord} />
+              <TripDetailMap region={trip.region} meetingPoint={trip.meetingPoint}
+                waypoints={waypointsVisible ? parsedWaypoints : []}
+                routeLine={gpxLine}
+                showWaypoints={waypointsVisible}
+                onWaypointClick={(i) => setDrawer(parsedWaypoints[i])}
+                height={190} liveLocation={showLoc} focusWaypoint={focusWp} hoverCoord={hoverCoord} />
             </div>
+            {isSelfGuided && !waypointsVisible && (
+              <div className="mt-2 text-[11px] text-fg-muted bg-surface-2/60 border border-border rounded-lg px-3 py-2">
+                🔒 המסלול מוצג. נקודות העניין, חומרי ההדרכה וההסברים ייפתחו לאחר הרכישה.
+              </div>
+            )}
             <button type="button" onClick={() => setShowLoc((v) => !v)}
               className="mt-2 text-xs rounded-full px-3 py-1.5 inline-flex items-center gap-1.5"
               style={showLoc ? { background: "var(--accent)", color: "var(--accent-ink)" } : { border: "1px solid var(--border)", color: "var(--fg-muted)" }}>
               <Navigation size={12} /> {showLoc ? "המיקום שלי פעיל" : "הצג את המיקום שלי"}
             </button>
 
-            {parsedWaypoints.length > 0 && (
+            {waypointsVisible && parsedWaypoints.length > 0 && (
               <div className="mt-4 flex flex-col">
                 {parsedWaypoints.map((wp, i) => {
                   const isFirst = i === 0, isLast = i === parsedWaypoints.length - 1;
@@ -802,7 +827,7 @@ export default function TripDetailPage() {
           </div>
 
           {/* ── 11. Elevation chart ── */}
-          {track.length >= 2 && <ElevationChart track={track} waypoints={parsedWaypoints} onHover={setHoverCoord} />}
+          {track.length >= 2 && <ElevationChart track={track} waypoints={waypointsVisible ? parsedWaypoints : []} onHover={setHoverCoord} />}
 
           {/* ── 12. Equipment + copy list ── */}
           {equipment.length > 0 && (
@@ -1116,7 +1141,11 @@ export default function TripDetailPage() {
             </div>
             {drawer.description && <p className="text-sm text-fg-muted leading-relaxed mb-4">{drawer.description}</p>}
             <div className="text-[11px] text-fg-faint mb-4">{drawer.lat.toFixed(5)}, {drawer.lng.toFixed(5)}</div>
-            {drawer.sources && drawer.sources.length > 0 && (
+            {!contentUnlocked ? (
+              <div className="text-xs text-fg-muted bg-surface-2/60 border border-border rounded-lg px-3 py-2">
+                🔒 חומרי ההדרכה וההסברים של התחנה {sgExpired ? "אינם זמינים — תוקף הגישה פג." : "ייפתחו לאחר הרכישה."}
+              </div>
+            ) : drawer.sources && drawer.sources.length > 0 && (
               <div>
                 <div className="text-xs font-semibold text-fg mb-2 flex items-center gap-1.5"><BookOpen size={13} style={{ color: "var(--accent)" }} /> חומרי מקור לתחנה</div>
                 <SourceList items={drawer.sources} />

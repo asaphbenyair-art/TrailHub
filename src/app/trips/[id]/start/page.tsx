@@ -177,6 +177,7 @@ export default function SelfGuidedStartPage() {
           <TripDetailMap
             region={trip.region}
             waypoints={mapPts.map((p) => ({ lat: p.lat, lng: p.lng, label: p.label }))}
+            routeLine={parseTrack(trip.routeGpx).map((p) => [p.lat, p.lon] as [number, number])}
             focusWaypoint={focusWp}
             hoverCoord={hoverCoord}
             height={220}
