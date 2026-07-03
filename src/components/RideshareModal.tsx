@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X, MapPin, ArrowLeftRight, Coins, MessageCircle, UserSearch, Plus, Check, Car, Phone } from "lucide-react";
 import { useDualDate } from "@/components/CalendarModeProvider";
+import { useTranslations } from "next-intl";
 
 interface Claim { id: string; userId: string; user: { id: string; name: string | null; phone: string | null } }
 interface Offer {
@@ -42,6 +43,7 @@ export default function RideshareModal({
   tripId: string; tripTitle: string; tripDate?: string | null; onClose: () => void;
 }) {
   const router = useRouter();
+  const tr = useTranslations("rideshare");
   const [tab, setTab] = useState<"offers" | "seekers">("offers");
   const [offers, setOffers] = useState<Offer[]>([]);
   const [seekers, setSeekers] = useState<Seeker[]>([]);
@@ -108,18 +110,18 @@ export default function RideshareModal({
         <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
           <button type="button" onClick={onClose} className="text-fg-faint hover:text-fg-muted order-first"><X size={20} /></button>
           <div className="flex-1 text-sm text-fg truncate">
-            <span className="inline-flex items-center gap-1.5"><Car size={15} className="text-[#1A6B4A]" /> לוח טרמפים</span>
+            <span className="inline-flex items-center gap-1.5"><Car size={15} className="text-[#1A6B4A]" /> {tr("title")}</span>
             <span className="text-fg-faint"> — {tripTitle}{dateLabel ? ` · ${dateLabel}` : ""}</span>
           </div>
         </div>
 
         {!allowed ? (
-          <div className="p-8 text-center text-sm text-fg-faint">לוח הטרמפים זמין לנרשמים ומתעניינים בטיול</div>
+          <div className="p-8 text-center text-sm text-fg-faint">{tr("accessNote")}</div>
         ) : (
           <>
             {/* Tabs */}
             <div className="flex border-b border-border shrink-0">
-              {([["offers", `טרמפים מוצעים (${offers.length})`], ["seekers", `מחפשים (${seekers.length})`]] as const).map(([key, label]) => (
+              {([["offers", `${tr("offers")} (${offers.length})`], ["seekers", `${tr("seekers")} (${seekers.length})`]] as const).map(([key, label]) => (
                 <button key={key} type="button" onClick={() => setTab(key)}
                   className={`flex-1 py-2.5 text-xs font-medium border-b-2 transition-colors ${
                     tab === key ? "border-[#1A6B4A] text-[#1A6B4A]" : "border-transparent text-fg-muted"
@@ -140,7 +142,7 @@ export default function RideshareModal({
                   <input type="text" value={city} onChange={(e) => setCity(e.target.value)} placeholder="עיר / נקודת יציאה"
                     className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
                   <div className="flex gap-2">
-                    <input type="number" min="1" value={spots} onChange={(e) => setSpots(e.target.value)} placeholder="מקומות" dir="ltr"
+                    <input type="number" min="1" value={spots} onChange={(e) => setSpots(e.target.value)} placeholder={tr("seatsPlaceholder")} dir="ltr"
                       className="w-24 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
                     <select value={direction} onChange={(e) => setDirection(e.target.value as "ROUND_TRIP" | "ONE_WAY")}
                       className="flex-1 border border-border rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-[#1A6B4A] bg-surface">
@@ -163,7 +165,7 @@ export default function RideshareModal({
               {/* Tab 1 — offered rides */}
               {!loading && tab === "offers" && (
                 offers.length === 0 ? (
-                  <div className="text-center py-8 text-fg-faint text-xs">אין טרמפים מוצעים עדיין</div>
+                  <div className="text-center py-8 text-fg-faint text-xs">{tr("noOffers")}</div>
                 ) : (
                   <div className="flex flex-col gap-2.5">
                     {offers.map((o) => {
@@ -181,7 +183,7 @@ export default function RideshareModal({
                                   {isPoster && <span className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold shrink-0" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>הטרמפ שלי</span>}
                                 </div>
                                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ${left > 0 ? "bg-[#D6EDE3] text-[#0F5038]" : "bg-[#FADBD8] text-[#791F1F]"}`}>
-                                  {left > 0 ? `${left} מקומות` : "מלא"}
+                                  {left > 0 ? tr("spotsCount", { n: left }) : tr("full")}
                                 </span>
                               </div>
                               {o.poster.phone && (
@@ -214,7 +216,7 @@ export default function RideshareModal({
                             ) : (
                               <button type="button" onClick={() => claim(o.id)} disabled={left === 0}
                                 className="flex-1 py-1.5 rounded-full text-xs font-semibold text-white bg-[#1A6B4A] hover:bg-[#155a3e] disabled:opacity-50">
-                                תפוס מקום
+                                {tr("claimSpot")}
                               </button>
                             )}
                             <button type="button" onClick={() => openChat(o.posterId)}
@@ -267,13 +269,13 @@ export default function RideshareModal({
             <div className="flex gap-2 p-3 border-t border-border shrink-0">
               <button type="button" onClick={() => { setTab("offers"); setShowForm((v) => !v); }}
                 className="flex-1 py-2.5 rounded-full text-xs font-semibold text-white bg-[#1A6B4A] hover:bg-[#155a3e] flex items-center justify-center gap-1.5">
-                <Plus size={14} /> הצע טרמפ
+                <Plus size={14} /> {tr("offerRide")}
               </button>
               <button type="button" onClick={toggleLooking}
                 className={`flex-1 py-2.5 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 border ${
                   looking ? "bg-[#EAF1F8] text-[#185FA5] border-[#185FA5]" : "text-white bg-[#185FA5] border-[#185FA5] hover:bg-[#134e73]"
                 }`}>
-                {looking ? <><Check size={14} /> מחפש/ת טרמפ</> : <><UserSearch size={14} /> אני מחפש טרמפ</>}
+                {looking ? <><Check size={14} /> {tr("imLooking")}</> : <><UserSearch size={14} /> {tr("lookingForRide")}</>}
               </button>
             </div>
           </>

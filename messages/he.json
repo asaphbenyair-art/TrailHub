@@ -152,6 +152,21 @@
     "loginToAsk": "התחבר כדי לשאול שאלה",
     "registerToAsk": "רק נרשמים ומתעניינים יכולים לשאול"
   },
+  "rideshare": {
+    "title": "לוח טרמפים",
+    "accessNote": "לוח הטרמפים זמין לנרשמים ומתעניינים בטיול",
+    "offers": "טרמפים מוצעים",
+    "seekers": "מחפשים",
+    "noOffers": "אין טרמפים מוצעים עדיין",
+    "spotsCount": "{n} מקומות",
+    "full": "מלא",
+    "claimSpot": "תפוס מקום",
+    "openChat": "פתח צ׳אט",
+    "offerRide": "הצע טרמפ",
+    "lookingForRide": "אני מחפש טרמפ",
+    "imLooking": "מחפש/ת טרמפ",
+    "seatsPlaceholder": "מקומות"
+  },
   "guideQa": {
     "title": "שאלות ותשובות",
     "waiting": "ממתינות",

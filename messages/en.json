@@ -152,6 +152,21 @@
     "loginToAsk": "Log in to ask a question",
     "registerToAsk": "Only registered or interested hikers can ask"
   },
+  "rideshare": {
+    "title": "Rideshare board",
+    "accessNote": "The rideshare board is available to registered and interested hikers",
+    "offers": "Offered rides",
+    "seekers": "Seekers",
+    "noOffers": "No rides offered yet",
+    "spotsCount": "{n} seats",
+    "full": "Full",
+    "claimSpot": "Claim a seat",
+    "openChat": "Open chat",
+    "offerRide": "Offer a ride",
+    "lookingForRide": "I'm looking for a ride",
+    "imLooking": "Looking for a ride",
+    "seatsPlaceholder": "Seats"
+  },
   "guideQa": {
     "title": "Q&A",
     "waiting": "waiting",
