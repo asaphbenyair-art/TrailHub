@@ -37,7 +37,6 @@ export default function GuideQAPage() {
   const dd = useDualDate();
 
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [view, setView] = useState<"public" | "private">("public");
   const [tripTitle, setTripTitle] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<Record<string, boolean>>({});
@@ -97,9 +96,9 @@ export default function GuideQAPage() {
     }
   }
 
-  const scoped = questions.filter((q) => (view === "private" ? q.isPrivate : !q.isPrivate));
-  const unanswered = scoped.filter((q) => !q.answer);
-  const answered = scoped.filter((q) => q.answer);
+  // Guide sees ALL questions (public + private, from every hiker) in one list.
+  const unanswered = questions.filter((q) => !q.answer);
+  const answered = questions.filter((q) => q.answer);
   const privateCount = questions.filter((q) => q.isPrivate).length;
   const publicCount = questions.length - privateCount;
 
@@ -123,19 +122,17 @@ export default function GuideQAPage() {
         )}
       </div>
 
-      {/* Public / private separation */}
+      {/* Summary of public vs private counts (informational, not a filter) */}
       <div className="max-w-xl mx-auto px-4 pt-3">
-        <div className="inline-flex bg-surface-2 rounded-full p-0.5 text-xs">
-          <button type="button" onClick={() => setView("public")}
-            className={`px-3 py-1 rounded-full font-medium ${view === "public" ? "bg-[#1A6B4A] text-white" : "text-fg-muted"}`}>🌐 גלויות ({publicCount})</button>
-          <button type="button" onClick={() => setView("private")}
-            className={`px-3 py-1 rounded-full font-medium ${view === "private" ? "bg-[#185FA5] text-white" : "text-fg-muted"}`}>🔒 פרטיות ({privateCount})</button>
+        <div className="inline-flex gap-2 text-[11px] text-fg-muted">
+          <span className="px-2.5 py-1 rounded-full bg-surface-2">🌐 {publicCount} גלויות</span>
+          <span className="px-2.5 py-1 rounded-full bg-surface-2">🔒 {privateCount} פרטיות</span>
         </div>
       </div>
 
       <div className="p-4 flex flex-col gap-4 max-w-xl mx-auto">
-        {scoped.length === 0 && (
-          <div className="py-16 text-center text-sm text-fg-faint">{view === "private" ? "אין שאלות פרטיות" : "אין שאלות גלויות"}</div>
+        {questions.length === 0 && (
+          <div className="py-16 text-center text-sm text-fg-faint">אין שאלות עדיין</div>
         )}
 
         {/* Unanswered */}
@@ -154,6 +151,9 @@ export default function GuideQAPage() {
                     {initials(q.user.name)}
                   </div>
                   <span className="text-xs font-medium text-fg">{q.user.name ?? "מטייל"}</span>
+                  {q.isPrivate
+                    ? <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(24,95,165,0.14)", color: "#185FA5" }}>🔒 פרטי</span>
+                    : <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(26,107,74,0.12)", color: "#1A6B4A" }}>🌐 גלוי</span>}
                   <span className="text-[10px] text-fg-faint mr-auto">
                     {dd(q.createdAt)}
                   </span>
@@ -195,6 +195,9 @@ export default function GuideQAPage() {
                     {initials(q.user.name)}
                   </div>
                   <span className="text-xs font-medium text-fg">{q.user.name ?? "מטייל"}</span>
+                  {q.isPrivate
+                    ? <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(24,95,165,0.14)", color: "#185FA5" }}>🔒 פרטי</span>
+                    : <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(26,107,74,0.12)", color: "#1A6B4A" }}>🌐 גלוי</span>}
                 </div>
                 <p className="text-sm text-fg mb-2">{q.body}</p>
                 <div className="pr-3 border-r-2 border-[#1A6B4A]">

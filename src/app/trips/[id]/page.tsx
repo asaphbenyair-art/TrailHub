@@ -668,11 +668,15 @@ export default function TripDetailPage() {
   }
 
   // Q&A: official-answer questions first, then chronological
-  const sortedQuestions = [...questions].sort((a, b) => {
-    const ao = a.official ? 1 : 0, bo = b.official ? 1 : 0;
-    if (ao !== bo) return bo - ao;
-    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-  });
+  const sortedQuestions = [...questions]
+    // Defense-in-depth: even if the API ever returns a private question, never
+    // render one that isn't the current viewer's own (the API is the real gate).
+    .filter((q) => !q.isPrivate || (!!meId && q.userId === meId))
+    .sort((a, b) => {
+      const ao = a.official ? 1 : 0, bo = b.official ? 1 : 0;
+      if (ao !== bo) return bo - ao;
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    });
 
   return (
     <div dir="rtl" className="min-h-screen bg-bg flex justify-center pb-28">
