@@ -12,6 +12,7 @@ import LanguageToggle from "@/components/LanguageToggle";
 import ModeIndicator from "@/components/ModeIndicator";
 import QAModal from "@/components/QAModal";
 import { useDateFmt, useCalendarMode } from "@/components/CalendarModeProvider";
+import { useTranslations } from "next-intl";
 import { formatDualDate } from "@/lib/hebrewDate";
 
 const DIFF_LABEL: Record<string, string> = { EASY: "קל", MEDIUM: "בינוני", HARD: "קשה", EXTREME: "קיצוני" };
@@ -316,6 +317,7 @@ function TripCard({
 
 export default function MyTripsPage() {
   const router = useRouter();
+  const tm = useTranslations("myTrips");
   const [regs, setRegs] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"registered" | "waitlist" | "interested" | "selfguided" | "history" | "cancelled">("registered");
@@ -348,12 +350,12 @@ export default function MyTripsPage() {
   const cancelled = regs.filter((r) => r.status === "CANCELLED");
 
   const tabs = [
-    { key: "registered" as const, label: "רשומים", count: registered.length },
-    { key: "waitlist" as const, label: "בהמתנה", count: waitlist.length },
-    { key: "interested" as const, label: "מתעניין", count: interested.length },
-    { key: "selfguided" as const, label: "עצמאיים", count: purchases.length },
-    { key: "history" as const, label: "היסטוריה", count: history.length },
-    { key: "cancelled" as const, label: "בוטלו", count: cancelled.length },
+    { key: "registered" as const, label: tm("registered"), count: registered.length },
+    { key: "waitlist" as const, label: tm("waitlist"), count: waitlist.length },
+    { key: "interested" as const, label: tm("interested"), count: interested.length },
+    { key: "selfguided" as const, label: tm("selfGuided"), count: purchases.length },
+    { key: "history" as const, label: tm("history"), count: history.length },
+    { key: "cancelled" as const, label: tm("cancelled"), count: cancelled.length },
   ];
 
   const currentList =
@@ -372,7 +374,7 @@ export default function MyTripsPage() {
           <Brand variant="word" href="/trips" />
           <ThemeToggle className="flex-shrink-0" />
             <LanguageToggle />
-          <span className="text-sm font-medium text-fg flex-1 text-center">הטיולים שלי</span>
+          <span className="text-sm font-medium text-fg flex-1 text-center">{tm("title")}</span>
           <ModeIndicator mode="hiker" />
           <AvatarMenu />
         </div>
@@ -407,7 +409,7 @@ export default function MyTripsPage() {
           purchases.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-3xl mb-3">🎒</div>
-              <div className="text-fg-muted text-sm">עוד לא רכשת טיולים עצמאיים</div>
+              <div className="text-fg-muted text-sm">{tm("emptySelfGuided")}</div>
               <Link href="/trips" className="inline-block mt-3 text-[#1A6B4A] text-sm border border-[#1A6B4A] rounded-full px-4 py-1.5">גלה טיולים עצמאיים</Link>
             </div>
           ) : (
@@ -450,11 +452,11 @@ export default function MyTripsPage() {
               {activeTab === "registered" ? "🏕" : activeTab === "waitlist" ? "⏳" : activeTab === "interested" ? "👀" : activeTab === "cancelled" ? "🚫" : "📋"}
             </div>
             <div className="text-fg-muted text-sm">
-              {activeTab === "registered" ? "אין טיולים רשומים" :
-               activeTab === "waitlist" ? "אינך ברשימת המתנה" :
-               activeTab === "interested" ? "לא מתעניין באף טיול כרגע" :
-               activeTab === "cancelled" ? "אין טיולים שבוטלו" :
-               "אין היסטוריה עדיין"}
+              {activeTab === "registered" ? tm("emptyRegistered") :
+               activeTab === "waitlist" ? tm("emptyWaitlist") :
+               activeTab === "interested" ? tm("emptyInterested") :
+               activeTab === "cancelled" ? tm("emptyCancelled") :
+               tm("emptyHistory")}
             </div>
             <Link href="/trips"
               className="inline-block mt-3 text-[#1A6B4A] text-sm border border-[#1A6B4A] rounded-full px-4 py-1.5">
