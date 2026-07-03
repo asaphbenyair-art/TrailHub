@@ -28,7 +28,9 @@
     "translate": "Translate",
     "showOriginal": "Show original",
     "translating": "Translating…",
-    "translatedFrom": "Auto-translated"
+    "translatedFrom": "Auto-translated",
+    "mine": "Mine",
+    "others": "Others"
   },
   "nav": {
     "search": "Search",

@@ -8,6 +8,7 @@ import RideshareBoard from "@/components/RideshareBoard";
 import RideshareModal from "@/components/RideshareModal";
 import ElevationChart, { parseTrack } from "@/components/ElevationChart";
 import TranslateButton from "@/components/TranslateButton";
+import { useTranslations } from "next-intl";
 import { TAG_LABEL } from "@/lib/tripTags";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { coverImages } from "@/lib/tripImage";
@@ -61,12 +62,13 @@ function Heading({ icon: Icon, children, right }: { icon: React.ElementType; chi
 
 /** "שלי" / "אחרים" segmented toggle for Q&A and Reviews sections. */
 function SelfOthersToggle({ view, onChange }: { view: "mine" | "others"; onChange: (v: "mine" | "others") => void }) {
+  const tc = useTranslations("common");
   return (
     <div className="inline-flex bg-surface-2 rounded-full p-0.5 text-[11px]">
       {(["mine", "others"] as const).map((v) => (
         <button key={v} type="button" onClick={() => onChange(v)}
           className={`px-3 py-1 rounded-full font-medium transition-colors ${view === v ? "bg-[#1A6B4A] text-white" : "text-fg-muted"}`}>
-          {v === "mine" ? "שלי" : "אחרים"}
+          {v === "mine" ? tc("mine") : tc("others")}
         </button>
       ))}
     </div>
@@ -244,6 +246,9 @@ export default function TripDetailPage() {
   const { id } = useParams<{ id: string }>();
   const dfmt = useDateFmt();
   const dd = useDualDate();
+  const tt = useTranslations("trip");
+  const tq = useTranslations("qa");
+  const trv = useTranslations("reviews");
   const router = useRouter();
   const { data: session } = useSession();
   const [trip, setTrip] = useState<Trip | null>(null);
@@ -747,7 +752,7 @@ export default function TripDetailPage() {
           {/* ── 9. Description ── */}
           {trip.description && (
             <div>
-              <Heading icon={FileText}>על הטיול</Heading>
+              <Heading icon={FileText}>{tt("description")}</Heading>
               <TranslateButton text={trip.description} className="text-sm text-fg-muted leading-relaxed block">
                 <p className="text-sm text-fg-muted leading-relaxed">{trip.description}</p>
               </TranslateButton>
@@ -843,7 +848,7 @@ export default function TripDetailPage() {
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Backpack size={16} style={{ color: "var(--accent)" }} strokeWidth={2} />
-                  <h2 className="font-display text-lg text-fg">ציוד נדרש</h2>
+                  <h2 className="font-display text-lg text-fg">{tt("equipment")}</h2>
                 </div>
                 <button type="button" onClick={copyEquipment}
                   className="text-xs flex items-center gap-1" style={{ color: copied ? "var(--accent)" : "var(--fg-muted)" }}>
@@ -901,7 +906,7 @@ export default function TripDetailPage() {
           {/* ── 14. Q&A (official first) ── */}
           {!isSelfGuided && (
             <div id="qa-section" style={{ scrollMarginTop: 80 }}>
-              <Heading icon={MessageCircle} right={isParticipant ? <SelfOthersToggle view={qaView} onChange={setQaView} /> : undefined}>שאלות ותשובות</Heading>
+              <Heading icon={MessageCircle} right={isParticipant ? <SelfOthersToggle view={qaView} onChange={setQaView} /> : undefined}>{tq("title")}</Heading>
               {(() => {
                 // Participants (registered/interested) get the שלי/אחרים toggle;
                 // plain viewers see only the public questions, no toggle.
@@ -913,7 +918,7 @@ export default function TripDetailPage() {
                 return (<>
               {shown.length === 0 && (
                 <p className="text-xs text-fg-faint mb-3">
-                  {!isParticipant ? "אין עדיין שאלות." : qaView === "mine" ? "לא שאלת שאלות עדיין." : "אין שאלות ממטיילים אחרים עדיין."}
+                  {!isParticipant ? tq("none") : qaView === "mine" ? tq("noneMine") : tq("noneOthers")}
                 </p>
               )}
               {shown.length > 0 && (
@@ -977,7 +982,7 @@ export default function TripDetailPage() {
               ) : !isParticipant ? (
                 // Plain viewer: can't ask until registered/interested.
                 <div className="rounded-xl p-3 border border-border bg-surface-2/50 flex items-center justify-between gap-2">
-                  <span className="text-xs text-fg-muted">רק נרשמים ומתעניינים יכולים לשאול</span>
+                  <span className="text-xs text-fg-muted">{tq("registerToAsk")}</span>
                   <button type="button" onClick={() => router.push(`/trips/${trip.id}/register?flow=interest`)}
                     className="px-3 py-1.5 text-xs rounded-full font-medium shrink-0" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
                     שאל שאלה — הירשם תחילה
@@ -986,7 +991,7 @@ export default function TripDetailPage() {
               ) : (
                 <div className="flex flex-col gap-2">
                   <div className="flex gap-2">
-                    <textarea value={qaBody} onChange={(e) => setQaBody(e.target.value)} placeholder="שאל שאלה…" rows={2}
+                    <textarea value={qaBody} onChange={(e) => setQaBody(e.target.value)} placeholder={tq("askPlaceholder")} rows={2}
                       className="flex-1 rounded-xl px-3 py-2 text-sm resize-none bg-surface border border-border text-fg placeholder:text-fg-faint focus:outline-none focus:border-accent" />
                     <button type="button" onClick={submitQuestion} disabled={!qaBody.trim() || qaLoading}
                       className="px-3 py-2 text-xs rounded-xl self-end font-medium disabled:opacity-50" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
@@ -995,9 +1000,9 @@ export default function TripDetailPage() {
                   </div>
                   <div className="inline-flex bg-surface-2 rounded-full p-0.5 self-start text-[11px]">
                     <button type="button" onClick={() => setQaPrivate(false)}
-                      className={`px-2.5 py-1 rounded-full font-medium ${!qaPrivate ? "bg-[#1A6B4A] text-white" : "text-fg-muted"}`}>שאלה גלויה</button>
+                      className={`px-2.5 py-1 rounded-full font-medium ${!qaPrivate ? "bg-[#1A6B4A] text-white" : "text-fg-muted"}`}>{tq("publicQuestion")}</button>
                     <button type="button" onClick={() => setQaPrivate(true)}
-                      className={`px-2.5 py-1 rounded-full font-medium ${qaPrivate ? "bg-[#185FA5] text-white" : "text-fg-muted"}`}>🔒 שאלה פרטית</button>
+                      className={`px-2.5 py-1 rounded-full font-medium ${qaPrivate ? "bg-[#185FA5] text-white" : "text-fg-muted"}`}>🔒 {tq("privateQuestion")}</button>
                   </div>
                 </div>
               )}
@@ -1056,7 +1061,7 @@ export default function TripDetailPage() {
             return (
               <div id="reviews" style={{ scrollMarginTop: 80 }}>
                 <Heading icon={Star} right={eligible ? <SelfOthersToggle view={reviewView} onChange={(v) => { setReviewView(v); setEditingReview(false); }} /> : undefined}>
-                  ביקורות ({trip.reviews.length})
+                  {trv("title")} ({trip.reviews.length})
                 </Heading>
                 {eligible && reviewView === "mine" ? (
                   <div className="flex flex-col gap-2">
@@ -1080,7 +1085,7 @@ export default function TripDetailPage() {
                 ) : (
                   <div className="flex flex-col gap-2">
                     {(eligible ? otherReviews : trip.reviews).length === 0 ? (
-                      <p className="text-xs text-fg-faint">אין ביקורות ממטיילים אחרים עדיין.</p>
+                      <p className="text-xs text-fg-faint">{trv("noneOthers")}</p>
                     ) : (
                       (eligible ? otherReviews : trip.reviews).map(reviewCard)
                     )}
@@ -1124,7 +1129,7 @@ export default function TripDetailPage() {
           {/* ── 17. Cancellation policy ── */}
           {cancellationLines.length > 0 && (
             <div>
-              <Heading icon={FileText}>מדיניות ביטולים</Heading>
+              <Heading icon={FileText}>{tt("cancellationPolicy")}</Heading>
               <div className="rounded-2xl p-3.5 border border-border bg-surface flex flex-col gap-1.5">
                 {cancellationLines.map((line, i) => {
                   const dashIdx = line.indexOf("—");

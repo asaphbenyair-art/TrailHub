@@ -28,7 +28,9 @@
     "translate": "תרגם",
     "showOriginal": "הצג מקור",
     "translating": "מתרגם…",
-    "translatedFrom": "תורגם אוטומטית"
+    "translatedFrom": "תורגם אוטומטית",
+    "mine": "שלי",
+    "others": "אחרים"
   },
   "nav": {
     "search": "חיפוש",
