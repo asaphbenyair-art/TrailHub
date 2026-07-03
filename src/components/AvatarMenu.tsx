@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { Settings, LogOut, Repeat } from "lucide-react";
 
 const AVATAR_COLORS = ["#854F0B", "#3B6D11", "#185FA5", "#6B3B87", "#1A6B4A"];
@@ -21,6 +22,7 @@ function initials(name: string | null) {
 /** Avatar in the top bar → dropdown: name/email, guide/hiker toggle, settings, sign out. */
 export default function AvatarMenu() {
   const router = useRouter();
+  const tn = useTranslations("nav");
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"hiker" | "guide">("hiker");
@@ -88,16 +90,16 @@ export default function AvatarMenu() {
               <button type="button" onClick={switchMode}
                 className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-fg hover:bg-surface-2 text-right">
                 <Repeat size={16} className="text-[#185FA5]" />
-                {target === "guide" ? "עבור למצב מדריך" : "עבור למצב מטייל"}
+                {target === "guide" ? tn("switchToGuide") : tn("switchToHiker")}
               </button>
             )}
             <button type="button" onClick={() => { setOpen(false); router.push("/profile"); }}
               className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-fg hover:bg-surface-2 text-right">
-              <Settings size={16} className="text-fg-faint" /> הגדרות
+              <Settings size={16} className="text-fg-faint" /> {tn("settings")}
             </button>
             <button type="button" onClick={() => { setOpen(false); signOut({ callbackUrl: "/" }); }}
               className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#C0392B] hover:bg-surface-2 text-right">
-              <LogOut size={16} /> התנתק
+              <LogOut size={16} /> {tn("signOut")}
             </button>
           </div>
         </div>
