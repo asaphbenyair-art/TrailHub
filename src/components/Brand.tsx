@@ -62,12 +62,19 @@ export function BrandTrail({ className = "" }: { className?: string }) {
   );
 }
 
+/** Just the brand word "בִּשְׁבִילִי" with full nikud, green bold (search screen). */
+export function BrandWord({ className = "" }: { className?: string }) {
+  return (
+    <span className={`font-display font-bold ${className}`} style={{ color: GREEN }}>בִּשְׁבִילִי</span>
+  );
+}
+
 export default function Brand({
   variant = "bar",
   href = "/",
   className = "",
 }: {
-  variant?: "bar" | "full";
+  variant?: "bar" | "full" | "word";
   href?: string | null;
   className?: string;
 }) {
@@ -77,6 +84,8 @@ export default function Brand({
         <BrandSlogan className="text-base sm:text-lg leading-snug" />
         <BrandTrail className="max-w-[320px]" />
       </span>
+    ) : variant === "word" ? (
+      <BrandWord className="text-lg" />
     ) : (
       <BrandSlogan twoLine className="text-[11px] sm:text-xs" />
     );
