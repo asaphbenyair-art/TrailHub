@@ -311,7 +311,25 @@ export default function TripsPage() {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { fetchTrips(EMPTY_FILTERS); }, [fetchTrips]);
+  // Active filters persist permanently — restore them on mount (refresh /
+  // navigation never resets them) and fetch with the restored set.
+  const filtersRestored = useRef(false);
+  useEffect(() => {
+    let restored = EMPTY_FILTERS;
+    try {
+      const s = localStorage.getItem("trailhub-filters");
+      if (s) restored = { ...EMPTY_FILTERS, ...JSON.parse(s) };
+    } catch {}
+    filtersRestored.current = true;
+    setFilters(restored);
+    fetchTrips(restored);
+  }, [fetchTrips]);
+
+  // Persist the active filters whenever they change (after the initial restore).
+  useEffect(() => {
+    if (!filtersRestored.current) return;
+    try { localStorage.setItem("trailhub-filters", JSON.stringify(filters)); } catch {}
+  }, [filters]);
   useEffect(() => {
     if (!session) return;
     fetch("/api/my-trips", { cache: "no-store" })
@@ -346,7 +364,10 @@ export default function TripsPage() {
     }
   }
 
-  // Seed search filters from the user's saved preferences (once, on first load)
+  // Load the user's saved preferences into state for the "אפס לפי העדפותי"
+  // button ONLY. Preferences are never auto-applied as active filters — the
+  // active filters persist on their own (see below) and change only by user
+  // action (spec: Search Filters — Persistence & Presets).
   const prefsApplied = useRef(false);
   useEffect(() => {
     if (!session || prefsApplied.current) return;
@@ -354,20 +375,18 @@ export default function TripsPage() {
     fetch("/api/profile")
       .then((r) => r.json())
       .then((p: { preferredRegions?: string[]; preferredDifficulties?: string[] }) => {
-        const regions = p.preferredRegions ?? [];
-        const difficulties = p.preferredDifficulties ?? [];
-        setPrefs({ regions, difficulties });
-        if (regions.length === 0 && difficulties.length === 0) return;
-        setFilters((f) => {
-          // Don't override if the user already started filtering
-          if (f.regions.length || f.difficulties.length) return f;
-          const next = { ...f, regions, difficulties };
-          fetchTrips(next);
-          return next;
-        });
+        setPrefs({ regions: p.preferredRegions ?? [], difficulties: p.preferredDifficulties ?? [] });
       })
       .catch(() => {});
-  }, [session, fetchTrips]);
+  }, [session]);
+
+  // Reset the active filters to match the user's saved profile preferences.
+  function applyPreferencesAsFilters() {
+    const next = { ...filters, regions: prefs.regions, difficulties: prefs.difficulties };
+    setFilters(next);
+    setMyTripsOnly(false); setFavoritesOnly(false); setPurchasesOnly(false);
+    fetchTrips(next);
+  }
 
   // Instant-apply: patch the live filters, refetch immediately (or debounced for text inputs)
   function updateFilters(patch: Partial<Filters>, debounce = false) {
@@ -794,6 +813,12 @@ export default function TripsPage() {
                   ))}
                 </div>
               </div>
+              {session && (prefs.regions.length > 0 || prefs.difficulties.length > 0) && (
+                <button type="button" onClick={applyPreferencesAsFilters}
+                  className="w-full mb-2 py-2 rounded-full text-xs font-medium border border-[#1A6B4A]/40 text-[#1A6B4A] hover:bg-[#D6EDE3] transition-colors">
+                  ⭐ אפס לפי העדפותי
+                </button>
+              )}
               <div className="flex items-center justify-between">
                 <button type="button" onClick={clearAllFilters}
                   className="text-xs text-fg-faint hover:text-fg-muted">נקה הכל</button>
