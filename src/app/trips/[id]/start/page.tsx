@@ -30,6 +30,15 @@ function fmtTime(s: number) {
   return `${m}:${String(sec).padStart(2, "0")}`;
 }
 
+// Distance in metres between two [lat,lng] points.
+function distM(a: [number, number], b: [number, number]): number {
+  const R = 6371000, dLat = ((b[0] - a[0]) * Math.PI) / 180, dLon = ((b[1] - a[1]) * Math.PI) / 180;
+  const s = Math.sin(dLat / 2) ** 2 + Math.cos((a[0] * Math.PI) / 180) * Math.cos((b[0] * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+const wazeUrl = (lat: number, lng: number) => `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
+const ARRIVE_M = 20; // proximity threshold for start + waypoint detection
+
 // Inline guidance-audio player: play/pause + seekable progress bar.
 function WaypointAudioPlayer({ src }: { src: string }) {
   const ref = useRef<HTMLAudioElement>(null);
@@ -82,7 +91,42 @@ export default function SelfGuidedStartPage() {
   const [hoverCoord, setHoverCoord] = useState<[number, number] | null>(null);
   const mapWrapRef = useRef<HTMLDivElement>(null);
 
+  // ── Active navigation flow ──
+  const [navMode, setNavMode] = useState<"preview" | "navigating" | "done">("preview");
+  const [navReverse, setNavReverse] = useState(false);
+  const [step, setStep] = useState(0);                 // index into the ordered waypoint sequence
+  const [myPos, setMyPos] = useState<[number, number] | null>(null);
+  const [pendingArrival, setPendingArrival] = useState(false); // within 20m of the current target, awaiting "הגעתי"
+  const [startPrompt, setStartPrompt] = useState<null | { atStart: boolean; atEnd: boolean; dStart: number; dEnd: number; nearestStep: number }>(null);
+  const [locating, setLocating] = useState(false);
+  const stepRef = useRef(0);
+  useEffect(() => { stepRef.current = step; }, [step]);
+
   const cacheKey = `trailhub_offline_${id}`;
+
+  // Ordered waypoint coordinates (respecting reverse direction).
+  const navPts: [number, number][] = (trip?.waypointsJson ?? [])
+    .filter((w) => w.lat != null && w.lng != null)
+    .map((w) => [w.lat as number, w.lng as number]);
+  const orderedPts = navReverse ? [...navPts].reverse() : navPts;
+
+  // Live GPS tracking during navigation → detect arrival within 20m of the target.
+  useEffect(() => {
+    if (navMode !== "navigating" || typeof navigator === "undefined" || !navigator.geolocation) return;
+    const pts = (trip?.waypointsJson ?? []).filter((w) => w.lat != null && w.lng != null).map((w) => [w.lat as number, w.lng as number] as [number, number]);
+    const ordered = navReverse ? [...pts].reverse() : pts;
+    const wid = navigator.geolocation.watchPosition(
+      (pos) => {
+        const cur: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+        setMyPos(cur);
+        const target = ordered[stepRef.current];
+        if (target && distM(cur, target) <= ARRIVE_M) setPendingArrival(true);
+      },
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 3000 }
+    );
+    return () => navigator.geolocation.clearWatch(wid);
+  }, [navMode, navReverse, trip]);
 
   async function saveShare() {
     const emails = shareEmails.map((e) => e.trim()).filter(Boolean);
@@ -146,6 +190,168 @@ export default function SelfGuidedStartPage() {
     mapWrapRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
+  // Ordered full waypoint objects (respecting reverse), for content reveal.
+  const wpWithLoc = waypoints.filter((w) => w.lat != null && w.lng != null);
+  const orderedWps = navReverse ? [...wpWithLoc].reverse() : wpWithLoc;
+  const currentWp = orderedWps[step];
+  const currentTarget = orderedPts[step];
+  const distToTarget = myPos && currentTarget ? Math.round(distM(myPos, currentTarget)) : null;
+
+  function startFromStep(idx: number, reverse: boolean) {
+    setNavReverse(reverse);
+    setStep(idx);
+    setPendingArrival(false);
+    setStartPrompt(null);
+    setNavMode("navigating");
+    setFocusWp(null);
+  }
+
+  // Check where the hiker is before starting: at the start, at the end (offer
+  // reverse), or elsewhere (offer Waze to start / join from the nearest point).
+  function beginNavigation() {
+    if (navPts.length < 1) { startFromStep(0, false); return; }
+    if (typeof navigator === "undefined" || !navigator.geolocation) { startFromStep(0, false); return; }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocating(false);
+        const cur: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+        setMyPos(cur);
+        const first = navPts[0], last = navPts[navPts.length - 1];
+        const dStart = distM(cur, first);
+        const dEnd = distM(cur, last);
+        let nearestStep = 0, nd = Infinity;
+        navPts.forEach((p, i) => { const d = distM(cur, p); if (d < nd) { nd = d; nearestStep = i; } });
+        const atStart = dStart <= ARRIVE_M;
+        const atEnd = dEnd <= ARRIVE_M && dEnd < dStart;
+        if (atStart) { startFromStep(0, false); return; }
+        setStartPrompt({ atStart, atEnd, dStart: Math.round(dStart), dEnd: Math.round(dEnd), nearestStep });
+      },
+      () => { setLocating(false); setStartPrompt({ atStart: false, atEnd: false, dStart: -1, dEnd: -1, nearestStep: 0 }); },
+      { enableHighAccuracy: true, timeout: 12000 }
+    );
+  }
+
+  function confirmArrival() {
+    setPendingArrival(false);
+    const next = step + 1;
+    if (next >= orderedWps.length) setNavMode("done");
+    else { setStep(next); setFocusWp(null); }
+  }
+
+  // The current waypoint's revealed content (text, safety, audio, PDF/links).
+  function wpContentBlock(wp: Waypoint) {
+    return (
+      <>
+        {wp.navInstructions && <div className="text-sm text-fg bg-surface-2 rounded-lg px-3 py-2 mb-2">🧭 {wp.navInstructions}</div>}
+        {wp.guidance && <p className="text-sm text-fg-muted leading-relaxed mb-2">{wp.guidance}</p>}
+        {wp.description && !wp.guidance && <p className="text-sm text-fg-muted leading-relaxed mb-2">{wp.description}</p>}
+        {wp.safety && <div className="text-xs text-[#7A5010] bg-[#FDF3DC] rounded-lg px-3 py-2 mb-2">⚠ {wp.safety}</div>}
+        <div className="flex items-center gap-2 mb-2">
+          {wp.audioUrl ? <WaypointAudioPlayer src={wp.audioUrl} /> : (
+            <button type="button" onClick={() => speak([wp.guidance, wp.navInstructions, wp.description].filter(Boolean).join(". "))}
+              className="text-xs text-[#1A6B4A] border border-[#1A6B4A]/30 rounded-full px-2.5 py-1">🔊 הקרא בקול</button>
+          )}
+        </div>
+        {Array.isArray(wp.sources) && wp.sources.length > 0 && (
+          <div className="flex flex-col gap-1">
+            {wp.sources.map((m, j) => (
+              <div key={j}>
+                <a href={m.url} target="_blank" rel="noreferrer" className="text-xs text-[#185FA5] hover:underline">{m.type === "pdf" ? "📄" : "🔗"} {m.title}</a>
+                {m.description && <div className="text-[11px] text-fg-faint pr-4">{m.description}</div>}
+              </div>
+            ))}
+          </div>
+        )}
+      </>
+    );
+  }
+
+  // ── Completion screen ──
+  if (navMode === "done") {
+    return (
+      <div dir="rtl" className="min-h-screen bg-bg flex flex-col items-center justify-center gap-4 px-6 text-center">
+        <div className="text-5xl">🎉</div>
+        <h1 className="font-display text-2xl text-fg">סיימת את הטיול!</h1>
+        <p className="text-sm text-fg-muted max-w-xs">כל הכבוד — עברת את כל {orderedWps.length} התחנות של &quot;{trip.title}&quot;. נשמח לשמוע איך היה.</p>
+        <div className="flex flex-col gap-2 w-full max-w-[260px]">
+          <button type="button" onClick={() => router.push(`/trips/${trip.id}?scroll=reviews`)}
+            className="w-full py-3 rounded-full text-sm font-semibold text-white" style={{ background: "#1A6B4A" }}>⭐ כתוב ביקורת</button>
+          <button type="button" onClick={() => { setNavMode("preview"); setStep(0); }}
+            className="w-full py-2.5 rounded-full text-sm font-medium border border-border text-fg-muted">חזרה לתוכן הטיול</button>
+          <button type="button" onClick={() => router.push(`/trips/${trip.id}`)}
+            className="w-full py-2.5 rounded-full text-sm font-medium text-fg-faint">לדף הטיול</button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Active navigation ──
+  if (navMode === "navigating") {
+    const isLast = step >= orderedWps.length - 1;
+    return (
+      <div dir="rtl" className="min-h-screen bg-bg pb-28">
+        <div className="max-w-[480px] mx-auto px-3 py-4">
+          <div className="flex items-center gap-3 mb-3">
+            <button type="button" onClick={() => setNavMode("preview")}
+              className="text-[11px] font-medium rounded-full px-3 py-1.5 shrink-0" style={{ background: "var(--surface-2)", color: "var(--fg)" }}>← עצור ניווט</button>
+            <h1 className="text-sm font-semibold text-fg flex-1 truncate">ניווט · {trip.title}{navReverse ? " (הפוך)" : ""}</h1>
+            <span className="text-[11px] text-fg-faint shrink-0">תחנה {step + 1}/{orderedWps.length}</span>
+          </div>
+
+          {/* Live map focused on the current target */}
+          <div className="mb-3" ref={mapWrapRef}>
+            <TripDetailMap
+              region={trip.region}
+              waypoints={orderedWps.map((w, i) => ({ lat: w.lat as number, lng: w.lng as number, label: `${i + 1}. ${w.name || ""}` }))}
+              routeLine={parseTrack(trip.routeGpx).map((p) => [p.lat, p.lon] as [number, number])}
+              focusWaypoint={step}
+              height={240}
+              liveLocation
+            />
+          </div>
+
+          {/* Distance to the current target */}
+          <div className="rounded-2xl p-3 mb-3 flex items-center justify-between"
+            style={{ background: pendingArrival ? "rgba(26,107,74,0.12)" : "var(--surface-2)" }}>
+            <div className="text-sm">
+              <div className="text-fg-muted text-[11px]">היעד הבא</div>
+              <div className="font-semibold text-fg">{currentWp?.name || `תחנה ${step + 1}`}</div>
+            </div>
+            <div className="text-left">
+              {distToTarget != null
+                ? <div className={`text-lg font-bold tabular-nums ${pendingArrival ? "text-[#1A6B4A]" : "text-fg"}`}>{distToTarget} מ׳</div>
+                : <div className="text-[11px] text-fg-faint">מאתר מיקום…</div>}
+              {pendingArrival && <div className="text-[10px] text-[#1A6B4A] font-medium">הגעת לאזור התחנה!</div>}
+            </div>
+          </div>
+
+          {/* Current waypoint content (revealed on arrival — always viewable) */}
+          {currentWp && (
+            <div className="bg-surface rounded-2xl border border-border p-4 mb-3">
+              <div className="text-sm font-semibold text-fg mb-2 flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-[#D6EDE3] text-[#1A6B4A] flex items-center justify-center text-xs font-bold">{step + 1}</span>
+                {currentWp.name || `תחנה ${step + 1}`}
+              </div>
+              {wpContentBlock(currentWp)}
+            </div>
+          )}
+        </div>
+
+        {/* Fixed "הגעתי" confirmation bar */}
+        <div className="fixed bottom-0 inset-x-0 flex justify-center z-40" dir="rtl">
+          <div className="w-full max-w-[480px] bg-surface/95 backdrop-blur-xl border-t border-border p-3" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}>
+            <button type="button" onClick={confirmArrival}
+              className="w-full py-3 rounded-full text-sm font-semibold text-white shadow-lg"
+              style={{ background: pendingArrival ? "#1A6B4A" : "#6b7280" }}>
+              {isLast ? "✓ הגעתי — סיים טיול" : pendingArrival ? "✓ הגעתי — לתחנה הבאה" : "הגעתי (אישור ידני) →"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div dir="rtl" className="min-h-screen bg-bg py-4 px-3">
       <div className="max-w-[480px] mx-auto pb-10">
@@ -165,6 +371,52 @@ export default function SelfGuidedStartPage() {
         {offlineMode && (
           <div className="bg-[#FDF3DC] border border-[#E8A020]/40 rounded-xl px-3 py-2 mb-3 text-[11px] text-[#7A5010]">
             ⚠ מצב לא מקוון — מוצג תוכן שמור (ייתכן שאינו מעודכן). המפה והניווט החי דורשים חיבור.
+          </div>
+        )}
+
+        {/* Start guided navigation */}
+        {navPts.length > 0 && (
+          <div className="bg-surface rounded-2xl border border-border p-4 mb-3">
+            <div className="text-sm font-semibold text-fg mb-1">🧭 ניווט מודרך</div>
+            <div className="text-[11px] text-fg-faint mb-3">התחל ניווט חי עם זיהוי תחנות אוטומטי (ברדיוס 20 מ׳) וחשיפת תוכן לאורך הדרך.</div>
+            {!startPrompt ? (
+              <div className="flex gap-2">
+                <button type="button" onClick={beginNavigation} disabled={locating}
+                  className="flex-1 py-2.5 rounded-full text-sm font-semibold text-white disabled:opacity-60" style={{ background: "#1A6B4A" }}>
+                  {locating ? "מאתר מיקום…" : "▶ התחל ניווט"}
+                </button>
+                <a href={wazeUrl(navPts[0][0], navPts[0][1])} target="_blank" rel="noreferrer"
+                  className="px-3 py-2.5 rounded-full text-sm font-medium border border-[#185FA5]/40 text-[#185FA5] flex items-center gap-1">
+                  📍 נווט לנקודת ההתחלה
+                </a>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <div className="text-xs text-[#7A5010] bg-[#FDF3DC] rounded-lg px-3 py-2">
+                  {startPrompt.dStart < 0
+                    ? "לא הצלחנו לאתר את מיקומך. אפשר להתחיל מנקודת ההתחלה ידנית."
+                    : startPrompt.atEnd
+                    ? `נראה שאתה קרוב לנקודת הסיום (${startPrompt.dEnd} מ׳). אפשר לנווט בכיוון הפוך.`
+                    : `אינך בנקודת ההתחלה (במרחק ${startPrompt.dStart} מ׳ ממנה).`}
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <a href={wazeUrl(navPts[0][0], navPts[0][1])} target="_blank" rel="noreferrer"
+                    className="w-full text-center py-2 rounded-full text-sm font-medium border border-[#185FA5]/40 text-[#185FA5]">📍 נווט לנקודת ההתחלה (Waze)</a>
+                  {startPrompt.atEnd && (
+                    <button type="button" onClick={() => startFromStep(0, true)}
+                      className="w-full py-2 rounded-full text-sm font-semibold text-white" style={{ background: "#1A6B4A" }}>🔄 נווט בכיוון הפוך</button>
+                  )}
+                  {startPrompt.dStart >= 0 && !startPrompt.atEnd && (
+                    <button type="button" onClick={() => startFromStep(startPrompt.nearestStep, false)}
+                      className="w-full py-2 rounded-full text-sm font-medium border border-[#1A6B4A]/40 text-[#1A6B4A]">📍 הצטרף מנקודה אחרת (התחנה הקרובה)</button>
+                  )}
+                  <button type="button" onClick={() => startFromStep(0, false)}
+                    className="w-full py-2 rounded-full text-sm font-semibold text-white" style={{ background: "#1A6B4A" }}>התחל מהתחלה בכל זאת</button>
+                  <button type="button" onClick={() => setStartPrompt(null)}
+                    className="w-full py-1.5 text-xs text-fg-faint">ביטול</button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

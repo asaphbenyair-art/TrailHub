@@ -1929,50 +1929,385 @@ Every time a new user registers (email or Google), send ntfy notification with: 
 
 ---
 
-## GPX Route Editing & Waypoint Safety
+## Free Trips — Display Fix
 
-### Waypoint map gating (creation/edit)
-- The waypoint map section is disabled/greyed until a GPX file is uploaded, showing: "יש להעלות קובץ GPX תחילה כדי להוסיף נקודות עניין". Once a GPX is uploaded the section becomes active.
-- Deleting OR replacing the GPX while waypoints exist prompts: "מחיקת קובץ ה-GPX תמחק את כל נקודות העניין שהגדרת. האם להמשיך?" — confirm deletes all waypoints (and applies the new/empty GPX); cancel keeps the existing GPX and waypoints unchanged.
+### Price display
+- If price = 0: show "חינם" in green (#3d8f5f) instead of "0₪"
+- Applies to both guided and self-guided trips — on cards, trip detail page, My Trips, and registration confirmation
 
-### GPX edit after publish
-- The GPX may be edited/replaced at any time, even after publish and with registrants.
-- If the trip has registered hikers, saving a changed route first warns: "שינוי המסלול ישלח הודעה אוטומטית לכל הנרשמים. האם להמשיך?". On confirm, the new GPX is saved AND an automatic broadcast + notification is sent to all registrants: "המדריך עדכן את מסלול הטיול — [trip name]. מומלץ לבדוק את המסלול המעודכן." (logged in broadcast history).
-- If the trip has no registrants, the GPX is replaced silently with no notification.
-- Elevation stats and the map/waypoint positions are derived from the GPX on the fly, so they update automatically after a GPX change.
+### Payment status
+- For free trips: hide all payment status indicators ("אושר", "טרם חויב", "חויב" etc.) — irrelevant
+- No payment flow for free trips at all
+
+### Filter
+- Add "חינם" filter chip in both guided trips search AND self-guided trips search
 
 ---
 
-## Broadcast (הודעות קבוצתיות) — Modal
-- Guide dashboard trip cards have a single "הודעות קבוצתיות" button (no separate "דחה" / "הודעה לקבוצה" buttons) opening a modal.
-- Modal lists past broadcasts newest-first, with a "+ הודעה חדשה" composer.
-- The composer has an optional "הטיול בוטל" checkbox that requires a reason; cancellation broadcasts are shown in red in the history list.
+## Q&A — Private vs Public Questions
+
+### When asking a question:
+- Hiker chooses before submitting: "שאלה גלויה" or "שאלה פרטית"
+- Default: גלויה
+
+### Public question:
+- Appears in the Q&A section on the trip page, visible to all
+- Guide answers publicly, answer visible to all
+
+### Private question:
+- Sent only to the guide, not visible on the trip page
+- Guide answers privately — only the asking hiker sees the answer
+- Appears in the hiker's notifications when answered
+- In guide dashboard: private questions shown separately from public ones
+
+---
+
+## Date Display — Hebrew + Gregorian Together
+
+### Rule
+Everywhere a date appears in the app (trip detail page, trip cards, My Trips, notifications, guide dashboard, registration confirmation) — show BOTH dates together.
+
+### Order (based on user's profile preference):
+- If preference is Gregorian: "יום שני, 6 יולי (כ׳ תמוז)"
+- If preference is Hebrew: "כ׳ תמוז (יום שני, 6 יולי)"
+
+### Exception — calendar/date picker only
+In the calendar grid (date picker) — show only ONE calendar at a time (Gregorian or Hebrew) based on the ע/ל toggle. Space constraints make dual display impractical there.
+
+---
+
+## Trip Cancellation by Guide — Full Spec
+
+### How to cancel
+- Remove the separate "דחה" button from guide dashboard
+- Inside "הודעה לקבוצה" (Broadcast), add a special message type: "הטיול בוטל"
+- Guide must write a cancellation reason (mandatory field) before sending
+- This broadcast type appears in a distinct color (red/warning) among other trip broadcasts
+
+### What happens automatically upon cancellation:
+1. All registrations are cancelled
+2. Full refund issued to all registered hikers (via payment provider)
+3. Waitlist cleared
+4. Notification sent to all registered hikers: "הטיול [name] בוטל. סיבה: [reason]. החזר כספי יבוצע תוך 3-5 ימי עסקים"
+5. Trip removed from public search results
+6. Trip remains in guide's trip history (marked as cancelled)
+
+### New tab in hiker's "My Trips"
+Add a new tab: **"בוטלו"** — shows trips the hiker was registered for that were subsequently cancelled by the guide
+
+### After cancellation — what's allowed:
+- Reviews: blocked — cannot write a review on a cancelled trip
+- Q&A: read-only — existing questions/answers visible but no new ones can be added
+- Rideshare chat: closed
+- No further interaction possible
+
+---
+
+## Q&A Indicator on Trip Card
+
+### Who sees it
+Only hikers who are registered or interested in the trip.
+
+### States:
+- **תשובה חדשה שלא נקראה** — amber/orange icon + count (e.g. "1 תשובה חדשה")
+- **שאלות ללא תשובה** — grey icon + count (e.g. "2 שאלות פתוחות")
+- **הכל נקרא, הכל נענה** — grey icon, no badge
+- **אין שאלות בכלל** — don't show indicator
+
+### Placement
+Same row as the rideshare indicator in the trip card stats strip — right-aligned, with label "שו"ת" above the icon (same pattern as rideshare "טרמפים" label).
+
+### Clicking
+Opens the trip page and scrolls directly to the Q&A section.
+
+---
+
+## Calendar — Capacity Badge Logic
+
+In the calendar view, the colored badge on each date showing trip count must reflect capacity:
+
+- **יש מקומות** (>20% available): green badge + number of available spots remaining
+- **כמעט מלא** (<20% available but not full): amber/orange badge + number of available spots remaining  
+- **מלא** (0 spots): red badge + lock icon (✕ or 🔒) — no number since nothing to show
+
+The number shown is always "how many spots are left", not "how many trips".
+If multiple trips on same day: show the most urgent status (full > almost full > available).
+
+---
+
+## Q&A Indicator — Guide Dashboard
+
+On each trip card in the guide dashboard, show a Q&A indicator (same position as hiker-facing indicator):
+
+### States:
+- **שאלות חדשות שלא נענו** — amber/orange icon + count (e.g. "3 שאלות חדשות")
+- **יש שאלות פתוחות** — grey icon + count
+- **הכל נענה** — no indicator shown
+
+### Clicking
+Opens the trip management page and scrolls to the Q&A section.
+
+### Private questions
+Private questions that haven't been answered appear in the count too — guide must answer them.
+
+---
+
+## Q&A & Reviews — Personal First
+
+### Q&A section (trip detail page):
+- For registered/interested hikers: show "השאלות שלי" section first (all questions the hiker asked + guide replies)
+- Then "שאלות אחרים" — other hikers' public questions (chronological)
+- If hiker has no questions yet: show only "שאלות אחרים"
+- Hiker can ask multiple questions
+
+### Reviews section (trip detail page):
+- For registered hikers: show "הביקורת שלי" first with "כתוב ביקורת" or "ערוך ביקורת" button
+- Then "ביקורות אחרים" — all other reviews
+- Each hiker can write only ONE review, but can edit it anytime
 
 ---
 
 ## Search Filters — Persistence & Presets
-- Active filters persist permanently (localStorage) — never reset on refresh or navigation.
-- Profile preferences are NOT auto-applied as filters.
-- The filter panel has an "אפס לפי העדפותי" button that loads the user's saved profile preferences (regions/difficulties) into the active filters — the only connection between profile prefs and active filters.
+
+### Filter persistence
+- Active filters are saved permanently (localStorage + DB) — they persist across page refreshes, navigation, and sessions
+- When hiker clicks a trip card and returns to search — filters remain exactly as they were
+- Filters do NOT reset automatically under any circumstance
+
+### Profile preset vs active filters
+- Profile preferences (region, difficulty etc.) are NOT automatically applied as filters on every visit
+- They are a separate "preset" that the user can load on demand
+- Add a button in the filter panel: **"אפס לפי העדפותי"** — clicking this loads the user's profile preferences into the active filters
+- This is the ONLY way profile preferences affect the filters — never automatic
+
+---
+
+## Q&A — Open as Modal (not new page)
+
+Clicking the Q&A indicator on a trip card must open a modal overlay (same pattern as rideshare and registrant list modals) — NOT navigate to a new page.
+
+### Modal behavior:
+- Opens as overlay on top of the current screen
+- User stays in context (scroll position preserved)
+- Closing the modal returns to exactly where they were
+- Header: "שאלות ותשובות — [trip name]"
+- Contains: toggle "שלי / אחרים", full Q&A thread list, "שאל שאלה" button
+
+### Why:
+- Avoids the back button navigation problem (currently sends user to home screen)
+- Consistent with rideshare and registrant list pattern
+
+---
+
+## Broadcast (הודעות קבוצתיות) — Redesign as Modal
+
+### Remove
+- Remove the separate "דחה" button from guide dashboard entirely
+- Remove the separate "הודעה לקבוצה" button
+
+### Replace with
+- Single button: "הודעות קבוצתיות" on each trip card in guide dashboard
+- Clicking opens a modal overlay (same pattern as rideshare, registrant list, Q&A modals)
+
+### Modal content
+- Header: "הודעות קבוצתיות — [trip name]"
+- List of all sent broadcasts, newest first, each showing: date + time + message content
+- Cancellation broadcast shown in red/warning color with "בוטל" badge
+- Button at bottom: "+ הודעה חדשה" — opens inline form within the same modal
+
+### New message form (inside modal)
+- Text field for message content
+- Checkbox/option: "הטיול בוטל" — if selected, shows mandatory reason field and sends cancellation broadcast
+- Send button
+- Cancel button (closes form, stays in modal showing the list)
+
+---
+
+## Recent Updates — Round 9
+
+### 1. Q&A — Private questions bug
+Private questions must be visible ONLY to the asking hiker and the guide. Not visible to any other hiker. Fix on both API and UI sides.
+
+### 2. Guide Q&A view
+Guide sees ALL questions (private and public, from all hikers) in one list — no "שלי/אחרים" toggle. Private questions marked with a "פרטי" badge.
+
+### 3. Seed data — threaded Q&A
+At least 3-4 trips must have long Q&A threads with 6 exchanges: hiker → guide → hiker → guide → hiker → guide. Realistic content relevant to each trip.
+
+### 4. Search filters — persistence
+- Active filters saved permanently (localStorage + DB)
+- Filters never reset automatically
+- Back navigation preserves scroll position and filters
+- Profile preferences NOT auto-applied — only loaded when user clicks "אפס לפי העדפותי" button in filter panel
+
+### 5. Self-guided redirect loop — fix
+Pages `/trips/[id]` and `/trips/[id]/start` must not redirect to each other. Each accessible independently. `/trips/[id]/start` must have a clear exit button.
+
+### 6. Elevation chart — smooth hover sync with map
+Mouse moves freely along X axis → vertical crosshair follows → map marker moves in real-time to corresponding GPS position (interpolated along GPX route). Not just discrete waypoint jumps.
+
+### 7. GPX editing after publication
+- GPX can always be replaced, even after publishing
+- If trip has registered hikers: show warning, then send automatic broadcast: "המדריך עדכן את מסלול הטיול"
+- If no registered hikers: replace silently
+- Recalculate elevation stats after update
+
+### 8. Waypoints — blocked until GPX uploaded
+- Waypoint map section is disabled/greyed out until GPX is uploaded
+- Message: "יש להעלות קובץ GPX תחילה כדי להוסיף נקודות עניין"
+- If GPX is deleted and waypoints exist: warn "מחיקת קובץ ה-GPX תמחק את כל נקודות העניין" — on confirm, delete all waypoints
+
+### 9. Review unlock message
+Change text to: "ביקורות על הטיול יתאפשרו החל משעה לפני סוף הטיול"
+Position: centered, directly below "שעת סיום משוערת" field
+
+### 10. Journey (מסע) — review unlock
+TBD — more complex than single-day trips, needs separate spec in the future
+
+### 11. Q&A — open as modal
+Clicking Q&A indicator on trip card opens a modal overlay (not new page). Header: "שאלות ותשובות — [trip name]". Contains שלי/אחרים toggle, thread list, "שאל שאלה" button. Closing returns to exact scroll position.
+
+### 12. Broadcast — redesign as modal
+- Remove "דחה" button and "הודעה לקבוצה" button
+- Replace with "הודעות קבוצתיות" button → modal showing all past broadcasts (newest first)
+- Cancellation broadcasts in red
+- "+ הודעה חדשה" button → inline form with optional "הטיול בוטל" checkbox (requires reason)
+
+### 13. Elevation profile — show to hikers
+Self-guided trip detail page must show the full interactive elevation profile chart to ALL viewers (not just guide). Hikers need it more than guides.
+
+---
+
+## Guides Directory — Follow/Unfollow from Card
+
+### Follow indicator on guide card
+- If the hiker already follows this guide: show a "עוקב ✓" badge or button on the card (green/accent)
+- If not following: show "+ עקוב" button
+
+### Actions directly from card
+- Clicking "+ עקוב" → immediately follows the guide, button changes to "עוקב ✓"
+- Clicking "עוקב ✓" → shows confirmation "לבטל עקיבה?" → on confirm, unfollows
+- No need to enter the guide's profile page to follow/unfollow
+
+---
+
+## Self-Guided Trip — Before vs After Purchase
+
+### Before purchase (preview):
+- Trip photos, title, guide name, tags, stats (km, hours, difficulty)
+- Description
+- Map with GPX route line (green) — NO waypoint markers
+- Elevation profile chart
+- Equipment list
+- Source materials: BLOCKED — shown as locked/blurred
+- No waypoints visible at all
+- "רכוש" / "הצטרף" button
+
+### After purchase (owner view — within access window):
+- Everything from preview PLUS:
+- Waypoint markers on map (numbered pins)
+- Tapping waypoint → drawer with: name, description, guidance content, audio player, source materials
+- GPS blue dot showing current location
+- Turn-by-turn navigation
+- TTS (text-to-speech) for waypoint content
+- Audio recordings (guide's voice) per waypoint
+- Full source materials accessible
+
+### After expiry (free trips: never expires):
+- Source materials: BLOCKED again
+- "פג תוקף — רכוש מחדש" state
+- Map with route still visible
+- Waypoints still visible on map but content locked
+
+### Free trips:
+- No access window, no expiry
+- After joining: full owner view permanently
+- Source materials always accessible
+
+---
+
+## Q&A — Display Logic by Registration Status
+
+### Not registered / not interested (viewer only):
+- Show only public questions from others — no toggle
+- No "שלי" tab at all
+- "שאל שאלה" button is visible but on click: prompt to register/express interest first
+
+### Registered or interested:
+- Show full toggle: "שלי / אחרים"
+- Default: "שלי" tab (their own questions + guide replies)
+- "שאלות אחרים" tab shows other hikers' public questions
+- Can ask questions freely
 
 ---
 
 ## Trip Gender Restriction
-- Optional "מיועד ל" field at trip creation (Step 3) — guided trips only, NOT self-guided: כולם (default) / גברים בלבד / נשים בלבד.
-- Display only — NOT technically enforced at registration.
-- Shown as a badge on trip cards and the trip detail page.
-- Search has a "מיועד ל" filter (כולם / גברים / נשים); selecting a gender shows trips for that gender plus open-to-all trips.
 
-## Self-Guided Trip — Before vs After Purchase
-- Before purchase: GPX route line on map, NO waypoint markers, content + source materials locked.
-- After purchase (within window) / free trips: full owner view — waypoints, content, audio, GPS, TTS.
-- After expiry: waypoints visible on the map but content + source materials locked.
-- Free trips: full access permanently, no expiry.
+### Trip creation
+- Add optional field: "מיועד ל" with three options:
+  - כולם (default)
+  - גברים בלבד
+  - נשים בלבד
 
-## Q&A — Display Logic by Registration Status
-- Viewer only (not registered/interested): public questions only, no שלי/אחרים toggle, "שאל שאלה" prompts to register first.
-- Registered or interested: full שלי/אחרים toggle, can ask freely (public or private).
-- Q&A opens as a modal from the trip-card indicator (no navigation).
+### Display
+- Show gender restriction tag on trip card and trip detail page (e.g. "גברים בלבד" badge)
 
-## Guides Directory — Follow/Unfollow from Card
-- Each guide card shows follow state: "+ עקוב" if not following, "עוקב ✓" if following; toggle directly from the card.
+### Search filter
+- Add "מגדר" filter in search: כולם / גברים בלבד / נשים בלבד
+
+### Registration
+- Do not technically block registration by gender (platform doesn't verify gender)
+- Just display the restriction clearly so hikers self-select
+
+---
+
+## Trip Gender Restriction — Clarification
+Gender restriction ("גברים בלבד" / "נשים בלבד") applies ONLY to guided trips (including journeys).
+Self-guided trips have no gender restriction option — not relevant since there's no live group dynamic.
+
+---
+
+## Trip Gender Restriction — Implementation Fix
+"מיועד ל" (גברים בלבד / נשים בלבד / כולם) should be implemented as an attribute tag — same as other trip attributes (כלבים מותרים, מתאים לילדים, etc.) — NOT as a separate prominent field.
+
+- In trip creation: appears within the attributes/tags section
+- On trip cards and detail page: displayed as a tag badge alongside other attribute tags
+- In search filters: filterable alongside other attribute filters
+- Applies to guided trips only
+
+---
+
+## Self-Guided Trip — Active Navigation Flow (Phase 1)
+
+### Entry point
+After purchase (or joining free trip): "התחל טיול" button activates navigation mode.
+
+### Before starting — navigate to trailhead
+- Show "נווט לנקודת ההתחלה" button that opens Waze with the first waypoint's GPS coordinates
+- System checks if user is within 20 meters of the starting point
+- If NOT within 20 meters: do not start navigation. Show options:
+  - "נווט לנקודת ההתחלה" (opens Waze)
+  - "הצטרף מנקודה אחרת" — user picks a waypoint to join from; app then waits for them to approach that waypoint
+- If user is at end of route and wants to do it in reverse: system detects this and asks "האם תרצה לעשות את המסלול בכיוון הפוך?"
+
+### During navigation
+- App tracks GPS in real-time
+- When user comes within 20 meters of next waypoint: app detects it and waits for user to tap "הגעתי" to confirm
+- On confirmation: waypoint content is revealed
+
+### At each waypoint — content options (based on what guide uploaded)
+User can choose what to see/hear:
+- טקסט הדרכה — guidance text
+- PDF — up to 2 files per waypoint
+- שמע — audio recording (guide's voice)
+TTS (text-to-speech) reads the guidance text if no audio file uploaded
+
+### End of trip
+- After confirming arrival at final waypoint: show trip completion screen
+- Option to write a review
+- Summary: distance covered, time elapsed
+
+### Direction options
+- Forward (default): waypoints in original order
+- Reverse: if user is detected near the end of the route, app asks if they want to do it in reverse
+- No other order options in Phase 1
