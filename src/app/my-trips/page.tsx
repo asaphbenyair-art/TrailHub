@@ -342,7 +342,7 @@ export default function MyTripsPage() {
 
         {/* Top bar */}
         <div className="bg-surface rounded-xl px-3 py-2.5 mb-2 flex items-center gap-2">
-          <Brand href="/trips" />
+          <Brand variant="word" href="/trips" />
           <ThemeToggle className="flex-shrink-0" />
           <span className="text-sm font-medium text-fg flex-1 text-center">הטיולים שלי</span>
           <ModeIndicator mode="hiker" />

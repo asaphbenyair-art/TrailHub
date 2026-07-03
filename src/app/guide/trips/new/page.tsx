@@ -115,6 +115,7 @@ export default function NewTripWizard() {
       multiPersonMode: data.multiPersonMode || null,
       endDate: data.endDate ? new Date(data.endDate).toISOString() : null,
       startTime: data.startTime,
+      estimatedEndTime: data.estimatedEndTime || null,
       meetingPoint: data.meetingPoint,
       waypoints: data.waypoints || null,
       difficulty: data.difficulty === "PREVIEW" ? "MEDIUM" : data.difficulty,

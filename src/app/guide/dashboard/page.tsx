@@ -145,7 +145,7 @@ export default function GuideDashboard() {
         {/* Header */}
         <div className="bg-surface rounded-xl p-4 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-3">
-            <Brand href="/guide/dashboard" />
+            <Brand variant="word" href="/guide/dashboard" />
             <ThemeToggle className="flex-shrink-0" />
             <Link href="/trips" className="text-[#1A6B4A] text-sm font-medium flex items-center gap-1 hover:underline">
               🧭 גלה טיולים

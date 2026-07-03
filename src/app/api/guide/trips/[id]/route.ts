@@ -37,7 +37,7 @@ export async function PUT(
   const body = await req.json();
   const {
     title, description, region, date, endDate, startTime,
-    meetingPoint, waypoints, difficulty, maxSpots, price,
+    meetingPoint, waypoints, difficulty, maxSpots, price, estimatedEndTime,
     distanceKm, durationMin, whatToBring, healthDeclarationUrl,
     cancellationPolicy, status, images,
     tripType, priceTiers, tripDays, coupons,
@@ -63,6 +63,7 @@ export async function PUT(
         date: new Date(date),
         endDate: endDate ? new Date(endDate) : null,
         startTime,
+        estimatedEndTime: estimatedEndTime || null,
         meetingPoint: meetingPoint || null,
         waypoints: waypoints || null,
         difficulty: difficulty || "MEDIUM",

@@ -61,6 +61,7 @@ export interface WizardData {
   date: string;
   endDate: string;
   startTime: string;
+  estimatedEndTime: string;
   region: string;
   meetingPoint: string;
   mainImagePreview: string;
@@ -121,6 +122,7 @@ export const DEFAULT_WIZARD_DATA: WizardData = {
   date: "",
   endDate: "",
   startTime: "07:00",
+  estimatedEndTime: "",
   region: "",
   meetingPoint: "",
   mainImagePreview: "",

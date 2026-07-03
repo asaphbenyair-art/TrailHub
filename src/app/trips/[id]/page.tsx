@@ -500,6 +500,17 @@ export default function TripDetailPage() {
 
   const sourcesVisible = trip.sourceMaterialsVisibility === "preview" || !!myRegStatus || purchase?.purchased;
 
+  // Reviews unlock 1h before the estimated end time (self-guided purchases: always open).
+  const reviewUnlocked = (() => {
+    if (purchase?.purchased) return true;
+    const end = (trip as { estimatedEndTime?: string | null }).estimatedEndTime;
+    if (!end) return true;
+    const [h, m] = end.split(":").map(Number);
+    const endAt = new Date(trip.date);
+    endAt.setHours(h || 0, m || 0, 0, 0);
+    return Date.now() >= endAt.getTime() - 60 * 60 * 1000;
+  })();
+
   async function copyEquipment() {
     try { await navigator.clipboard.writeText(equipment.join("\n")); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* noop */ }
   }
@@ -923,6 +934,8 @@ export default function TripDetailPage() {
             <div className="rounded-2xl p-3.5 border" style={{ background: "rgba(61,143,95,0.08)", borderColor: "rgba(61,143,95,0.25)" }}>
               {reviewDone ? (
                 <div className="text-xs text-accent">תודה! הביקורת נשמרה.</div>
+              ) : !reviewUnlocked ? (
+                <div className="text-xs text-fg-muted">🔒 ניתן לכתוב ביקורת החל משעה לפני סיום הטיול</div>
               ) : (
                 <>
                   <div className="text-sm font-semibold text-fg mb-1.5">כתוב ביקורת</div>

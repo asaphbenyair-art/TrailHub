@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
 
   const {
     title, description, region, date, endDate, startTime,
-    meetingPoint, waypoints, difficulty, maxSpots, price,
+    meetingPoint, waypoints, difficulty, maxSpots, price, estimatedEndTime,
     distanceKm, durationMin, whatToBring, healthDeclarationUrl,
     cancellationPolicy, status, images,
     tripType, priceTiers, tripDays, coupons,
@@ -105,6 +105,7 @@ export async function POST(req: NextRequest) {
         date: date ? new Date(date) : new Date(),
         endDate: endDate ? new Date(endDate) : null,
         startTime: startTime || "07:00",
+        estimatedEndTime: estimatedEndTime || null,
         meetingPoint: meetingPoint || null,
         waypoints: waypoints || null,
         difficulty: difficulty || "MEDIUM",

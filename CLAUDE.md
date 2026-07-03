@@ -1818,3 +1818,111 @@ Create several self-guided trips in the DB that have audio files at some of thei
 - If guide has logo but trip manager has none — show guide logo
 - If neither has logo — show nothing
 - Logo displayed as small icon in the trip card strip (bottom-left or top-left corner)
+
+---
+
+## Self-Guided Trip — Map Waypoint UX Fixes
+
+### 1. First waypoint placement
+When the guide opens the map to add waypoints, the map must center on the GPX route (if uploaded) or the trip's region — NOT on a random/default location.
+
+### 2. Remove "הוסף תחנה" button
+Remove the "הוסף תחנה" button entirely. Tapping the map already creates a waypoint — this is sufficient and the button is redundant.
+
+### 3. Map mode indicator + toggle
+Add a clear visual toggle on the map with two modes:
+- **מצב צפייה** (view/static) — tapping the map pans/zooms only, no new waypoints created
+- **מצב עריכה** (edit) — tapping the map creates a new waypoint
+
+Show clearly which mode is active (e.g. colored toggle button at top of map). Default: view mode. Guide switches to edit mode intentionally to add waypoints.
+
+---
+
+## Reviews — Unlock After Trip Ends
+
+### Guide adds end time to trip
+- Add "שעת סיום משוערת" field to trip creation (time field, required)
+- This is in addition to the existing departure time
+
+### Review unlock logic
+- Reviews are locked until 1 hour before the trip's estimated end time
+- If a hiker tries to write a review before that: show message "ניתן לכתוב ביקורת החל משעה לפני סיום הטיול"
+- After unlock time: review button becomes active
+- The unlock is per-trip based on date + end time
+
+### Display
+- If review is locked, show the review button as disabled/greyed out with the explanation message on hover/tap
+
+---
+
+## UI & UX Fixes — Round 8
+
+### 1. Slogan text alignment
+Two-line slogan must be right-aligned (RTL). Second line "אנוכי עפר ואפר" must end where the first line ends — aligned to the right edge, not centered.
+
+### 2. My Trips — dual date display
+In registered trip cards (My Trips), always show BOTH dates:
+- If user preference is Gregorian: "10 יולי (כ׳ תמוז)"
+- If user preference is Hebrew: "כ׳ תמוז (10 יולי)"
+Apply only to My Trips cards, not general search results.
+
+### 3. Bottom navigation — always show labels
+Show text labels below ALL bottom nav icons at all times, not just the active tab. Active tab remains highlighted in green.
+
+### 4. "שאלה למדריך" button — scroll to Q&A
+Clicking "שאלה למדריך" must smooth-scroll to the Q&A section on the trip page (anchor `id="qa-section"`), not to the top of the page.
+
+### 5. Company logo — size and position
+Logo on trip cards: place at bottom-left corner of the trip image, slightly larger than current size. Should sit on the gradient overlay.
+
+### 6. Rideshare seekers indicator — guide dashboard
+On each trip card in guide dashboard: show "🙋 X מחפשי טרמפ" only when there are unmatched seekers. Informational only, no action required. Show nothing if no unmatched seekers.
+
+### 7. Trail SVG — full width
+The trail illustration SVG on splash/landing page must span full screen width with no containing black box. Remove the frame, set SVG width to 100%.
+
+### 8. Map mode toggle — self-guided waypoints
+- Remove "הוסף תחנה" button
+- Add view/edit mode toggle on map
+- Default: view mode. Guide switches to edit mode to place waypoints.
+- First waypoint must center on GPX route, not random location.
+
+### 9. Audio files for waypoints — seed data
+Create 3+ self-guided trips in DB with audio files at some waypoints (use public sample MP3 URLs).
+
+### 10. Daily summary email
+Send daily email at 08:00 Israel time via Vercel Cron + Resend:
+- New registrations in last 24h (names + emails)
+- Logins in last 24h
+- Total users to date
+- Trips viewed
+- New trip registrations
+
+### 11. New user notification via ntfy
+Every time a new user registers (email or Google), send ntfy notification with: name, email, method, timestamp.
+
+---
+
+## "My Trips" Tabs — Restructure
+
+### New tab order:
+1. **רשומים** — trips the hiker is registered for, not yet departed
+2. **בהמתנה** — trips where hiker is on the waitlist
+3. **מתעניין** — trips hiker marked as interested
+4. **עצמאיים** — purchased self-guided trips (active + expired)
+5. **היסטוריה** — past guided trips (departed)
+
+### Self-guided (עצמאיים) tab:
+- Active purchases shown normally with access window indicator
+- Expired purchases shown at bottom of the same tab, greyed out with "פג תוקף — רכוש מחדש" button
+- Do NOT hide expired trips — show them as a re-purchase opportunity
+
+### היסטוריה tab:
+- Shows guided trips that have passed their end time
+- Each card has "כתוב ביקורת" button (or "ערוך ביקורת" if already reviewed)
+- Trips the hiker cancelled do NOT appear here
+
+### Reviews — identification:
+- Each review is stored with the user ID in DB
+- In the trip's review section: hiker's own review appears first with "הביקורת שלי" label + edit button
+- In היסטוריה tab: button shows "כתוב ביקורת" or "ערוך ביקורת" based on whether they've reviewed

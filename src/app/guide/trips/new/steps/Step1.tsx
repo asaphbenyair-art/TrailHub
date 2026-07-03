@@ -372,15 +372,28 @@ export default function Step1({ data, onChange }: Props) {
             />
           </div>
         ) : (
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-fg-muted">שעת מפגש</label>
-            <input
-              type="time"
-              value={data.startTime}
-              onChange={(e) => onChange("startTime", e.target.value)}
-              className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
-              dir="ltr"
-            />
+          <div className="flex gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-fg-muted">שעת מפגש</label>
+              <input
+                type="time"
+                value={data.startTime}
+                onChange={(e) => onChange("startTime", e.target.value)}
+                className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+                dir="ltr"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-fg-muted">שעת סיום משוערת</label>
+              <input
+                type="time"
+                value={data.estimatedEndTime}
+                onChange={(e) => onChange("estimatedEndTime", e.target.value)}
+                className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
+                dir="ltr"
+              />
+              <span className="text-[10px] text-fg-faint">ביקורות ייפתחו שעה לפני</span>
+            </div>
           </div>
         )}
       </div>

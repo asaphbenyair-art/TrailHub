@@ -61,7 +61,7 @@ export default function ManagerDashboard() {
     <div dir="rtl" className="min-h-screen bg-bg">
       <div className="bg-surface border-b border-border px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="flex items-center gap-2"><Brand href="/" /><ThemeToggle /></span>
+          <span className="flex items-center gap-2"><Brand variant="word" href="/" /><ThemeToggle /></span>
           <span className="text-xs bg-[#EEF5FC] text-[#185FA5] px-2 py-0.5 rounded-full font-semibold">מנהל טיול · צפייה בלבד</span>
         </div>
         <AvatarMenu />
