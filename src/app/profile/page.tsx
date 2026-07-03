@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import ThemeToggle from "@/components/ThemeToggle";
+import LanguageToggle from "@/components/LanguageToggle";
 import { useCalendarMode } from "@/components/CalendarModeProvider";
 import ModeIndicator from "@/components/ModeIndicator";
 import { SignOutButton } from "@/components/SignOutButton";
@@ -253,6 +254,7 @@ export default function ProfilePage() {
           <div className="flex items-center gap-2 text-xs text-fg-muted">
             מצב תצוגה
             <ThemeToggle />
+            <LanguageToggle />
           </div>
         </div>
 

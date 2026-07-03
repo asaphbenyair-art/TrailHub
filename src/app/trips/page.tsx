@@ -9,6 +9,7 @@ import CalendarView from "@/components/CalendarView";
 import AvatarMenu from "@/components/AvatarMenu";
 import Brand from "@/components/Brand";
 import ThemeToggle from "@/components/ThemeToggle";
+import LanguageToggle from "@/components/LanguageToggle";
 import ModeIndicator from "@/components/ModeIndicator";
 import { TRIP_TAGS } from "@/lib/tripTags";
 import { coverImages } from "@/lib/tripImage";
@@ -499,6 +500,7 @@ export default function TripsPage() {
           <div className="flex items-center gap-2.5">
             <Brand variant="word" />
             <ThemeToggle className="flex-shrink-0" />
+            <LanguageToggle />
             <div className="flex-1" />
             <ModeIndicator mode="hiker" />
             {session ? (

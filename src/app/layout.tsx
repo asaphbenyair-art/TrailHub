@@ -5,6 +5,7 @@ import Providers from "@/components/Providers";
 import BottomNav from "@/components/BottomNav";
 import { CalendarModeProvider } from "@/components/CalendarModeProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { LanguageProvider } from "@/components/LanguageProvider";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -28,6 +29,9 @@ export const metadata: Metadata = {
 // Priority: saved localStorage → system preference → default dark.
 const themeInit = `(function(){try{var t=localStorage.getItem('trailhub-theme');var light=t?t==='light':(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches);document.documentElement.classList.toggle('theme-light',!!light);}catch(e){}})();`;
 
+// Apply the saved UI language (direction + lang) before first paint.
+const langInit = `(function(){try{var l=localStorage.getItem('trailhub-lang');if(l==='en'||l==='he'){document.documentElement.lang=l;document.documentElement.dir=l==='he'?'rtl':'ltr';}}catch(e){}})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -37,15 +41,18 @@ export default function RootLayout({
     <html lang="he" dir="rtl" suppressHydrationWarning className={`h-full ${playfair.variable} ${inter.variable}`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
+        <script dangerouslySetInnerHTML={{ __html: langInit }} />
       </head>
       <body suppressHydrationWarning className="min-h-full flex flex-col bg-bg text-fg antialiased">
         <Providers>
-          <ThemeProvider>
-            <CalendarModeProvider>
-              {children}
-              <BottomNav />
-            </CalendarModeProvider>
-          </ThemeProvider>
+          <LanguageProvider>
+            <ThemeProvider>
+              <CalendarModeProvider>
+                {children}
+                <BottomNav />
+              </CalendarModeProvider>
+            </ThemeProvider>
+          </LanguageProvider>
         </Providers>
       </body>
     </html>

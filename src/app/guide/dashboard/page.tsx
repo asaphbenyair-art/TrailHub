@@ -11,6 +11,7 @@ import { coverImages } from "@/lib/tripImage";
 import { useDateFmt } from "@/components/CalendarModeProvider";
 import Brand from "@/components/Brand";
 import ThemeToggle from "@/components/ThemeToggle";
+import LanguageToggle from "@/components/LanguageToggle";
 import RegistrantsModal from "@/components/RegistrantsModal";
 import BroadcastModal from "@/components/BroadcastModal";
 
@@ -134,6 +135,7 @@ export default function GuideDashboard() {
           <div className="flex items-center gap-3">
             <Brand variant="word" href="/guide/dashboard" />
             <ThemeToggle className="flex-shrink-0" />
+            <LanguageToggle />
             {guide && (
               <span className="text-xs text-fg-faint">
                 ★{guide.rating > 0 ? guide.rating.toFixed(1) : "—"} · {guide.reviewCount} ביקורות

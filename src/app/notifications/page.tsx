@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { FileText, XCircle, MessageCircle, Mail, Bell, ChevronRight, Check } from "lucide-react";
 import AvatarMenu from "@/components/AvatarMenu";
 import ThemeToggle from "@/components/ThemeToggle";
+import LanguageToggle from "@/components/LanguageToggle";
 import { useLiveNotifications } from "@/hooks/useLiveNotifications";
 
 interface Notif {
@@ -91,6 +92,7 @@ export default function NotificationsPage() {
               </button>
             )}
             <ThemeToggle />
+            <LanguageToggle />
             <AvatarMenu />
           </div>
         </div>

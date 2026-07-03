@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
+import { useLocale } from "@/components/LanguageProvider";
 import { Compass, Backpack, Bell, User } from "lucide-react";
 
 // Bottom nav shows only on the primary hiker surfaces — never on detail,
@@ -11,15 +13,17 @@ import { Compass, Backpack, Bell, User } from "lucide-react";
 const ALLOWED = new Set(["/", "/trips", "/my-trips", "/notifications", "/profile"]);
 
 const TABS = [
-  { href: "/trips", label: "חיפוש", Icon: Compass },
-  { href: "/my-trips", label: "הטיולים שלי", Icon: Backpack },
-  { href: "/notifications", label: "התראות", Icon: Bell },
-  { href: "/profile", label: "פרופיל", Icon: User },
+  { href: "/trips", key: "search", Icon: Compass },
+  { href: "/my-trips", key: "myTrips", Icon: Backpack },
+  { href: "/notifications", key: "notifications", Icon: Bell },
+  { href: "/profile", key: "profile", Icon: User },
 ] as const;
 
 export default function BottomNav() {
   const pathname = usePathname();
   const { status } = useSession();
+  const { locale } = useLocale();
+  const t = useTranslations("nav");
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
@@ -34,12 +38,12 @@ export default function BottomNav() {
 
   return (
     <nav
-      dir="rtl"
+      dir={locale === "he" ? "rtl" : "ltr"}
       className="fixed bottom-0 inset-x-0 z-40 border-t border-border bg-surface/90 backdrop-blur-xl"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="max-w-[480px] mx-auto flex items-stretch">
-        {TABS.map(({ href, label, Icon }) => {
+        {TABS.map(({ href, key, Icon }) => {
           const active =
             href === "/trips"
               ? pathname === "/trips" || pathname === "/"
@@ -63,7 +67,7 @@ export default function BottomNav() {
                 )}
               </span>
               <span className="text-[10px] font-medium" style={{ color: active ? "var(--accent)" : "var(--fg-muted)" }}>
-                {label}
+                {t(key)}
               </span>
             </Link>
           );

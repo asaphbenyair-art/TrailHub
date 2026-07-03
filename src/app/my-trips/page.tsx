@@ -8,6 +8,7 @@ import { coverImages } from "@/lib/tripImage";
 import AvatarMenu from "@/components/AvatarMenu";
 import Brand from "@/components/Brand";
 import ThemeToggle from "@/components/ThemeToggle";
+import LanguageToggle from "@/components/LanguageToggle";
 import ModeIndicator from "@/components/ModeIndicator";
 import QAModal from "@/components/QAModal";
 import { useDateFmt, useCalendarMode } from "@/components/CalendarModeProvider";
@@ -370,6 +371,7 @@ export default function MyTripsPage() {
         <div className="bg-surface rounded-xl px-3 py-2.5 mb-2 flex items-center gap-2">
           <Brand variant="word" href="/trips" />
           <ThemeToggle className="flex-shrink-0" />
+            <LanguageToggle />
           <span className="text-sm font-medium text-fg flex-1 text-center">הטיולים שלי</span>
           <ModeIndicator mode="hiker" />
           <AvatarMenu />

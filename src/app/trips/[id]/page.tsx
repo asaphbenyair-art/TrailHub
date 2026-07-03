@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import RideshareBoard from "@/components/RideshareBoard";
 import RideshareModal from "@/components/RideshareModal";
 import ElevationChart, { parseTrack } from "@/components/ElevationChart";
+import TranslateButton from "@/components/TranslateButton";
 import { TAG_LABEL } from "@/lib/tripTags";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { coverImages } from "@/lib/tripImage";
@@ -747,7 +748,9 @@ export default function TripDetailPage() {
           {trip.description && (
             <div>
               <Heading icon={FileText}>על הטיול</Heading>
-              <p className="text-sm text-fg-muted leading-relaxed">{trip.description}</p>
+              <TranslateButton text={trip.description} className="text-sm text-fg-muted leading-relaxed block">
+                <p className="text-sm text-fg-muted leading-relaxed">{trip.description}</p>
+              </TranslateButton>
             </div>
           )}
 
@@ -924,7 +927,9 @@ export default function TripDetailPage() {
                         <span className="text-xs font-medium text-fg">{q.user.name ?? "מטייל"}</span>
                         <span className="text-[10px] text-fg-faint mr-auto">{dd(q.createdAt)}</span>
                       </div>
-                      <p className="text-sm text-fg mb-1">{q.body}</p>
+                      <TranslateButton text={q.body} className="block mb-1">
+                        <p className="text-sm text-fg">{q.body}</p>
+                      </TranslateButton>
                       {q.answer && (
                         <div className="mt-2 pr-3 border-r-2" style={{ borderColor: "var(--accent)" }}>
                           <div className="text-[10px] text-accent font-medium mb-0.5">תשובת המדריך</div>
@@ -1015,7 +1020,11 @@ export default function TripDetailPage() {
                     {[1, 2, 3, 4, 5].map((n) => <Star key={n} size={12} fill={n <= rev.rating ? "#e0b64a" : "none"} color={n <= rev.rating ? "#e0b64a" : "var(--fg-faint)"} />)}
                   </span>
                 </div>
-                {rev.comment && <p className="text-xs text-fg-muted leading-relaxed">{rev.comment}</p>}
+                {rev.comment && (
+                  <TranslateButton text={rev.comment} className="block text-xs text-fg-muted leading-relaxed">
+                    <p className="text-xs text-fg-muted leading-relaxed">{rev.comment}</p>
+                  </TranslateButton>
+                )}
               </div>
             );
 

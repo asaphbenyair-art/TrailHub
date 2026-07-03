@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Brand from "@/components/Brand";
 import ThemeToggle from "@/components/ThemeToggle";
+import LanguageToggle from "@/components/LanguageToggle";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -63,7 +64,8 @@ export default function ManagerDashboard() {
     <div dir="rtl" className="min-h-screen bg-bg">
       <div className="bg-surface border-b border-border px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="flex items-center gap-2"><Brand variant="word" href="/" /><ThemeToggle /></span>
+          <span className="flex items-center gap-2"><Brand variant="word" href="/" /><ThemeToggle />
+            <LanguageToggle /></span>
           <span className="text-xs bg-[#EEF5FC] text-[#185FA5] px-2 py-0.5 rounded-full font-semibold">מנהל טיול · צפייה בלבד</span>
         </div>
         <AvatarMenu />
