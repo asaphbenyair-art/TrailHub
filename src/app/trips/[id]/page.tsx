@@ -386,6 +386,8 @@ export default function TripDetailPage() {
     fetch(`/api/trips/${id}`).then((r) => r.json())
       .then((d) => { if (d.error) setNotFound(true); else setTrip(d); setLoading(false); })
       .catch(() => { setNotFound(true); setLoading(false); });
+    // Log the view (fire-and-forget) for the daily summary.
+    fetch(`/api/trips/${id}/view`, { method: "POST" }).catch(() => {});
   }, [id]);
 
   useEffect(() => {

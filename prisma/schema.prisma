@@ -144,6 +144,7 @@ model User {
   role          Role      @default(USER)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime? // updated on each sign-in (for the daily summary)
 
   gender                String?
   birthYear             Int?
@@ -479,6 +480,16 @@ model TripQuestion {
   replies TripQuestionReply[]
 
   @@index([tripId])
+}
+
+// Lightweight trip-view log (for the daily summary "trips viewed" metric).
+model TripView {
+  id        String   @id @default(cuid())
+  tripId    String
+  userId    String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
 }
 
 // Guide broadcast/announcement history (persisted, shown on the trip page).

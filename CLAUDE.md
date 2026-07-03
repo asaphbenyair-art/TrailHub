@@ -1776,3 +1776,45 @@ Styling:
 - להטמיע כ-SVG inline בתוך הקומפוננטה
 - להופיע בדף הבית (Hero) ובמסך splash
 - בנאב העליון — הטקסט בלבד ללא השביל (אין מקום)
+
+---
+
+## Self-Guided Trips — Audio per Waypoint
+
+### Guide side (creation):
+- At each waypoint, guide can upload an audio file (MP3/M4A/WAV) — their own voice recording
+- Show uploaded file name + duration + delete button
+- Max 1 audio file per waypoint
+- Allow re-upload (replaces existing)
+
+### Hiker side (playback):
+- At each waypoint, if audio exists: show a play button prominently
+- Tapping play: plays the guide's voice recording through the phone speaker
+- Show progress bar + pause/resume controls
+- Audio plays inline in the app — no need to open external player
+- If user is in TTS mode (text-to-speech), audio recording takes priority over TTS for that waypoint
+
+---
+
+## Features — Round 7
+
+### 1. Audio Files for Self-Guided Trips — Seed Data
+Create several self-guided trips in the DB that have audio files at some of their waypoints (use placeholder/sample MP3 URLs from a public source). At least 3 trips with 3-4 waypoints each having audio.
+
+### 2. Slogan Placement
+- **Before login (splash/landing page):** Full slogan with trail illustration: "בשבילי נברא העולם — אנוכי עפר ואפר"
+- **After login (landing/home page):** Same full slogan
+- **Main trip search screen:** Only the word "בִּשְׁבִילִי" with full Hebrew nikud (vocalization). Nothing else from the slogan.
+
+### 3. Mode Indicator — Guide vs Hiker
+- The UI for switching between guide mode and hiker mode must look identical in both directions (currently looks different)
+- Add a clear visual indicator so the guide always knows which mode they're in — e.g. a subtle colored badge or label in the top bar showing "מצב מדריך" or "מצב מטייל"
+
+### 4. Company Logo per Guide / Trip Manager
+- Guide can upload their company logo in profile settings
+- Trip Manager (מנהל טיול) can upload their organization logo in profile settings
+- Logo appears on all trip cards belonging to that guide
+- If a trip has both a guide logo AND a trip manager logo — trip manager logo takes priority
+- If guide has logo but trip manager has none — show guide logo
+- If neither has logo — show nothing
+- Logo displayed as small icon in the trip card strip (bottom-left or top-left corner)

@@ -1,6 +1,28 @@
 // Minimal pluggable email sender. Uses Resend's REST API when RESEND_API_KEY is
-// set; otherwise logs the link to the server console (dev fallback) so the flow
-// is fully testable without an email provider configured.
+// set; otherwise logs to the server console (dev fallback) so flows are testable
+// without an email provider configured.
+
+/** Generic send via Resend. Returns {sent} — no-op (logs) when RESEND_API_KEY is unset. */
+export async function sendEmail(to: string, subject: string, html: string) {
+  const key = process.env.RESEND_API_KEY;
+  const from = process.env.EMAIL_FROM ?? "בשבילי <onboarding@resend.dev>";
+  if (!key) {
+    // eslint-disable-next-line no-console
+    console.log(`[email:dev] would send to ${to}: ${subject}`);
+    return { sent: false, dev: true };
+  }
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from, to, subject, html }),
+    });
+    return { sent: res.ok, dev: false };
+  } catch {
+    return { sent: false, dev: false };
+  }
+}
+
 export async function sendPasswordResetEmail(to: string, resetUrl: string) {
   const key = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM ?? "בשבילי <onboarding@resend.dev>";

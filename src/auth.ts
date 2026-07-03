@@ -75,6 +75,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       if (trigger === "signIn" && user?.id) {
         token.id = user.id;
+        // Record the login timestamp for the daily summary (fire-and-forget).
+        prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }).catch(() => {});
       }
       // For OAuth sign-ins the adapter user may not carry role onto the token
       // on every pass — backfill it from the DB so guides/admins keep access.
