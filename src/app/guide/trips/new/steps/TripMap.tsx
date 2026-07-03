@@ -54,9 +54,10 @@ interface Props {
   waypoints?: MapWaypoint[];
   onDistanceKm?: (km: string) => void;
   onMapClick?: (lat: number, lng: number) => void;
+  editable?: boolean; // when false, tapping the map does nothing (view mode)
 }
 
-export default function TripMap({ gpxContent, waypoints = [], onDistanceKm, onMapClick }: Props) {
+export default function TripMap({ gpxContent, waypoints = [], onDistanceKm, onMapClick, editable = true }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const polylineRef = useRef<L.Polyline | null>(null);
@@ -86,14 +87,16 @@ export default function TripMap({ gpxContent, waypoints = [], onDistanceKm, onMa
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Wire click handler (re-run when onMapClick reference changes)
+  // Wire click handler — only adds waypoints in edit mode.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    const handler = (e: L.LeafletMouseEvent) => onMapClick?.(e.latlng.lat, e.latlng.lng);
+    const handler = (e: L.LeafletMouseEvent) => { if (editable) onMapClick?.(e.latlng.lat, e.latlng.lng); };
     map.on("click", handler);
+    const el = map.getContainer();
+    el.style.cursor = editable ? "crosshair" : "grab";
     return () => { map.off("click", handler); };
-  }, [onMapClick]);
+  }, [onMapClick, editable]);
 
   // Draw GPX track — also handles clearing when gpxContent becomes empty
   useEffect(() => {
@@ -117,7 +120,11 @@ export default function TripMap({ gpxContent, waypoints = [], onDistanceKm, onMa
     const latlngs: L.LatLngTuple[] = pts.map((p) => [p.lat, p.lng]);
     const poly = L.polyline(latlngs, { color: "#1A6B4A", weight: 3, opacity: 0.85 }).addTo(map);
     polylineRef.current = poly;
+    // Center the map on the route (invalidateSize fixes bounds when the container
+    // was just laid out, e.g. when the waypoint editor first opens).
+    map.invalidateSize();
     map.fitBounds(poly.getBounds(), { padding: [24, 24] });
+    setTimeout(() => { try { map.invalidateSize(); map.fitBounds(poly.getBounds(), { padding: [24, 24] }); } catch {} }, 200);
 
     onDistanceKm?.(String(totalDistanceKm(pts)));
   // eslint-disable-next-line react-hooks/exhaustive-deps

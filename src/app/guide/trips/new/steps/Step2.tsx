@@ -108,6 +108,7 @@ export default function Step2({ data, onChange }: Props) {
   const gpxContent = data.routeGpx;
   const mapWaypoints = data.waypointsJson;
   const routePoints = useMemo(() => parseGpxPoints(gpxContent), [gpxContent]);
+  const [mapMode, setMapMode] = useState<"view" | "edit">("edit");
 
   // After adding a waypoint, scroll its form into view and focus the name field.
   const nameInputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -146,14 +147,6 @@ export default function Step2({ data, onChange }: Props) {
     if (Date.now() - gpxPickedAt.current < 700) return; // ignore post-dialog synthetic click
     addWaypointAt(lat, lng);
   }, [addWaypointAt]);
-
-  function addWaypoint() {
-    // Default near the last point (or Israel's center) — guide fine-tunes on the map / via nav text
-    const last = mapWaypoints[mapWaypoints.length - 1];
-    const lat = last ? last.lat + 0.003 : 31.5;
-    const lng = last ? last.lng + 0.003 : 34.9;
-    addWaypointAt(lat, lng);
-  }
 
   function patchWaypoint(i: number, patch: Partial<WaypointData>) {
     onChange("waypointsJson", mapWaypoints.map((w, j) => (j === i ? { ...w, ...patch } : w)));
@@ -207,15 +200,36 @@ export default function Step2({ data, onChange }: Props) {
         <input ref={gpxRef} type="file" accept=".gpx,application/gpx+xml" className="hidden" onChange={handleGpxFile} />
       </div>
 
-      {/* Map */}
-      <div className="flex flex-col gap-1">
-        {!gpxContent && <p className="text-xs text-fg-faint">לחץ על המפה להוספת נקודות עצירה</p>}
-        <TripMap
-          gpxContent={gpxContent}
-          waypoints={mapWaypoints.map((w) => ({ lat: w.lat, lng: w.lng, label: w.name }))}
-          onMapClick={handleMapClick}
-          onDistanceKm={(km) => onChange("distanceKm", km)}
-        />
+      {/* Map + view/edit mode toggle */}
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <div className="inline-flex bg-surface-2 rounded-full p-0.5">
+            <button type="button" onClick={() => setMapMode("edit")}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${mapMode === "edit" ? "bg-[#1A6B4A] text-white" : "text-fg-muted"}`}>
+              ✏️ עריכה
+            </button>
+            <button type="button" onClick={() => setMapMode("view")}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${mapMode === "view" ? "bg-[#185FA5] text-white" : "text-fg-muted"}`}>
+              👁 צפייה
+            </button>
+          </div>
+          <span className="text-[11px] font-medium" style={{ color: mapMode === "edit" ? "#1A6B4A" : "#185FA5" }}>
+            {mapMode === "edit" ? "מצב עריכה — הקש על המפה להוספת תחנה" : "מצב צפייה — ניתן לגרור ולהגדיל בלבד"}
+          </span>
+        </div>
+        <div className="relative">
+          <span className="absolute top-2 right-2 z-[500] text-[10px] font-semibold px-2 py-0.5 rounded-full shadow"
+            style={mapMode === "edit" ? { background: "#1A6B4A", color: "#fff" } : { background: "#185FA5", color: "#fff" }}>
+            {mapMode === "edit" ? "✏️ עריכה" : "👁 צפייה"}
+          </span>
+          <TripMap
+            gpxContent={gpxContent}
+            waypoints={mapWaypoints.map((w) => ({ lat: w.lat, lng: w.lng, label: w.name }))}
+            onMapClick={handleMapClick}
+            onDistanceKm={(km) => onChange("distanceKm", km)}
+            editable={mapMode === "edit"}
+          />
+        </div>
       </div>
 
       {/* Waypoints list — name + description per point */}
@@ -224,10 +238,7 @@ export default function Step2({ data, onChange }: Props) {
           <label className="text-xs font-medium text-fg-muted">
             {data.tripType === "SELF_GUIDED" ? "תחנות ניווט" : "נקודות עצירה"} ({mapWaypoints.length})
           </label>
-          <button type="button" onClick={addWaypoint}
-            className="text-xs text-[#1A6B4A] font-medium border border-[#1A6B4A] rounded-full px-3 py-1 hover:bg-[#D6EDE3] transition-colors">
-            + הוסף תחנה
-          </button>
+          <span className="text-[11px] text-fg-faint">הקש על המפה במצב עריכה כדי להוסיף</span>
         </div>
         {data.tripType === "SELF_GUIDED" && mapWaypoints.length === 0 && (
           <p className="text-[11px] text-fg-faint">כל תחנה כוללת הוראות ניווט צעד-אחר-צעד, חומר הדרכה שיוקרא בקול, ואזהרת בטיחות — הם מחליפים את המדריך החי.</p>
