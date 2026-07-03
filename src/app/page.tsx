@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import HikerHome from "./HikerHome";
-import { BrandSlogan, BrandTrail } from "@/components/Brand";
 
 export default async function Home() {
   const session = await auth();
@@ -33,35 +32,29 @@ export default async function Home() {
     return <HikerHome />;
   }
 
-  // Logged-out → editorial marketing landing
+  // Logged-out → splash: full-bleed hand-drawn trail image + overlay
   return (
     <main dir="rtl" className="relative min-h-screen flex flex-col justify-end overflow-hidden">
-      <div className="absolute inset-0" style={{ background: "linear-gradient(150deg,#1c3a20,#0a0a0a)" }} />
-      <div className="absolute inset-0" style={{ background: "radial-gradient(120% 80% at 70% 0%, rgba(61,143,95,0.25), transparent 60%)" }} />
+      {/* Portrait sketch cropped to fill the screen (don't rotate). */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/splash-trail.jpg" alt="" className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: "center" }} />
+      {/* Dark overlay for readability */}
+      <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.45)" }} />
 
       <div className="relative max-w-[480px] mx-auto w-full px-6 pb-14 pt-24">
-        <BrandSlogan className="font-display text-lg sm:text-xl leading-snug block mb-4" />
-        {/* Trail runs edge to edge — break out of the horizontal padding */}
-        <div className="-mx-6 mb-10">
-          <BrandTrail />
+        {/* Slogan — right-aligned; בשבילי + עפר bold green */}
+        <div dir="rtl" className="font-display text-white text-right leading-snug mb-8" style={{ fontWeight: 300, fontSize: "clamp(20px, 6vw, 30px)", textShadow: "0 2px 12px rgba(0,0,0,0.55)" }}>
+          <span style={{ color: "#3d8f5f", fontWeight: 700 }}>בשבילי</span> נברא העולם — אנוכי{" "}
+          <span style={{ color: "#3d8f5f", fontWeight: 700 }}>עפר</span> ואפר
         </div>
-        <h1 className="font-display text-white text-[42px] leading-[1.08] mb-4">
-          הטיול הבא שלך<br />מתחיל כאן.
-        </h1>
-        <p className="text-white/75 text-base leading-relaxed mb-10 max-w-[88%]">
-          שוק דו-צדדי המחבר מדריכי טיולים למטיילים — טיולים מודרכים, מסעות רב-יומיים וטיולים עצמאיים ברחבי הארץ.
-        </p>
+
         <div className="flex flex-col gap-3">
-          <Link href="/auth/register"
-            className="w-full text-center rounded-full py-4 text-sm font-semibold"
-            style={{ background: "#3d8f5f", color: "#fff" }}>
-            הרשמה
-          </Link>
           <Link href="/auth/login"
-            className="w-full text-center rounded-full py-4 text-sm font-medium border border-white/25 text-white bg-surface/5 backdrop-blur-sm">
-            כניסה
+            className="w-full text-center rounded-full py-4 text-base font-semibold shadow-lg"
+            style={{ background: "#3d8f5f", color: "#fff" }}>
+            כניסה / הרשמה
           </Link>
-          <Link href="/trips" className="w-full text-center py-2 text-sm text-white/70">
+          <Link href="/trips" className="w-full text-center py-2 text-sm text-white/80">
             גלה טיולים ללא הרשמה →
           </Link>
         </div>
