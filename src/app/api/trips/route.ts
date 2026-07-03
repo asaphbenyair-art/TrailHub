@@ -13,6 +13,7 @@ export async function GET(request: Request) {
   const ageMin = searchParams.get("ageMin") ?? "";
   const favoriteGuides = searchParams.get("favoriteGuides") === "1";
   const category = searchParams.get("category") ?? "guided";
+  const gender = searchParams.get("gender") ?? ""; // "", "MEN", "WOMEN"
   const tagsParam = searchParams.get("tags") ?? "";
   const tags = tagsParam ? tagsParam.split(",").filter(Boolean) : [];
 
@@ -54,6 +55,9 @@ export async function GET(request: Request) {
       ...(difficulties.length > 0 && {
         difficulty: { in: difficulties as ("EASY" | "MEDIUM" | "HARD" | "EXTREME")[] },
       }),
+      ...(gender === "MEN" || gender === "WOMEN"
+        ? { genderRestriction: { in: [gender, "ALL"] } }
+        : {}),
       ...(dateFrom && { date: { gte: new Date(dateFrom) } }),
       ...(priceMax && { price: { lte: parseFloat(priceMax) } }),
       ...(priceMin && { price: { gte: parseFloat(priceMin) } }),

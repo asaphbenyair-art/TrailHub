@@ -45,7 +45,7 @@ export async function PUT(
     minAge, maxAge, fitnessLevel, minSpots, registrationMode,
     secondGuideEmail, secondGuideRole, managerEmails,
     routeGpx, waypointsJson, individualDayPrice,
-    unlimitedCapacity, accessWindowDays, attributeTags,
+    unlimitedCapacity, accessWindowDays, attributeTags, genderRestriction,
     sourceMaterials, sourceMaterialsVisibility, multiPersonMode,
   } = body;
 
@@ -89,6 +89,7 @@ export async function PUT(
         ...(unlimitedCapacity !== undefined && { unlimitedCapacity: !!unlimitedCapacity }),
         ...(accessWindowDays !== undefined && { accessWindowDays: accessWindowDays ? parseInt(accessWindowDays) : null }),
         ...(attributeTags !== undefined && { attributeTags: Array.isArray(attributeTags) ? attributeTags : [] }),
+        ...(genderRestriction !== undefined && { genderRestriction: genderRestriction || "ALL" }),
         ...(sourceMaterials !== undefined && { sourceMaterials: sourceMaterials ?? undefined }),
         ...(sourceMaterialsVisibility !== undefined && { sourceMaterialsVisibility: sourceMaterialsVisibility || null }),
         ...(multiPersonMode !== undefined && { multiPersonMode: multiPersonMode || null }),

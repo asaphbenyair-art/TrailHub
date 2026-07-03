@@ -70,6 +70,7 @@ export interface WizardData {
   registrationMode: "FULL_ONLY" | "INDIVIDUAL_DAYS" | "FLEXIBLE";
   accessWindowDays: string; // self-guided: how long buyer has access
   attributeTags: string[];
+  genderRestriction: "ALL" | "MEN" | "WOMEN";
   tripDays: TripDayData[];
 
   // Step 2
@@ -131,6 +132,7 @@ export const DEFAULT_WIZARD_DATA: WizardData = {
   registrationMode: "FULL_ONLY",
   accessWindowDays: "30",
   attributeTags: [],
+  genderRestriction: "ALL",
   tripDays: [],
   routeType: "one-way",
   distanceKm: "",

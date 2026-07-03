@@ -296,6 +296,7 @@ model Trip {
 
   // Attribute tags + multi-person + source materials
   attributeTags    String[]
+  genderRestriction String? @default("ALL") // "ALL" | "MEN" | "WOMEN" (display only, not enforced)
   multiPersonMode  String?  // "simple" | "detailed"
   sourceMaterials  Json?    // [{ type:"pdf"|"link", url, title }]
   sourceMaterialsVisibility String? // "preview" | "during"

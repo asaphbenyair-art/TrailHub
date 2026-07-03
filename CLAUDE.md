@@ -1954,3 +1954,25 @@ Every time a new user registers (email or Google), send ntfy notification with: 
 - Active filters persist permanently (localStorage) — never reset on refresh or navigation.
 - Profile preferences are NOT auto-applied as filters.
 - The filter panel has an "אפס לפי העדפותי" button that loads the user's saved profile preferences (regions/difficulties) into the active filters — the only connection between profile prefs and active filters.
+
+---
+
+## Trip Gender Restriction
+- Optional "מיועד ל" field at trip creation (Step 3): כולם (default) / גברים בלבד / נשים בלבד.
+- Display only — NOT technically enforced at registration.
+- Shown as a badge on trip cards and the trip detail page.
+- Search has a "מיועד ל" filter (כולם / גברים / נשים); selecting a gender shows trips for that gender plus open-to-all trips.
+
+## Self-Guided Trip — Before vs After Purchase
+- Before purchase: GPX route line on map, NO waypoint markers, content + source materials locked.
+- After purchase (within window) / free trips: full owner view — waypoints, content, audio, GPS, TTS.
+- After expiry: waypoints visible on the map but content + source materials locked.
+- Free trips: full access permanently, no expiry.
+
+## Q&A — Display Logic by Registration Status
+- Viewer only (not registered/interested): public questions only, no שלי/אחרים toggle, "שאל שאלה" prompts to register first.
+- Registered or interested: full שלי/אחרים toggle, can ask freely (public or private).
+- Q&A opens as a modal from the trip-card indicator (no navigation).
+
+## Guides Directory — Follow/Unfollow from Card
+- Each guide card shows follow state: "+ עקוב" if not following, "עוקב ✓" if following; toggle directly from the card.

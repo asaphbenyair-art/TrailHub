@@ -185,7 +185,7 @@ interface Trip {
   waypointsJson: { lat?: number; lng?: number; name?: string; description?: string }[] | null;
   routeGpx: string | null; whatToBring: string | null; cancellationPolicy: string | null;
   routeType: string | null; minAge: number | null; maxAge: number | null; fitnessLevel: string | null;
-  attributeTags: string[] | null;
+  attributeTags: string[] | null; genderRestriction?: string | null;
   registrationFields: { id: string; label: string; type: string; required: boolean; options: string[] }[] | null;
   sourceMaterials: SourceMaterial[] | null; sourceMaterialsVisibility: string | null;
   postponeCategory?: string | null; postponeReason?: string | null;
@@ -649,6 +649,11 @@ export default function TripDetailPage() {
             <span className="text-xs px-3 py-1.5 rounded-full" style={{ background: "var(--surface-2)", color: "var(--fg-muted)" }}>
               {trip.region}
             </span>
+            {trip.genderRestriction && trip.genderRestriction !== "ALL" && (
+              <span className="text-xs px-3 py-1.5 rounded-full font-medium" style={{ background: "rgba(232,160,32,0.15)", color: "#7A5010" }}>
+                {trip.genderRestriction === "MEN" ? "👨 מיועד לגברים בלבד" : "👩 מיועד לנשים בלבד"}
+              </span>
+            )}
             {trip.routeType && ROUTE_TYPE_LABEL[trip.routeType] && (
               <span className="text-xs px-3 py-1.5 rounded-full" style={{ background: "var(--surface-2)", color: "var(--fg-muted)" }}>
                 {ROUTE_TYPE_LABEL[trip.routeType]}

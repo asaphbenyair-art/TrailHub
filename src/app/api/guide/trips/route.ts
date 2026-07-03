@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
     minAge, maxAge, fitnessLevel, minSpots, registrationMode,
     secondGuideEmail, secondGuideRole, managerEmails,
     routeGpx, waypointsJson, individualDayPrice,
-    unlimitedCapacity, accessWindowDays, attributeTags,
+    unlimitedCapacity, accessWindowDays, attributeTags, genderRestriction,
     sourceMaterials, sourceMaterialsVisibility, multiPersonMode,
     isDraftSave,
   } = body;
@@ -131,6 +131,7 @@ export async function POST(req: NextRequest) {
         unlimitedCapacity: !!unlimitedCapacity,
         accessWindowDays: accessWindowDays ? parseInt(accessWindowDays) : null,
         attributeTags: Array.isArray(attributeTags) ? attributeTags : [],
+        genderRestriction: genderRestriction || "ALL",
         sourceMaterials: sourceMaterials ?? undefined,
         sourceMaterialsVisibility: sourceMaterialsVisibility || null,
         multiPersonMode: multiPersonMode || null,

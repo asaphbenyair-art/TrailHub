@@ -281,6 +281,21 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
       </div>
       )}
 
+      {/* Gender restriction — display only, not enforced */}
+      <div className="flex flex-col gap-2 border-t border-border pt-4">
+        <label className="text-xs font-medium text-fg-muted">מיועד ל</label>
+        <div className="flex gap-2">
+          {([["ALL", "כולם"], ["MEN", "גברים בלבד"], ["WOMEN", "נשים בלבד"]] as const).map(([val, label]) => (
+            <button key={val} type="button"
+              onClick={() => onChange("genderRestriction" as keyof WizardData, val as unknown as string)}
+              className={`flex-1 text-xs px-2.5 py-2 rounded-lg border transition-colors ${
+                (data.genderRestriction ?? "ALL") === val ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-border text-fg-muted"}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Attribute tags */}
       <div className="flex flex-col gap-2 border-t border-border pt-4">
         <label className="text-xs font-medium text-fg-muted">מאפייני הטיול (לסינון בחיפוש)</label>

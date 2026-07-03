@@ -76,6 +76,7 @@ interface Trip {
   price: number; maxSpots: number; spotsBooked: number; images: string[];
   tripType?: string; endDate?: string | null; _count?: { days: number }; accessWindowDays?: number | null;
   rideSpots?: number; rideSeekers?: number; qaCount?: number; qaOpen?: number; cardLogo?: string | null;
+  genderRestriction?: string;
   guide: { rating: number; user: { name: string | null } };
   guides?: { role: string; guide: { user: { name: string | null } } }[];
 }
@@ -167,12 +168,12 @@ function tripDayCount(t: Trip): number {
 interface Filters {
   q: string; regions: string[]; difficulties: string[]; dateFrom: string;
   priceMax: string; priceMin: string; ageMin: string; favoriteGuides: boolean; sort: string;
-  category: "guided" | "self_guided" | "guides"; tags: string[];
+  category: "guided" | "self_guided" | "guides"; tags: string[]; gender: string;
 }
 function toggle<T>(arr: T[], val: T): T[] {
   return arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val];
 }
-const EMPTY_FILTERS: Filters = { q: "", regions: [], difficulties: [], dateFrom: "", priceMax: "", priceMin: "", ageMin: "", favoriteGuides: false, sort: "date", category: "guided", tags: [] };
+const EMPTY_FILTERS: Filters = { q: "", regions: [], difficulties: [], dateFrom: "", priceMax: "", priceMin: "", ageMin: "", favoriteGuides: false, sort: "date", category: "guided", tags: [], gender: "" };
 // ── Sliding image hero for cards with multiple images ─────────────
 function TripCardHero({ images, title }: { images: string[]; title: string }) {
   const [idx, setIdx] = useState(0);
@@ -309,6 +310,7 @@ export default function TripsPage() {
       if (f.favoriteGuides) p.set("favoriteGuides", "1");
       if (f.category) p.set("category", f.category);
       if (f.tags.length) p.set("tags", f.tags.join(","));
+      if (f.gender) p.set("gender", f.gender);
       const res = await fetch(`/api/trips?${p.toString()}`, { cache: "no-store" });
       let data: Trip[] = await res.json();
       if (!Array.isArray(data)) data = [];
@@ -816,6 +818,19 @@ export default function TripsPage() {
                 </button>
               </div>
               <div className="mb-4">
+                <div className="text-[11px] text-fg-muted mb-2">מיועד ל</div>
+                <div className="flex gap-1.5">
+                  {([["", "כולם"], ["MEN", "👨 גברים"], ["WOMEN", "👩 נשים"]] as const).map(([val, label]) => (
+                    <button key={val || "all"} type="button"
+                      onClick={() => updateFilters({ gender: val })}
+                      className={`px-3 py-1 rounded-full text-xs border transition-colors ${
+                        filters.gender === val ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-border text-fg-muted"}`}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="mb-4">
                 <div className="text-[11px] text-fg-muted mb-2">מאפיינים</div>
                 <div className="flex flex-wrap gap-1.5">
                   {TRIP_TAGS.filter((t) => !t.selfGuidedOnly || filters.category === "self_guided").map((t) => (
@@ -1023,11 +1038,14 @@ export default function TripsPage() {
                           ...(trip.distanceKm > 0 ? [{ t: `📍 ${trip.distanceKm} ק"מ` }] : []),
                           ...(trip.durationMin > 0 ? [{ t: `⏱ ${Math.round(trip.durationMin / 60)} שע'` }] : []),
                         ];
+                    const gender = trip.genderRestriction && trip.genderRestriction !== "ALL"
+                      ? [{ t: trip.genderRestriction === "MEN" ? "👨 גברים בלבד" : "👩 נשים בלבד", color: "#7A5010" }]
+                      : [];
                     return (
                   <div className="px-3 pt-2 pb-2.5">
                     <div className="flex items-end justify-between gap-2 mb-2">
                       <div className="flex flex-wrap" style={{ gap: 0 }}>
-                        {meta.map((m, i, arr) => (
+                        {[...gender, ...meta].map((m, i, arr) => (
                           <span key={i} className="text-[11px] text-fg-muted"
                             style={{ paddingLeft: i < arr.length-1 ? 8 : 0, marginLeft: i < arr.length-1 ? 8 : 0, borderLeft: i < arr.length-1 ? "1px solid #eee" : "none", ...(m.color ? { color: m.color, fontWeight: 600 } : {}) }}>
                             {m.t}

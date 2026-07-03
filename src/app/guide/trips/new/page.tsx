@@ -110,6 +110,7 @@ export default function NewTripWizard() {
       unlimitedCapacity: isSelfGuided,
       accessWindowDays: isSelfGuided ? (data.accessWindowDays || "30") : null,
       attributeTags: data.attributeTags || [],
+      genderRestriction: data.genderRestriction || "ALL",
       sourceMaterials: data.sourceMaterials.length > 0 ? data.sourceMaterials : null,
       sourceMaterialsVisibility: data.sourceMaterialsVisibility || "preview",
       multiPersonMode: data.multiPersonMode || null,

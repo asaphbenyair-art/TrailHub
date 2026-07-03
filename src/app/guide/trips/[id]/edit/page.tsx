@@ -64,6 +64,7 @@ function tripToWizard(trip: Record<string, unknown>): WizardData {
     registrationMode: (trip.registrationMode as "FULL_ONLY" | "INDIVIDUAL_DAYS" | "FLEXIBLE") ?? "FULL_ONLY",
     accessWindowDays: trip.accessWindowDays != null ? String(trip.accessWindowDays) : "30",
     attributeTags: Array.isArray(trip.attributeTags) ? trip.attributeTags as string[] : [],
+    genderRestriction: (trip.genderRestriction as "ALL" | "MEN" | "WOMEN") ?? "ALL",
     tripDays,
     routeGpx: String(trip.routeGpx ?? ""),
     waypointsJson: Array.isArray(trip.waypointsJson)
@@ -240,6 +241,7 @@ export default function EditTripPage() {
       unlimitedCapacity: data.tripType === "SELF_GUIDED",
       accessWindowDays: data.tripType === "SELF_GUIDED" ? (data.accessWindowDays || "30") : null,
       attributeTags: data.attributeTags || [],
+      genderRestriction: data.genderRestriction || "ALL",
       sourceMaterials: data.sourceMaterials.length > 0 ? data.sourceMaterials : null,
       sourceMaterialsVisibility: data.sourceMaterialsVisibility || "preview",
       multiPersonMode: data.multiPersonMode || null,
