@@ -252,8 +252,8 @@ function CompactMonthPanel({
       <div className="mt-3 pt-2 border-t border-border flex flex-col gap-1">
         <div className="text-[9px] text-fg-faint font-medium mb-0.5">מקומות פנויים ביום</div>
         {[
-          { bg: "#D6EDE3", text: "#0F5038", label: "יש מקומות", icon: "5" },
-          { bg: "#FAEEDA", text: "#633806", label: "כמעט מלא", icon: "2" },
+          { bg: "#D6EDE3", text: "#0F5038", label: "יש X מקומות פנויים", icon: "X" },
+          { bg: "#FAEEDA", text: "#633806", label: "כמעט מלא — X מקומות", icon: "X" },
           { bg: "#FADBD8", text: "#791F1F", label: "מלא", icon: "🔒" },
         ].map((item) => (
           <div key={item.label} className="flex items-center gap-1.5">
