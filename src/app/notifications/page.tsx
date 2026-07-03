@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { FileText, XCircle, MessageCircle, Mail, Bell, ChevronRight, Check } from "lucide-react";
 import AvatarMenu from "@/components/AvatarMenu";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -37,6 +38,7 @@ function relTime(iso: string) {
 
 export default function NotificationsPage() {
   const router = useRouter();
+  const tnf = useTranslations("notifications");
   const { data: session, status } = useSession();
   const meId = (session?.user as { id?: string })?.id;
   const [notifs, setNotifs] = useState<Notif[]>([]);
@@ -83,12 +85,12 @@ export default function NotificationsPage() {
     <div dir="rtl" className="min-h-screen bg-bg pb-24">
       <div className="max-w-[480px] mx-auto px-4 pt-6">
         <div className="flex items-center justify-between mb-5">
-          <h1 className="font-display text-3xl text-fg">התראות</h1>
+          <h1 className="font-display text-3xl text-fg">{tnf("title")}</h1>
           <div className="flex items-center gap-3">
             {unread > 0 && (
               <button type="button" onClick={markAll}
                 className="text-xs text-accent flex items-center gap-1">
-                <Check size={13} /> סמן הכל כנקרא
+                <Check size={13} /> {tnf("markAllRead")}
               </button>
             )}
             <ThemeToggle />
@@ -102,7 +104,7 @@ export default function NotificationsPage() {
         ) : notifs.length === 0 ? (
           <div className="text-center py-20">
             <Bell size={40} className="mx-auto text-fg-faint mb-3" strokeWidth={1.4} />
-            <div className="text-fg-muted text-sm">אין התראות</div>
+            <div className="text-fg-muted text-sm">{tnf("empty")}</div>
           </div>
         ) : (
           <div className="flex flex-col gap-2">

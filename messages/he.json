@@ -32,6 +32,11 @@
     "mine": "שלי",
     "others": "אחרים"
   },
+  "notifications": {
+    "title": "התראות",
+    "empty": "אין התראות",
+    "markAllRead": "סמן הכל כנקרא"
+  },
   "nav": {
     "search": "חיפוש",
     "myTrips": "הטיולים שלי",

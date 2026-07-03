@@ -32,6 +32,11 @@
     "mine": "Mine",
     "others": "Others"
   },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications",
+    "markAllRead": "Mark all as read"
+  },
   "nav": {
     "search": "Search",
     "myTrips": "My Trips",
