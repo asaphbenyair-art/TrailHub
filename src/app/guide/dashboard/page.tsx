@@ -93,18 +93,23 @@ export default function GuideDashboard() {
   }
 
   const loadTrips = useCallback(async () => {
-    const res = await fetch("/api/guide/trips");
-    const data = await res.json();
-    if (data.trips) {
-      const now = new Date();
-      const regular = data.trips.filter((t: Trip) => t.tripType !== "SELF_GUIDED");
-      const upcoming = regular.filter((t: Trip) => new Date(t.date) >= now);
-      const past = regular.filter((t: Trip) => new Date(t.date) < now);
-      setTrips([...upcoming, ...past]);
-      setGuide(data.guide);
+    try {
+      const res = await fetch("/api/guide/trips");
+      const data = await res.json().catch(() => ({}));
+      if (Array.isArray(data?.trips)) {
+        const now = new Date();
+        const regular = data.trips.filter((t: Trip) => t.tripType !== "SELF_GUIDED");
+        const upcoming = regular.filter((t: Trip) => new Date(t.date) >= now);
+        const past = regular.filter((t: Trip) => new Date(t.date) < now);
+        setTrips([...upcoming, ...past]);
+        if (data.guide) setGuide(data.guide);
+      }
+      await fetch("/api/guide/self-guided").then((r) => r.ok ? r.json() : []).then((d) => setSelfGuided(Array.isArray(d) ? d : [])).catch(() => {});
+    } catch {
+      // Never leave the view stuck on the loader if a request fails.
+    } finally {
+      setLoading(false);
     }
-    fetch("/api/guide/self-guided").then((r) => r.ok ? r.json() : []).then((d) => setSelfGuided(Array.isArray(d) ? d : [])).catch(() => {});
-    setLoading(false);
   }, []);
 
   useEffect(() => { loadTrips(); }, [loadTrips]);

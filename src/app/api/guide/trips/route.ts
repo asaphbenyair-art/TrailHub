@@ -11,7 +11,7 @@ export async function GET() {
   const guide = await prisma.guide.findUnique({
     where: { userId: session.user.id! },
     include: {
-      trips: { orderBy: { date: "asc" }, take: 20 },
+      trips: { orderBy: { date: "desc" }, take: 200 },
     },
   });
   if (!guide) return NextResponse.json({ error: "מדריך לא נמצא" }, { status: 404 });
