@@ -12,6 +12,7 @@ interface Question {
   answer: string | null;
   answeredAt: string | null;
   createdAt: string;
+  isPrivate?: boolean;
   user: { name: string | null; image: string | null };
   replies?: QReply[];
 }
@@ -34,6 +35,7 @@ export default function GuideQAPage() {
   const { data: session, status } = useSession();
 
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [view, setView] = useState<"public" | "private">("public");
   const [tripTitle, setTripTitle] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<Record<string, boolean>>({});
@@ -93,8 +95,11 @@ export default function GuideQAPage() {
     }
   }
 
-  const unanswered = questions.filter((q) => !q.answer);
-  const answered = questions.filter((q) => q.answer);
+  const scoped = questions.filter((q) => (view === "private" ? q.isPrivate : !q.isPrivate));
+  const unanswered = scoped.filter((q) => !q.answer);
+  const answered = scoped.filter((q) => q.answer);
+  const privateCount = questions.filter((q) => q.isPrivate).length;
+  const publicCount = questions.length - privateCount;
 
   return (
     <div dir="rtl" className="min-h-screen bg-bg">
@@ -116,9 +121,19 @@ export default function GuideQAPage() {
         )}
       </div>
 
+      {/* Public / private separation */}
+      <div className="max-w-xl mx-auto px-4 pt-3">
+        <div className="inline-flex bg-surface-2 rounded-full p-0.5 text-xs">
+          <button type="button" onClick={() => setView("public")}
+            className={`px-3 py-1 rounded-full font-medium ${view === "public" ? "bg-[#1A6B4A] text-white" : "text-fg-muted"}`}>🌐 גלויות ({publicCount})</button>
+          <button type="button" onClick={() => setView("private")}
+            className={`px-3 py-1 rounded-full font-medium ${view === "private" ? "bg-[#185FA5] text-white" : "text-fg-muted"}`}>🔒 פרטיות ({privateCount})</button>
+        </div>
+      </div>
+
       <div className="p-4 flex flex-col gap-4 max-w-xl mx-auto">
-        {questions.length === 0 && (
-          <div className="py-16 text-center text-sm text-fg-faint">אין שאלות עדיין</div>
+        {scoped.length === 0 && (
+          <div className="py-16 text-center text-sm text-fg-faint">{view === "private" ? "אין שאלות פרטיות" : "אין שאלות גלויות"}</div>
         )}
 
         {/* Unanswered */}

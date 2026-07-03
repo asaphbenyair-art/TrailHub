@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { canManageTrip } from "@/lib/tripAccess";
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const session = await auth();
+  const meId = session?.user?.id;
+  const role = (session?.user as { role?: string } | undefined)?.role;
+  const isManager = meId ? await canManageTrip(id, meId, role) : false;
 
   const questions = await prisma.tripQuestion.findMany({
     where: { tripId: id },
@@ -20,7 +25,9 @@ export async function GET(
     orderBy: { createdAt: "asc" },
   });
 
-  return NextResponse.json(questions);
+  // Private questions are visible only to the guide/manager and the asker.
+  const visible = questions.filter((q) => !q.isPrivate || isManager || q.userId === meId);
+  return NextResponse.json(visible);
 }
 
 export async function POST(
@@ -31,7 +38,7 @@ export async function POST(
   if (!session?.user) return NextResponse.json({ error: "לא מחובר" }, { status: 401 });
 
   const { id } = await params;
-  const { body } = await req.json();
+  const { body, isPrivate } = await req.json();
   if (!body?.trim()) return NextResponse.json({ error: "שאלה ריקה" }, { status: 400 });
 
   const trip = await prisma.trip.findUnique({
@@ -41,7 +48,7 @@ export async function POST(
   if (!trip) return NextResponse.json({ error: "טיול לא נמצא" }, { status: 404 });
 
   const question = await prisma.tripQuestion.create({
-    data: { tripId: id, userId: session.user.id!, body: body.trim() },
+    data: { tripId: id, userId: session.user.id!, body: body.trim(), isPrivate: !!isPrivate },
     include: { user: { select: { name: true, image: true } } },
   });
 

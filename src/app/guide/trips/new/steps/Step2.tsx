@@ -218,10 +218,6 @@ export default function Step2({ data, onChange }: Props) {
           </span>
         </div>
         <div className="relative">
-          <span className="absolute top-2 right-2 z-[500] text-[10px] font-semibold px-2 py-0.5 rounded-full shadow"
-            style={mapMode === "edit" ? { background: "#1A6B4A", color: "#fff" } : { background: "#185FA5", color: "#fff" }}>
-            {mapMode === "edit" ? "✏️ עריכה" : "👁 צפייה"}
-          </span>
           <TripMap
             gpxContent={gpxContent}
             waypoints={mapWaypoints.map((w) => ({ lat: w.lat, lng: w.lng, label: w.name }))}

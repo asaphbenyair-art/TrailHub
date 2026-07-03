@@ -370,11 +370,12 @@ export default function TripDetailPage() {
   interface QReply { id: string; body: string; createdAt: string; userId: string; user: { name: string | null; image: string | null } }
   interface Question {
     id: string; userId: string; body: string; answer: string | null; answeredAt: string | null;
-    createdAt: string; official?: boolean; user: { name: string | null; image: string | null };
+    createdAt: string; official?: boolean; isPrivate?: boolean; user: { name: string | null; image: string | null };
     replies?: QReply[];
   }
   const [questions, setQuestions] = useState<Question[]>([]);
   const [qaBody, setQaBody] = useState("");
+  const [qaPrivate, setQaPrivate] = useState(false);
   const [qaLoading, setQaLoading] = useState(false);
   interface Announcement { id: string; body: string; createdAt: string; sender: { name: string | null } }
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -451,9 +452,9 @@ export default function TripDetailPage() {
     try {
       const res = await fetch(`/api/trips/${id}/questions`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body: qaBody }),
+        body: JSON.stringify({ body: qaBody, isPrivate: qaPrivate }),
       });
-      if (res.ok) { const q = await res.json(); setQuestions((prev) => [...prev, q]); setQaBody(""); }
+      if (res.ok) { const q = await res.json(); setQuestions((prev) => [...prev, q]); setQaBody(""); setQaPrivate(false); }
     } finally { setQaLoading(false); }
   }
 
@@ -868,6 +869,7 @@ export default function TripDetailPage() {
                   {sortedQuestions.map((q) => (
                     <div key={q.id} id={`qa-${q.id}`} style={{ scrollMarginTop: 80 }} className="rounded-2xl p-3.5 border border-border bg-surface">
                       {q.official && <div className="text-[10px] font-semibold text-amber mb-1.5">★ תשובה רשמית</div>}
+                      {q.isPrivate && <div className="text-[10px] font-semibold text-[#185FA5] mb-1.5">🔒 שאלה פרטית — גלויה לך ולמדריך בלבד</div>}
                       <div className="flex items-center gap-2 mb-1">
                         <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-medium text-white" style={{ background: avatarColor(q.user.name) }}>{initials(q.user.name)}</div>
                         <span className="text-xs font-medium text-fg">{q.user.name ?? "מטייל"}</span>
@@ -913,13 +915,21 @@ export default function TripDetailPage() {
                 </div>
               )}
               {session ? (
-                <div className="flex gap-2">
-                  <textarea value={qaBody} onChange={(e) => setQaBody(e.target.value)} placeholder="שאל שאלה…" rows={2}
-                    className="flex-1 rounded-xl px-3 py-2 text-sm resize-none bg-surface border border-border text-fg placeholder:text-fg-faint focus:outline-none focus:border-accent" />
-                  <button type="button" onClick={submitQuestion} disabled={!qaBody.trim() || qaLoading}
-                    className="px-3 py-2 text-xs rounded-xl self-end font-medium disabled:opacity-50" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
-                    {qaLoading ? "…" : "שלח"}
-                  </button>
+                <div className="flex flex-col gap-2">
+                  <div className="flex gap-2">
+                    <textarea value={qaBody} onChange={(e) => setQaBody(e.target.value)} placeholder="שאל שאלה…" rows={2}
+                      className="flex-1 rounded-xl px-3 py-2 text-sm resize-none bg-surface border border-border text-fg placeholder:text-fg-faint focus:outline-none focus:border-accent" />
+                    <button type="button" onClick={submitQuestion} disabled={!qaBody.trim() || qaLoading}
+                      className="px-3 py-2 text-xs rounded-xl self-end font-medium disabled:opacity-50" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
+                      {qaLoading ? "…" : "שלח"}
+                    </button>
+                  </div>
+                  <div className="inline-flex bg-surface-2 rounded-full p-0.5 self-start text-[11px]">
+                    <button type="button" onClick={() => setQaPrivate(false)}
+                      className={`px-2.5 py-1 rounded-full font-medium ${!qaPrivate ? "bg-[#1A6B4A] text-white" : "text-fg-muted"}`}>שאלה גלויה</button>
+                    <button type="button" onClick={() => setQaPrivate(true)}
+                      className={`px-2.5 py-1 rounded-full font-medium ${qaPrivate ? "bg-[#185FA5] text-white" : "text-fg-muted"}`}>🔒 שאלה פרטית</button>
+                  </div>
                 </div>
               ) : (
                 <p className="text-xs text-fg-faint">

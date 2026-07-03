@@ -475,6 +475,7 @@ model TripQuestion {
   body       String    @db.Text
   answer     String?   @db.Text
   answeredAt DateTime?
+  isPrivate  Boolean   @default(false) // private = visible only to guide + asker
   createdAt  DateTime  @default(now())
 
   trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)

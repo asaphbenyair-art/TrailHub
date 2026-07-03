@@ -147,9 +147,6 @@ export default function GuideDashboard() {
           <div className="flex items-center gap-3">
             <Brand variant="word" href="/guide/dashboard" />
             <ThemeToggle className="flex-shrink-0" />
-            <Link href="/trips" className="text-[#1A6B4A] text-sm font-medium flex items-center gap-1 hover:underline">
-              🧭 גלה טיולים
-            </Link>
             {guide && (
               <span className="text-xs text-fg-faint">
                 ★{guide.rating > 0 ? guide.rating.toFixed(1) : "—"} · {guide.reviewCount} ביקורות
