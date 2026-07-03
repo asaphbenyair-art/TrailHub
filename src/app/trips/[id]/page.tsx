@@ -42,16 +42,31 @@ function formatDuration(min: number) {
   return m ? `${h}:${String(m).padStart(2, "0")}` : `${h}`;
 }
 
-interface Review { id: string; rating: number; comment: string | null; user: { name: string | null } }
+interface Review { id: string; rating: number; comment: string | null; userId?: string; createdAt?: string; user: { name: string | null } }
 interface SourceMaterial { type: "pdf" | "link"; url: string; title: string; description?: string }
 interface Waypoint { lat: number; lng: number; label: string; description?: string; sources?: SourceMaterial[] }
 
 // ── Section heading (Playfair) ──
-function Heading({ icon: Icon, children }: { icon: React.ElementType; children: React.ReactNode }) {
+function Heading({ icon: Icon, children, right }: { icon: React.ElementType; children: React.ReactNode; right?: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 mb-3">
       <Icon size={16} style={{ color: "var(--accent)" }} strokeWidth={2} />
       <h2 className="font-display text-lg text-fg">{children}</h2>
+      {right && <div className="mr-auto">{right}</div>}
+    </div>
+  );
+}
+
+/** "שלי" / "אחרים" segmented toggle for Q&A and Reviews sections. */
+function SelfOthersToggle({ view, onChange }: { view: "mine" | "others"; onChange: (v: "mine" | "others") => void }) {
+  return (
+    <div className="inline-flex bg-surface-2 rounded-full p-0.5 text-[11px]">
+      {(["mine", "others"] as const).map((v) => (
+        <button key={v} type="button" onClick={() => onChange(v)}
+          className={`px-3 py-1 rounded-full font-medium transition-colors ${view === v ? "bg-[#1A6B4A] text-white" : "text-fg-muted"}`}>
+          {v === "mine" ? "שלי" : "אחרים"}
+        </button>
+      ))}
     </div>
   );
 }
@@ -440,7 +455,9 @@ export default function TripDetailPage() {
 
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewComment, setReviewComment] = useState("");
-  const [reviewDone, setReviewDone] = useState(false);
+  const [qaView, setQaView] = useState<"mine" | "others">("mine");
+  const [reviewView, setReviewView] = useState<"mine" | "others">("mine");
+  const [editingReview, setEditingReview] = useState(false);
 
   async function submitReview() {
     if (!reviewRating) return;
@@ -448,7 +465,18 @@ export default function TripDetailPage() {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ rating: reviewRating, comment: reviewComment }),
     });
-    if (res.ok) setReviewDone(true);
+    if (res.ok) {
+      setEditingReview(false);
+      // Reflect the change locally so the "שלי" tab shows the updated review.
+      setTrip((prev) => {
+        if (!prev) return prev;
+        const mine = prev.reviews.find((rv) => rv.userId === meId);
+        const updated = mine
+          ? prev.reviews.map((rv) => (rv.userId === meId ? { ...rv, rating: reviewRating, comment: reviewComment || null } : rv))
+          : [{ id: "mine-temp", rating: reviewRating, comment: reviewComment || null, userId: meId, user: { name: (session?.user as { name?: string })?.name ?? null } }, ...prev.reviews];
+        return { ...prev, reviews: updated };
+      });
+    }
   }
 
   const isSelfGuided = trip?.tripType === "SELF_GUIDED";
@@ -985,11 +1013,20 @@ export default function TripDetailPage() {
           {/* ── 14. Q&A (official first) ── */}
           {!isSelfGuided && (
             <div id="qa-section" style={{ scrollMarginTop: 80 }}>
-              <Heading icon={MessageCircle}>שאלות ותשובות</Heading>
-              {sortedQuestions.length === 0 && <p className="text-xs text-fg-faint mb-3">אין שאלות עדיין. שאל את המדריך!</p>}
-              {sortedQuestions.length > 0 && (
+              <Heading icon={MessageCircle} right={<SelfOthersToggle view={qaView} onChange={setQaView} />}>שאלות ותשובות</Heading>
+              {(() => {
+                const shown = qaView === "mine"
+                  ? sortedQuestions.filter((q) => q.userId === meId)
+                  : sortedQuestions.filter((q) => q.userId !== meId);
+                return (<>
+              {shown.length === 0 && (
+                <p className="text-xs text-fg-faint mb-3">
+                  {qaView === "mine" ? "לא שאלת שאלות עדיין." : "אין שאלות ממטיילים אחרים עדיין."}
+                </p>
+              )}
+              {shown.length > 0 && (
                 <div className="flex flex-col gap-3 mb-3">
-                  {sortedQuestions.map((q) => (
+                  {shown.map((q) => (
                     <div key={q.id} id={`qa-${q.id}`} style={{ scrollMarginTop: 80 }} className="rounded-2xl p-3.5 border border-border bg-surface">
                       {q.official && <div className="text-[10px] font-semibold text-amber mb-1.5">★ תשובה רשמית</div>}
                       {q.isPrivate && <div className="text-[10px] font-semibold text-[#185FA5] mb-1.5">🔒 שאלה פרטית — גלויה לך ולמדריך בלבד</div>}
@@ -1037,6 +1074,8 @@ export default function TripDetailPage() {
                   ))}
                 </div>
               )}
+                </>);
+              })()}
               {session ? (
                 <div className="flex flex-col gap-2">
                   <div className="flex gap-2">
@@ -1062,52 +1101,87 @@ export default function TripDetailPage() {
             </div>
           )}
 
-          {/* Write a review (eligible) */}
-          {session && (!!myRegStatus || purchase?.purchased) && (
-            <div className="rounded-2xl p-3.5 border" style={{ background: "rgba(61,143,95,0.08)", borderColor: "rgba(61,143,95,0.25)" }}>
-              {reviewDone ? (
-                <div className="text-xs text-accent">תודה! הביקורת נשמרה.</div>
-              ) : !reviewUnlocked ? (
-                <div className="text-xs text-fg-muted">🔒 ניתן לכתוב ביקורת החל משעה לפני סיום הטיול</div>
-              ) : (
-                <>
-                  <div className="text-sm font-semibold text-fg mb-1.5">כתוב ביקורת</div>
-                  <div className="flex gap-1 mb-2">
-                    {[1, 2, 3, 4, 5].map((n) => (
-                      <button key={n} type="button" onClick={() => setReviewRating(n)}>
-                        <Star size={22} fill={n <= reviewRating ? "#e0b64a" : "none"} color={n <= reviewRating ? "#e0b64a" : "var(--fg-faint)"} />
-                      </button>
-                    ))}
-                  </div>
-                  <textarea value={reviewComment} onChange={(e) => setReviewComment(e.target.value)} rows={2} placeholder="ספר על החוויה (אופציונלי)"
-                    className="w-full rounded-lg px-3 py-2 text-sm resize-none mb-2 bg-surface border border-border text-fg placeholder:text-fg-faint focus:outline-none focus:border-accent" />
-                  <button type="button" onClick={submitReview} disabled={!reviewRating}
-                    className="px-4 py-1.5 rounded-full text-xs font-medium disabled:opacity-50" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>שלח ביקורת</button>
-                </>
-              )}
-            </div>
-          )}
+          {/* ── 15. Reviews — "שלי" / "אחרים" toggle; own review is editable ── */}
+          {(() => {
+            const eligible = !!session && (!!myRegStatus || !!purchase?.purchased);
+            const myReview = meId ? trip.reviews.find((rv) => rv.userId === meId) : undefined;
+            const otherReviews = trip.reviews.filter((rv) => rv.userId !== meId);
+            if (trip.reviews.length === 0 && !eligible) return null;
 
-          {/* ── 15. Reviews (all, no pagination) ── */}
-          {trip.reviews.length > 0 && (
-            <div>
-              <Heading icon={Star}>ביקורות ({trip.reviews.length})</Heading>
-              <div className="flex flex-col gap-2">
-                {trip.reviews.map((rev) => (
-                  <div key={rev.id} className="rounded-2xl p-3.5 border border-border bg-surface">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-medium text-white shrink-0" style={{ background: avatarColor(rev.user.name) }}>{initials(rev.user.name)}</div>
-                      <span className="text-xs font-medium text-fg">{rev.user.name}</span>
-                      <span className="flex items-center gap-0.5 mr-auto">
-                        {[1, 2, 3, 4, 5].map((n) => <Star key={n} size={12} fill={n <= rev.rating ? "#e0b64a" : "none"} color={n <= rev.rating ? "#e0b64a" : "var(--fg-faint)"} />)}
-                      </span>
-                    </div>
-                    {rev.comment && <p className="text-xs text-fg-muted leading-relaxed">{rev.comment}</p>}
-                  </div>
-                ))}
+            const reviewCard = (rev: Review) => (
+              <div key={rev.id} className="rounded-2xl p-3.5 border border-border bg-surface">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-medium text-white shrink-0" style={{ background: avatarColor(rev.user.name) }}>{initials(rev.user.name)}</div>
+                  <span className="text-xs font-medium text-fg">{rev.user.name}</span>
+                  <span className="flex items-center gap-0.5 mr-auto">
+                    {[1, 2, 3, 4, 5].map((n) => <Star key={n} size={12} fill={n <= rev.rating ? "#e0b64a" : "none"} color={n <= rev.rating ? "#e0b64a" : "var(--fg-faint)"} />)}
+                  </span>
+                </div>
+                {rev.comment && <p className="text-xs text-fg-muted leading-relaxed">{rev.comment}</p>}
               </div>
-            </div>
-          )}
+            );
+
+            const reviewForm = (
+              <div className="rounded-2xl p-3.5 border" style={{ background: "rgba(61,143,95,0.08)", borderColor: "rgba(61,143,95,0.25)" }}>
+                <div className="text-sm font-semibold text-fg mb-1.5">{myReview ? "עריכת הביקורת שלך" : "כתוב ביקורת"}</div>
+                <div className="flex gap-1 mb-2">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button key={n} type="button" onClick={() => setReviewRating(n)}>
+                      <Star size={22} fill={n <= reviewRating ? "#e0b64a" : "none"} color={n <= reviewRating ? "#e0b64a" : "var(--fg-faint)"} />
+                    </button>
+                  ))}
+                </div>
+                <textarea value={reviewComment} onChange={(e) => setReviewComment(e.target.value)} rows={2} placeholder="ספר על החוויה (אופציונלי)"
+                  className="w-full rounded-lg px-3 py-2 text-sm resize-none mb-2 bg-surface border border-border text-fg placeholder:text-fg-faint focus:outline-none focus:border-accent" />
+                <div className="flex gap-2">
+                  <button type="button" onClick={submitReview} disabled={!reviewRating}
+                    className="px-4 py-1.5 rounded-full text-xs font-medium disabled:opacity-50" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
+                    {myReview ? "שמור שינויים" : "שלח ביקורת"}
+                  </button>
+                  {myReview && editingReview && (
+                    <button type="button" onClick={() => setEditingReview(false)}
+                      className="px-4 py-1.5 rounded-full text-xs font-medium text-fg-muted border border-border">ביטול</button>
+                  )}
+                </div>
+              </div>
+            );
+
+            return (
+              <div>
+                <Heading icon={Star} right={eligible ? <SelfOthersToggle view={reviewView} onChange={(v) => { setReviewView(v); setEditingReview(false); }} /> : undefined}>
+                  ביקורות ({trip.reviews.length})
+                </Heading>
+                {eligible && reviewView === "mine" ? (
+                  <div className="flex flex-col gap-2">
+                    {myReview && !editingReview ? (
+                      <>
+                        {reviewCard(myReview)}
+                        <button type="button"
+                          onClick={() => { setReviewRating(myReview.rating); setReviewComment(myReview.comment ?? ""); setEditingReview(true); }}
+                          className="self-start px-4 py-1.5 rounded-full text-xs font-medium border" style={{ borderColor: "rgba(61,143,95,0.4)", color: "var(--accent)" }}>
+                          ✏️ ערוך ביקורת
+                        </button>
+                      </>
+                    ) : !reviewUnlocked && !myReview ? (
+                      <div className="rounded-2xl p-3.5 border text-xs text-fg-muted" style={{ background: "rgba(61,143,95,0.08)", borderColor: "rgba(61,143,95,0.25)" }}>
+                        🔒 ניתן לכתוב ביקורת החל משעה לפני סיום הטיול
+                      </div>
+                    ) : (
+                      reviewForm
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {(eligible ? otherReviews : trip.reviews).length === 0 ? (
+                      <p className="text-xs text-fg-faint">אין ביקורות ממטיילים אחרים עדיין.</p>
+                    ) : (
+                      (eligible ? otherReviews : trip.reviews).map(reviewCard)
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* ── 16. Rideshare board ── */}
           {/* ── Fellow registrants (visible to registrants/interested) ── */}
