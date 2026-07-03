@@ -32,14 +32,17 @@ function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-// Availability color for a day's trips
-function dayBadgeStyle(dayTrips: Trip[]): { bg: string; text: string } | null {
+// Availability for a day's trips: the badge shows REMAINING SPOTS (not trip count).
+// green = plenty, amber = almost full (<20% left), red + lock = completely full.
+function dayBadgeStyle(dayTrips: Trip[]): { bg: string; text: string; remaining: number; full: boolean } | null {
   if (!dayTrips.length) return null;
-  const allFull = dayTrips.every(t => t.status === "FULL" || t.spotsBooked >= t.maxSpots);
-  const anyAlmostFull = dayTrips.some(t => t.maxSpots > 0 && t.spotsBooked / t.maxSpots >= 0.8);
-  if (allFull) return { bg: "#FADBD8", text: "#791F1F" };
-  if (anyAlmostFull) return { bg: "#FAEEDA", text: "#633806" };
-  return { bg: "#D6EDE3", text: "#0F5038" };
+  let remaining = 0, capacity = 0;
+  for (const t of dayTrips) { remaining += Math.max(t.maxSpots - t.spotsBooked, 0); capacity += t.maxSpots; }
+  const full = remaining === 0;
+  const ratio = capacity > 0 ? remaining / capacity : 0;
+  if (full) return { bg: "#FADBD8", text: "#791F1F", remaining, full };
+  if (ratio < 0.2) return { bg: "#FAEEDA", text: "#633806", remaining, full };
+  return { bg: "#D6EDE3", text: "#0F5038", remaining, full };
 }
 
 export interface DateRange { start: Date | null; end: Date | null }
@@ -229,17 +232,15 @@ function CompactMonthPanel({
               }`}>
                 {dayLabel}
               </span>
-              {count > 0 && (
+              {count > 0 && badge && (
                 <span
                   className="mt-0.5 min-w-[14px] h-[14px] rounded-full text-[9px] font-bold flex items-center justify-center px-0.5 leading-none"
                   style={isSelected
                     ? { background: "rgba(255,255,255,0.25)", color: "#fff" }
-                    : (badge ?? { bg: "#ddd", text: "#666" })
-                    ? { background: (badge ?? { bg: "#ddd" }).bg, color: (badge ?? { text: "#666" }).text }
-                    : {}
-                  }
+                    : { background: badge.bg, color: badge.text }}
+                  title={badge.full ? "מלא" : `${badge.remaining} מקומות פנויים`}
                 >
-                  {count > 9 ? "9+" : count}
+                  {badge.full ? "🔒" : badge.remaining > 99 ? "99+" : badge.remaining}
                 </span>
               )}
             </button>
@@ -249,15 +250,15 @@ function CompactMonthPanel({
 
       {/* Legend */}
       <div className="mt-3 pt-2 border-t border-border flex flex-col gap-1">
-        <div className="text-[9px] text-fg-faint font-medium mb-0.5">מספר הטיולים ביום</div>
+        <div className="text-[9px] text-fg-faint font-medium mb-0.5">מקומות פנויים ביום</div>
         {[
-          { bg: "#D6EDE3", text: "#0F5038", label: "יש מקומות" },
-          { bg: "#FAEEDA", text: "#633806", label: "כמעט מלא" },
-          { bg: "#FADBD8", text: "#791F1F", label: "מלא" },
+          { bg: "#D6EDE3", text: "#0F5038", label: "יש מקומות", icon: "5" },
+          { bg: "#FAEEDA", text: "#633806", label: "כמעט מלא", icon: "2" },
+          { bg: "#FADBD8", text: "#791F1F", label: "מלא", icon: "🔒" },
         ].map((item) => (
           <div key={item.label} className="flex items-center gap-1.5">
             <span className="w-3.5 h-3.5 rounded-full text-[9px] font-bold flex items-center justify-center"
-              style={{ background: item.bg, color: item.text }}>1</span>
+              style={{ background: item.bg, color: item.text }}>{item.icon}</span>
             <span className="text-[9px] text-fg-muted">{item.label}</span>
           </div>
         ))}

@@ -34,10 +34,18 @@ export default async function Home() {
 
   // Logged-out → splash: full-bleed hand-drawn trail image + overlay
   return (
-    <main dir="rtl" className="relative min-h-screen flex flex-col justify-end overflow-hidden">
+    <main dir="rtl" className="relative min-h-screen flex flex-col justify-end overflow-hidden" style={{ background: "#0d1a0f" }}>
       {/* Portrait sketch cropped to fill the screen (don't rotate). */}
+      {/* Optimised WebP (~300KB), eager + high priority so it paints fast. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/splash-trail.jpg" alt="" className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: "center" }} />
+      <img
+        src="/splash-trail.webp"
+        alt=""
+        loading="eager"
+        fetchPriority="high"
+        className="absolute inset-0 w-full h-full object-cover"
+        style={{ objectPosition: "center" }}
+      />
       {/* Dark overlay for readability */}
       <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.45)" }} />
 
