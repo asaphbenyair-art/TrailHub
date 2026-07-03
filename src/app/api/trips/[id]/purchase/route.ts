@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { simIntentId } from "@/lib/payment";
+import { canManageTrip } from "@/lib/tripAccess";
 
 // GET → does the current user have access (own purchase OR shared with them)?
 export async function GET(
@@ -11,6 +12,13 @@ export async function GET(
   const session = await auth();
   if (!session?.user) return NextResponse.json({ purchased: false });
   const { id } = await params;
+
+  // The trip's own guide / co-managers / admin can always preview the content
+  // (no purchase needed) — otherwise they'd be locked out of their own trip.
+  const role = (session.user as { role?: string }).role;
+  if (await canManageTrip(id, session.user.id!, role)) {
+    return NextResponse.json({ purchased: true, owner: false, expired: false, canManage: true });
+  }
 
   const p = await prisma.selfGuidedPurchase.findUnique({
     where: { tripId_userId: { tripId: id, userId: session.user.id! } },

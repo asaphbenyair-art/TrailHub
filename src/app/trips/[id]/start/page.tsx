@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import ElevationChart, { parseTrack } from "@/components/ElevationChart";
 
 const TripDetailMap = dynamic(() => import("@/components/TripDetailMap"), { ssr: false });
 
@@ -12,6 +13,7 @@ interface Trip {
   id: string; title: string; description: string | null; whatToBring: string | null; region: string;
   waypointsJson: Waypoint[] | null;
   sourceMaterials: SourceMaterial[] | null;
+  routeGpx?: string | null;
 }
 
 function speak(text: string) {
@@ -77,6 +79,7 @@ export default function SelfGuidedStartPage() {
   const [shareEmails, setShareEmails] = useState<string[]>(["", "", ""]);
   const [shareMsg, setShareMsg] = useState("");
   const [focusWp, setFocusWp] = useState<number | null>(null);
+  const [hoverCoord, setHoverCoord] = useState<[number, number] | null>(null);
   const mapWrapRef = useRef<HTMLDivElement>(null);
 
   const cacheKey = `trailhub_offline_${id}`;
@@ -121,9 +124,12 @@ export default function SelfGuidedStartPage() {
 
   if (loading || allowed === null) return <div dir="rtl" className="min-h-screen flex items-center justify-center text-fg-faint text-sm">טוען...</div>;
   if (!allowed) return (
-    <div dir="rtl" className="min-h-screen flex flex-col items-center justify-center gap-3 text-sm text-fg-muted">
-      אין לך גישה לתוכן זה
-      <button type="button" onClick={() => router.push(`/trips/${id}`)} className="text-[#1A6B4A] underline">חזרה לדף הטיול</button>
+    <div dir="rtl" className="min-h-screen flex flex-col items-center justify-center gap-3 text-sm text-fg-muted px-6 text-center">
+      <div>אין לך גישה לתוכן זה — יש לרכוש את הטיול תחילה.</div>
+      <div className="flex gap-2">
+        <button type="button" onClick={() => router.push(`/trips/${id}`)} className="px-4 py-2 rounded-full font-medium text-white" style={{ background: "#1A6B4A" }}>חזרה לדף הטיול</button>
+        <button type="button" onClick={() => router.push("/trips")} className="px-4 py-2 rounded-full font-medium border border-border text-fg-muted">חזרה לחיפוש</button>
+      </div>
     </div>
   );
   if (!trip) return null;
@@ -144,7 +150,11 @@ export default function SelfGuidedStartPage() {
     <div dir="rtl" className="min-h-screen bg-bg py-4 px-3">
       <div className="max-w-[480px] mx-auto pb-10">
         <div className="flex items-center gap-3 mb-3">
-          <button type="button" onClick={() => router.push(`/trips/${id}`)} className="text-fg-faint hover:text-fg-muted text-sm">← חזרה</button>
+          <button type="button" onClick={() => router.push(`/trips/${id}`)}
+            className="text-[11px] font-medium rounded-full px-3 py-1.5 shrink-0 flex items-center gap-1"
+            style={{ background: "var(--surface-2)", color: "var(--fg)" }}>
+            ← צא מהטיול
+          </button>
           <h1 className="text-sm font-semibold text-fg flex-1 truncate">טיול עצמאי — {trip.title}</h1>
           {offlineSaved ? (
             <button type="button" onClick={removeOffline} className="text-[11px] text-[#0F5038] border border-[#1A6B4A]/30 rounded-full px-2.5 py-1 shrink-0">✓ זמין לא מקוון</button>
@@ -162,16 +172,28 @@ export default function SelfGuidedStartPage() {
           📍 הנקודה הכחולה במפה מציגה את מיקומך בזמן אמת. כל תחנה כוללת הנחיות והסבר עם אפשרות הקראה.
         </div>
 
-        {/* Live map with blue dot */}
+        {/* Live map with blue dot + elevation-hover marker */}
         <div className="mb-3" ref={mapWrapRef}>
           <TripDetailMap
             region={trip.region}
             waypoints={mapPts.map((p) => ({ lat: p.lat, lng: p.lng, label: p.label }))}
             focusWaypoint={focusWp}
+            hoverCoord={hoverCoord}
             height={220}
             liveLocation
           />
         </div>
+
+        {/* Interactive elevation profile — synced with the map above */}
+        {(() => {
+          const track = parseTrack(trip.routeGpx);
+          if (track.length < 2) return null;
+          return (
+            <div className="mb-3">
+              <ElevationChart track={track} waypoints={mapPts.map((p) => ({ lat: p.lat, lng: p.lng, label: p.label }))} onHover={setHoverCoord} />
+            </div>
+          );
+        })()}
 
         {/* Share access (owner only, up to 3 people) */}
         {isOwner && !offlineMode && (
