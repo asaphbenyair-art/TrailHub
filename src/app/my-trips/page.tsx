@@ -9,7 +9,8 @@ import AvatarMenu from "@/components/AvatarMenu";
 import Brand from "@/components/Brand";
 import ThemeToggle from "@/components/ThemeToggle";
 import ModeIndicator from "@/components/ModeIndicator";
-import { useDateFmt } from "@/components/CalendarModeProvider";
+import { useDateFmt, useCalendarMode } from "@/components/CalendarModeProvider";
+import { formatDualDate } from "@/lib/hebrewDate";
 
 const DIFF_LABEL: Record<string, string> = { EASY: "קל", MEDIUM: "בינוני", HARD: "קשה", EXTREME: "קיצוני" };
 
@@ -95,6 +96,7 @@ function TripCard({
   onCancel: (id: string) => void;
 }) {
   const dfmt = useDateFmt();
+  const { mode } = useCalendarMode();
   const { trip, status } = reg;
   const router = useRouter();
   const isPast = new Date(trip.date) < now;
@@ -143,7 +145,7 @@ function TripCard({
           </div>
           <div className="text-sm font-medium text-fg leading-snug mb-1 truncate">{trip.title}</div>
           <div className="flex flex-col gap-0.5 text-xs text-fg-muted">
-            <span>📅 {isPast ? dfmt(trip.date, { long: true, weekday: true, greg: { weekday: "long", day: "numeric", month: "long" } }) : dfmt(trip.date, { greg: { weekday: "short", day: "numeric", month: "short" } })} · {trip.startTime}</span>
+            <span>📅 {formatDualDate(trip.date, mode)} · {trip.startTime}</span>
             <span>👤 {guideName}</span>
             {trip.meetingPoint && <span>📍 {trip.meetingPoint}</span>}
           </div>
@@ -226,7 +228,7 @@ function TripCard({
               <a href={googleCalendarUrl({ title: trip.title, dateISO: trip.date, startTime: trip.startTime, location: trip.meetingPoint })}
                 target="_blank" rel="noreferrer"
                 className="px-2.5 py-1 border border-[#185FA5]/30 text-[#185FA5] rounded-full text-[11px]">📅 ליומן</a>
-              <button type="button" onClick={() => router.push(`/trips/${trip.id}`)}
+              <button type="button" onClick={() => router.push(`/trips/${trip.id}?scroll=qa-section`)}
                 className="px-2.5 py-1 border border-border rounded-full text-[11px] text-fg-muted">
                 שאלה למדריך
               </button>

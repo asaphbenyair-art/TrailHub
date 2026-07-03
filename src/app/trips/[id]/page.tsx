@@ -849,7 +849,7 @@ export default function TripDetailPage() {
 
           {/* ── 14. Q&A (official first) ── */}
           {!isSelfGuided && (
-            <div>
+            <div id="qa-section" style={{ scrollMarginTop: 80 }}>
               <Heading icon={MessageCircle}>שאלות ותשובות</Heading>
               {sortedQuestions.length === 0 && <p className="text-xs text-fg-faint mb-3">אין שאלות עדיין. שאל את המדריך!</p>}
               {sortedQuestions.length > 0 && (

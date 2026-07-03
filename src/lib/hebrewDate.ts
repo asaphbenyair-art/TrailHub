@@ -17,6 +17,21 @@ export function weekdayHe(date: string | Date): string {
   return new Date(date).toLocaleDateString("he-IL", { weekday: "short" });
 }
 
+const GREG_MONTHS_HE = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"];
+
+/**
+ * Both dates together, ordered by preference:
+ *  - gregorian pref → "10 יולי (כ׳ תמוז)"
+ *  - hebrew pref    → "כ׳ תמוז (10 יולי)"
+ */
+export function formatDualDate(date: string | Date, mode: CalendarMode): string {
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "";
+  const greg = `${d.getDate()} ${GREG_MONTHS_HE[d.getMonth()]}`;
+  const heb = toHebrewDate(date, { long: false });
+  return mode === "hebrew" ? `${heb} (${greg})` : `${greg} (${heb})`;
+}
+
 /** Hebrew day-of-month as gematriya for a Gregorian date, e.g. "ט״ו". */
 export function hebrewDayNum(date: string | Date): string {
   const d = new Date(date);
