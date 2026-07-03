@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { BrandSlogan } from "@/components/Brand";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -31,6 +32,7 @@ function GoogleIcon() {
 
 export default function LoginPage() {
   const router = useRouter();
+  const ta = useTranslations("auth");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -102,7 +104,7 @@ export default function LoginPage() {
                 className="w-full flex items-center justify-center gap-3 border border-border rounded-full py-3 text-sm font-medium text-fg hover:bg-surface-2 transition-colors disabled:opacity-60"
               >
                 <GoogleIcon />
-                {googleLoading ? "מתחבר..." : "כניסה עם Google"}
+                {googleLoading ? "…" : ta("loginWithGoogle")}
               </button>
 
               <div className="flex items-center gap-3 my-4">
@@ -122,7 +124,7 @@ export default function LoginPage() {
             )}
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-fg-muted">אימייל</label>
+              <label className="text-xs text-fg-muted">{ta("email")}</label>
               <input
                 type="email"
                 value={email}
@@ -135,7 +137,7 @@ export default function LoginPage() {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-fg-muted">סיסמה</label>
+              <label className="text-xs text-fg-muted">{ta("password")}</label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
@@ -159,7 +161,7 @@ export default function LoginPage() {
 
             <div className="-mt-1 text-left">
               <Link href="/auth/forgot" className="text-xs text-[#1A6B4A] hover:underline">
-                שכחת סיסמה?
+                {ta("forgotPassword")}
               </Link>
             </div>
 
@@ -168,15 +170,13 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full bg-[#1A6B4A] text-white rounded-full py-3 text-sm font-medium mt-1 disabled:opacity-60 hover:bg-[#155a3e] transition-colors"
             >
-              {loading ? "מתחבר..." : "כניסה"}
+              {loading ? "…" : ta("login")}
             </button>
           </form>
 
           <div className="px-6 pb-6 text-center text-sm text-fg-muted">
-            אין לך חשבון?{" "}
-            <Link href="/auth/register" className="text-[#1A6B4A] font-medium hover:underline">
-              הרשמה
-            </Link>
+            {ta("noAccount")}{" "}
+            <Link href="/auth/register" className="text-[#1A6B4A] font-medium hover:underline">{ta("register")}</Link>
           </div>
         </div>
       </div>
