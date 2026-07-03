@@ -152,6 +152,21 @@
     "loginToAsk": "Log in to ask a question",
     "registerToAsk": "Only registered or interested hikers can ask"
   },
+  "broadcast": {
+    "title": "Group messages",
+    "newMessage": "New message",
+    "empty": "No messages sent yet",
+    "cancelTrip": "Trip cancelled",
+    "cancelTripCheckbox": "Trip cancelled (send a cancellation notice)",
+    "send": "Send message",
+    "sendCancel": "Send cancellation notice",
+    "sending": "Sending…",
+    "placeholder": "Write a message to the group…",
+    "cancelPlaceholder": "Explain the cancellation reason…",
+    "errEmpty": "Please write a message",
+    "errReason": "A cancellation requires a reason",
+    "errFailed": "Sending failed"
+  },
   "registrants": {
     "title": "Participants",
     "anonymous": "Anonymous participant",

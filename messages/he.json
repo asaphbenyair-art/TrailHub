@@ -152,6 +152,21 @@
     "loginToAsk": "התחבר כדי לשאול שאלה",
     "registerToAsk": "רק נרשמים ומתעניינים יכולים לשאול"
   },
+  "broadcast": {
+    "title": "הודעות קבוצתיות",
+    "newMessage": "הודעה חדשה",
+    "empty": "עוד לא נשלחו הודעות",
+    "cancelTrip": "הטיול בוטל",
+    "cancelTripCheckbox": "הטיול בוטל (שליחת הודעת ביטול)",
+    "send": "שלח הודעה",
+    "sendCancel": "שלח הודעת ביטול",
+    "sending": "שולח…",
+    "placeholder": "כתוב הודעה לקבוצה…",
+    "cancelPlaceholder": "פרט את סיבת הביטול…",
+    "errEmpty": "יש לכתוב הודעה",
+    "errReason": "ביטול טיול מחייב לציין סיבה",
+    "errFailed": "שליחה נכשלה"
+  },
   "registrants": {
     "title": "משתתפים",
     "anonymous": "משתתף אנונימי",
