@@ -52,6 +52,7 @@ interface Trip {
 
 interface SelfGuidedTrip {
   id: string; title: string; region: string; images: string[]; price: number; status: string;
+  difficulty?: string; visibility?: string; accessWindowDays?: number | null;
   purchaseCount: number; revenue: number; reviewCount: number;
 }
 
@@ -185,36 +186,74 @@ export default function GuideDashboard() {
           <div className="flex flex-col gap-3">
             {selfGuided.length === 0 ? (
               <div className="bg-surface rounded-2xl border border-border p-10 text-center shadow-sm text-fg-muted text-sm">עוד אין טיולים עצמאיים</div>
-            ) : selfGuided.map((t) => (
-              <div key={t.id} className="bg-surface rounded-2xl border border-border shadow-sm overflow-hidden flex">
-                <div className="w-24 flex-shrink-0" style={{ minHeight: 96 }}>
+            ) : selfGuided.map((t) => {
+              const diffBadge = t.difficulty ? DIFF_BADGE[t.difficulty] : null;
+              const statusBadge = STATUS_BADGE[t.status] ?? STATUS_BADGE.DRAFT;
+              return (
+              <div key={t.id} className="bg-surface rounded-2xl overflow-hidden border border-border shadow-sm">
+                {/* Image — same template as regular guided cards */}
+                <div className="relative cursor-pointer" style={{ height: 150 }} onClick={() => router.push(`/trips/${t.id}`)}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={coverImages(t.images, t.id, { region: t.region, title: t.title })[0]} alt="" className="w-full h-full object-cover" />
+                  <img src={coverImages(t.images, t.id, { region: t.region, title: t.title })[0]} alt={t.title} className="w-full h-full object-cover" />
+
+                  <div className="absolute top-2.5 right-2.5 flex gap-1.5">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: statusBadge.bg, color: statusBadge.color }}>
+                      {statusBadge.label}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-medium text-white" style={{ background: "rgba(61,143,95,0.92)" }}>🎒 עצמאי</span>
+                    {(t.status === "OPEN" || t.status === "FULL") && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium"
+                        style={{ background: t.visibility === "PRIVATE" ? "rgba(0,0,0,0.6)" : "rgba(44,95,138,0.9)", color: "#fff" }}>
+                        {t.visibility === "PRIVATE" ? "🔒 פרטי" : "🌍 ציבורי"}
+                      </span>
+                    )}
+                    {diffBadge && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: diffBadge.bg, color: diffBadge.color }}>
+                        {diffBadge.label}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="absolute top-2.5 left-2.5 flex gap-1.5" onClick={(e) => e.stopPropagation()}>
+                    <button type="button" onClick={() => router.push(`/guide/trips/${t.id}/edit`)}
+                      className="bg-black/50 hover:bg-black/70 text-white rounded-full px-2.5 py-1 text-[11px] transition-colors">✏️ עריכה</button>
+                  </div>
+
+                  <div className="absolute bottom-0 left-0 right-0 px-3 py-2.5" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.65), transparent)" }}>
+                    <div className="text-sm font-medium text-white leading-snug">{t.title}</div>
+                  </div>
                 </div>
-                <div className="flex-1 p-3 min-w-0">
-                  <div className="text-sm font-medium text-fg truncate">{t.title}</div>
-                  <div className="text-[11px] text-fg-faint mb-2">📍 {t.region} · ₪{t.price}</div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[[t.purchaseCount, "רכישות"], [`₪${t.revenue.toLocaleString("he-IL")}`, "הכנסה"], [t.reviewCount, "ביקורות"]].map(([v, l], i) => (
-                      <div key={i} className="bg-surface-2 rounded-lg py-1.5 text-center">
-                        <div className="text-sm font-semibold text-fg">{v}</div>
-                        <div className="text-[10px] text-fg-faint">{l}</div>
-                      </div>
-                    ))}
+
+                {/* Card body — self-guided meta (no capacity/date; no revenue/purchase boxes) */}
+                <div className="px-3 py-2.5">
+                  <div className="flex flex-wrap gap-x-2.5 gap-y-0.5 mb-2">
+                    <span className="text-[11px] text-fg-muted">📍 {t.region}</span>
+                    <span className="text-[11px] text-fg-muted">🔓 גישה ל-{t.accessWindowDays ?? 30} ימים</span>
+                    {t.reviewCount > 0 && <span className="text-[11px] text-fg-muted">⭐ {t.reviewCount} ביקורות</span>}
                   </div>
-                  <div className="flex gap-2 mt-2">
-                    <Link href={`/guide/trips/${t.id}/edit`} className="flex-1 text-center text-[11px] text-fg-muted border border-border rounded-lg py-1.5 hover:bg-surface-2">עריכה</Link>
-                    <Link href={`/trips/${t.id}`} className="flex-1 text-center text-[11px] text-[#1A6B4A] border border-[#1A6B4A]/25 rounded-lg py-1.5 hover:bg-[#D6EDE3]">תצוגה</Link>
+
+                  <div className="flex items-center">
+                    <span className="text-sm font-medium text-fg">
+                      {t.price === 0
+                        ? <span className="px-2 py-0.5 rounded-full text-[13px] font-bold" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>חינם</span>
+                        : <>₪{t.price.toLocaleString("he-IL")}<span className="text-xs font-normal text-fg-faint mr-1">לחבילה</span></>}
+                    </span>
                   </div>
+
                   {(t.status === "DRAFT" || t.status === "PENDING_REVIEW") && (
                     <Link href={`/guide/trips/${t.id}/edit`}
-                      className="block text-center w-full mt-2 py-1.5 text-[11px] font-semibold rounded-lg border-2 border-dashed border-[#1A6B4A] text-[#1A6B4A] hover:bg-[#D6EDE3]">
+                      className="block text-center w-full mt-2 py-1.5 text-xs font-semibold rounded-full border-2 border-dashed border-[#1A6B4A] text-[#1A6B4A] hover:bg-[#D6EDE3]">
                       ✏️ המשך עריכה כדי לפרסם
                     </Link>
                   )}
+
+                  <div className="flex gap-2 mt-2.5 pt-2.5 border-t border-border">
+                    <Link href={`/guide/trips/${t.id}/edit`} className="flex-1 text-center text-[11px] text-fg-muted border border-border rounded-lg py-1.5 hover:bg-surface-2">✏️ עריכה</Link>
+                    <Link href={`/trips/${t.id}`} className="flex-1 text-center text-[11px] text-[#1A6B4A] border border-[#1A6B4A]/25 bg-[#F0FAF5] rounded-lg py-1.5 hover:bg-[#D6EDE3]">👁 תצוגה</Link>
+                  </div>
                 </div>
               </div>
-            ))}
+            );})}
           </div>
         )}
 

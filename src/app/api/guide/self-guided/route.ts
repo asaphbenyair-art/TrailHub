@@ -15,6 +15,7 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
     select: {
       id: true, title: true, region: true, images: true, price: true, status: true, accessWindowDays: true,
+      difficulty: true, visibility: true,
       _count: { select: { purchases: true, reviews: true } },
       purchases: { where: { revoked: false }, select: { price: true } },
     },
@@ -22,7 +23,7 @@ export async function GET() {
 
   const result = trips.map((t) => ({
     id: t.id, title: t.title, region: t.region, images: t.images, price: t.price, status: t.status,
-    accessWindowDays: t.accessWindowDays,
+    accessWindowDays: t.accessWindowDays, difficulty: t.difficulty, visibility: t.visibility,
     purchaseCount: t.purchases.length,
     revenue: t.purchases.reduce((s, p) => s + p.price, 0),
     reviewCount: t._count.reviews,
