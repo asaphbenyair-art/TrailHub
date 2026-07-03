@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import NotificationBell from "@/components/NotificationBell";
 import ModeIndicator from "@/components/ModeIndicator";
+import { useTranslations } from "next-intl";
 import AvatarMenu from "@/components/AvatarMenu";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { coverImages } from "@/lib/tripImage";
@@ -73,6 +74,7 @@ function formatDuration(min: number) {
 
 export default function GuideDashboard() {
   const router = useRouter();
+  const tg = useTranslations("guide");
   const dfmt = useDateFmt();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [guide, setGuide] = useState<Guide | null>(null);
@@ -149,7 +151,7 @@ export default function GuideDashboard() {
               href={tab === "selfguided" ? "/guide/trips/new?type=self_guided" : "/guide/trips/new"}
               className="bg-[#1A6B4A] text-white text-sm rounded-full px-4 py-2 font-medium hover:bg-[#155a3e] transition-colors whitespace-nowrap"
             >
-              {tab === "selfguided" ? "+ טיול עצמאי" : "+ טיול חדש"}
+              {tab === "selfguided" ? `+ ${tg("newSelfGuided")}` : `+ ${tg("newTrip")}`}
             </Link>
             <AvatarMenu />
           </div>
@@ -157,7 +159,7 @@ export default function GuideDashboard() {
 
         {/* Tabs */}
         <div className="bg-surface rounded-xl overflow-hidden flex shadow-sm">
-          {([["trips", "הטיולים שלי"], ["selfguided", "עצמאיים"], ["stats", "סטטיסטיקות"]] as const).map(([k, label]) => (
+          {([["trips", tg("myTrips")], ["selfguided", tg("selfGuidedTab")], ["stats", tg("stats")]] as const).map(([k, label]) => (
             <button key={k} type="button" onClick={() => setTab(k)}
               className={`flex-1 py-2.5 text-xs font-medium border-b-2 transition-colors ${
                 tab === k ? "border-[#1A6B4A] text-[#1A6B4A]" : "border-transparent text-fg-faint"}`}>
@@ -232,7 +234,7 @@ export default function GuideDashboard() {
                   {(t.status === "DRAFT" || t.status === "PENDING_REVIEW") && (
                     <Link href={`/guide/trips/${t.id}/edit`}
                       className="block text-center w-full mt-2 py-1.5 text-xs font-semibold rounded-full border-2 border-dashed border-[#1A6B4A] text-[#1A6B4A] hover:bg-[#D6EDE3]">
-                      ✏️ המשך עריכה כדי לפרסם
+                      ✏️ {tg("continueEditing")}
                     </Link>
                   )}
 
@@ -255,12 +257,12 @@ export default function GuideDashboard() {
           const cancelled = trips.filter((t) => t.status === "CANCELLED").length;
           const completionRate = trips.length > 0 ? Math.round((completed / trips.length) * 100) : 0;
           const cards = [
-            { v: `₪${revenue.toLocaleString("he-IL")}`, l: "הכנסה" },
-            { v: trips.length, l: "טיולים" },
-            { v: registrants, l: "נרשמים" },
-            { v: guide && guide.rating > 0 ? `★${guide.rating.toFixed(1)}` : "—", l: "דירוג ממוצע" },
-            { v: `${completionRate}%`, l: "אחוז השלמה" },
-            { v: cancelled, l: "ביטולים" },
+            { v: `₪${revenue.toLocaleString("he-IL")}`, l: tg("revenue") },
+            { v: trips.length, l: tg("trips") },
+            { v: registrants, l: tg("registrants") },
+            { v: guide && guide.rating > 0 ? `★${guide.rating.toFixed(1)}` : "—", l: tg("avgRating") },
+            { v: `${completionRate}%`, l: tg("completionRate") },
+            { v: cancelled, l: tg("cancellations") },
           ];
           return (
             <div className="bg-surface rounded-2xl border border-border shadow-sm p-4 grid grid-cols-3 gap-2">
@@ -277,12 +279,12 @@ export default function GuideDashboard() {
         {!loading && tab === "trips" && trips.length === 0 && (
           <div className="bg-surface rounded-2xl border border-border p-10 text-center shadow-sm">
             <div className="text-4xl mb-3">🥾</div>
-            <p className="text-fg-muted text-sm mb-4">עוד לא יצרת טיולים</p>
+            <p className="text-fg-muted text-sm mb-4">{tg("noTrips")}</p>
             <Link
               href="/guide/trips/new"
               className="bg-[#1A6B4A] text-white text-sm rounded-full px-6 py-2.5 font-medium hover:bg-[#155a3e] transition-colors"
             >
-              צור טיול ראשון
+              {tg("createFirst")}
             </Link>
           </div>
         )}
@@ -416,7 +418,7 @@ export default function GuideDashboard() {
                   {(trip.status === "DRAFT" || trip.status === "PENDING_REVIEW" || trip.status === "REJECTED") && (
                     <Link href={`/guide/trips/${trip.id}/edit`} onClick={(e) => e.stopPropagation()}
                       className="block text-center w-full mt-2 py-1.5 text-xs font-semibold rounded-full border-2 border-dashed border-[#1A6B4A] text-[#1A6B4A] hover:bg-[#D6EDE3] transition-colors">
-                      ✏️ המשך עריכה כדי לפרסם
+                      ✏️ {tg("continueEditing")}
                     </Link>
                   )}
 
@@ -427,13 +429,13 @@ export default function GuideDashboard() {
                       onClick={(e) => { e.stopPropagation(); setRegistrantsModal({ id: trip.id, title: trip.title }); }}
                       className="flex-1 text-center text-[11px] text-[#7A5010] border border-[#E8A020]/30 bg-[#FDF6E8] rounded-lg py-1.5 hover:bg-[#FBEFD5] transition-colors"
                     >
-                      👥 נרשמים
+                      👥 {tg("registrants")}
                     </button>
                     <Link
                       href={`/guide/trips/${trip.id}/qa`}
                       className="flex-1 text-center text-[11px] text-[#1A6B4A] border border-[#1A6B4A]/25 bg-[#F0FAF5] rounded-lg py-1.5 hover:bg-[#D6EDE3] transition-colors"
                     >
-                      💬 שאלות
+                      💬 {tg("questions")}
                     </Link>
                   </div>
 
@@ -442,12 +444,12 @@ export default function GuideDashboard() {
                     <div className="flex gap-2 mt-2">
                       <button type="button" onClick={() => setBroadcastModal({ id: trip.id, title: trip.title })}
                         className="flex-1 text-center text-[11px] text-fg-muted border border-border rounded-lg py-1.5 hover:bg-surface-2 transition-colors">
-                        📢 הודעות קבוצתיות
+                        📢 {tg("broadcasts")}
                       </button>
                       <a href={googleCalendarUrl({ title: trip.title, dateISO: trip.date, startTime: trip.startTime, location: trip.region })}
                         target="_blank" rel="noreferrer"
                         className="flex-1 text-center text-[11px] text-[#185FA5] border border-[#185FA5]/30 rounded-lg py-1.5 hover:bg-[#EEF5FC] transition-colors">
-                        📅 ליומן
+                        📅 {tg("addToCalendar")}
                       </a>
                       {trip.visibility === "PRIVATE" && (
                         <button type="button" onClick={() => copyLink(trip.id)}
