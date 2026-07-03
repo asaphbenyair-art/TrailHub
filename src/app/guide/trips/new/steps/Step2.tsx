@@ -6,6 +6,7 @@ import { WizardData, WaypointData } from "../types";
 import SourceMaterialsEditor from "./SourceMaterialsEditor";
 
 const TripMap = dynamic(() => import("./TripMap"), { ssr: false });
+import ElevationChart, { parseTrack } from "@/components/ElevationChart";
 
 // ── GPX route parsing + distance (for the 10m waypoint-off-route warning) ──
 type LL = { lat: number; lng: number };
@@ -109,6 +110,8 @@ export default function Step2({ data, onChange }: Props) {
   const mapWaypoints = data.waypointsJson;
   const routePoints = useMemo(() => parseGpxPoints(gpxContent), [gpxContent]);
   const [mapMode, setMapMode] = useState<"view" | "edit">("edit");
+  const [hoverCoord, setHoverCoord] = useState<[number, number] | null>(null);
+  const track = useMemo(() => parseTrack(gpxContent), [gpxContent]);
 
   // After adding a waypoint, scroll its form into view and focus the name field.
   const nameInputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -243,8 +246,17 @@ export default function Step2({ data, onChange }: Props) {
             onMapClick={handleMapClick}
             onDistanceKm={(km) => onChange("distanceKm", km)}
             editable={mapMode === "edit"}
+            hoverCoord={hoverCoord}
           />
         </div>
+        {/* Same interactive elevation chart the hiker sees (hover syncs the map). */}
+        {track.length >= 2 && (
+          <ElevationChart
+            track={track}
+            waypoints={mapWaypoints.map((w) => ({ lat: w.lat, lng: w.lng, label: w.name }))}
+            onHover={setHoverCoord}
+          />
+        )}
       </div>
       )}
 

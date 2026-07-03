@@ -408,7 +408,7 @@ export default function TripsPage() {
     else fetchTrips(next);
   }
   function clearAllFilters() {
-    updateFilters({ regions: [], difficulties: [], dateFrom: "", priceMax: "", priceMin: "", ageMin: "", favoriteGuides: false, tags: [] });
+    updateFilters({ regions: [], difficulties: [], dateFrom: "", priceMax: "", priceMin: "", ageMin: "", favoriteGuides: false, tags: [], gender: "" });
   }
   function clearFilter(key: keyof Filters, val?: string) {
     if (key === "regions" && val) updateFilters({ regions: filters.regions.filter((r) => r !== val) });
@@ -818,21 +818,17 @@ export default function TripsPage() {
                 </button>
               </div>
               <div className="mb-4">
-                <div className="text-[11px] text-fg-muted mb-2">מיועד ל</div>
-                <div className="flex gap-1.5">
-                  {([["", "כולם"], ["MEN", "👨 גברים"], ["WOMEN", "👩 נשים"]] as const).map(([val, label]) => (
-                    <button key={val || "all"} type="button"
-                      onClick={() => updateFilters({ gender: val })}
-                      className={`px-3 py-1 rounded-full text-xs border transition-colors ${
+                <div className="text-[11px] text-fg-muted mb-2">מאפיינים</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {/* Gender-designated options live alongside the attribute tags */}
+                  {([["MEN", "👨 גברים בלבד"], ["WOMEN", "👩 נשים בלבד"]] as const).map(([val, label]) => (
+                    <button key={val} type="button"
+                      onClick={() => updateFilters({ gender: filters.gender === val ? "" : val })}
+                      className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
                         filters.gender === val ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-border text-fg-muted"}`}>
                       {label}
                     </button>
                   ))}
-                </div>
-              </div>
-              <div className="mb-4">
-                <div className="text-[11px] text-fg-muted mb-2">מאפיינים</div>
-                <div className="flex flex-wrap gap-1.5">
                   {TRIP_TAGS.filter((t) => !t.selfGuidedOnly || filters.category === "self_guided").map((t) => (
                     <button key={t.value} type="button"
                       onClick={() => updateFilters({ tags: toggle(filters.tags, t.value) })}

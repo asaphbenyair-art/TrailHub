@@ -281,7 +281,8 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
       </div>
       )}
 
-      {/* Gender restriction — display only, not enforced */}
+      {/* Gender restriction — guided trips only, display only (not enforced) */}
+      {!selfGuided && (
       <div className="flex flex-col gap-2 border-t border-border pt-4">
         <label className="text-xs font-medium text-fg-muted">מיועד ל</label>
         <div className="flex gap-2">
@@ -295,6 +296,7 @@ export default function Step3({ data, onChange, selfGuided = false }: Props) {
           ))}
         </div>
       </div>
+      )}
 
       {/* Attribute tags */}
       <div className="flex flex-col gap-2 border-t border-border pt-4">

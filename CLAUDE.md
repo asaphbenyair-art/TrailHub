@@ -1958,7 +1958,7 @@ Every time a new user registers (email or Google), send ntfy notification with: 
 ---
 
 ## Trip Gender Restriction
-- Optional "מיועד ל" field at trip creation (Step 3): כולם (default) / גברים בלבד / נשים בלבד.
+- Optional "מיועד ל" field at trip creation (Step 3) — guided trips only, NOT self-guided: כולם (default) / גברים בלבד / נשים בלבד.
 - Display only — NOT technically enforced at registration.
 - Shown as a badge on trip cards and the trip detail page.
 - Search has a "מיועד ל" filter (כולם / גברים / נשים); selecting a gender shows trips for that gender plus open-to-all trips.

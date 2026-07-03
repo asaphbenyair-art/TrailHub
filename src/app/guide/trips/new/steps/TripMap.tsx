@@ -1,7 +1,7 @@
 "use client";
 
 import "leaflet/dist/leaflet.css";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import L from "leaflet";
 
 // Fix Leaflet default marker icons (broken by webpack)
@@ -55,14 +55,16 @@ interface Props {
   onDistanceKm?: (km: string) => void;
   onMapClick?: (lat: number, lng: number) => void;
   editable?: boolean; // when false, tapping the map does nothing (view mode)
+  /** Coordinate to highlight with a moving marker (elevation-chart hover sync). */
+  hoverCoord?: [number, number] | null;
 }
 
-export default function TripMap({ gpxContent, waypoints = [], onDistanceKm, onMapClick, editable = true }: Props) {
+export default function TripMap({ gpxContent, waypoints = [], onDistanceKm, onMapClick, editable = true, hoverCoord = null }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const polylineRef = useRef<L.Polyline | null>(null);
   const markerRefs = useRef<L.Marker[]>([]);
-  const [points, setPoints] = useState<GpxPoint[]>([]);
+  const hoverRef = useRef<L.CircleMarker | null>(null);
 
   // Init map once
   useEffect(() => {
@@ -108,14 +110,12 @@ export default function TripMap({ gpxContent, waypoints = [], onDistanceKm, onMa
     polylineRef.current = null;
 
     if (!gpxContent) {
-      setPoints([]);
       map.setView([31.5, 34.9], 7);
       return;
     }
 
     const pts = parseGpx(gpxContent);
     if (!pts.length) return;
-    setPoints(pts);
 
     const latlngs: L.LatLngTuple[] = pts.map((p) => [p.lat, p.lng]);
     const poly = L.polyline(latlngs, { color: "#1A6B4A", weight: 3, opacity: 0.85 }).addTo(map);
@@ -142,41 +142,26 @@ export default function TripMap({ gpxContent, waypoints = [], onDistanceKm, onMa
     );
   }, [waypoints]);
 
-  // Elevation profile
-  const eleMin = points.length ? Math.min(...points.map((p) => p.ele)) : 0;
-  const eleMax = points.length ? Math.max(...points.map((p) => p.ele)) : 0;
-  const eleRange = eleMax - eleMin || 1;
-  const W = 360, H = 48;
-  const pathD = points.length
-    ? points
-        .map((p, i) => {
-          const x = (i / (points.length - 1)) * W;
-          const y = H - ((p.ele - eleMin) / eleRange) * (H - 6);
-          return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
-        })
-        .join(" ")
-    : "";
+  // Moving marker driven by the elevation-chart hover (same as the hiker view).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (!hoverCoord) {
+      if (hoverRef.current) { hoverRef.current.remove(); hoverRef.current = null; }
+      return;
+    }
+    if (!hoverRef.current) {
+      hoverRef.current = L.circleMarker(hoverCoord, { radius: 7, color: "#fff", weight: 3, fillColor: "#1A6B4A", fillOpacity: 1 }).addTo(map);
+    } else {
+      hoverRef.current.setLatLng(hoverCoord);
+    }
+  }, [hoverCoord]);
 
   return (
-    <div className="flex flex-col gap-2">
-      <div
-        ref={containerRef}
-        className="rounded-lg overflow-hidden border border-border"
-        style={{ height: 200 }}
-      />
-
-      {points.length > 0 && (
-        <div className="bg-surface-2 rounded-lg p-3">
-          <div className="flex justify-between text-xs text-fg-faint mb-1">
-            <span>פרופיל גבהים</span>
-            <span>{eleMin}m — {eleMax}m</span>
-          </div>
-          <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H}>
-            <path d={`${pathD} L${W},${H} L0,${H}Z`} fill="#D6EDE3" />
-            <path d={pathD} stroke="#1A6B4A" strokeWidth="1.5" fill="none" />
-          </svg>
-        </div>
-      )}
-    </div>
+    <div
+      ref={containerRef}
+      className="rounded-lg overflow-hidden border border-border"
+      style={{ height: 200 }}
+    />
   );
 }
