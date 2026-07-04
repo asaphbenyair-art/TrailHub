@@ -150,10 +150,12 @@ function TripCard({
   reg,
   onCancel,
   onOpenQa,
+  qaRefresh,
 }: {
   reg: Registration;
   onCancel: (id: string) => void;
   onOpenQa: (id: string, title: string) => void;
+  qaRefresh?: number;
 }) {
   const dfmt = useDateFmt();
   const { mode } = useCalendarMode();
@@ -183,7 +185,7 @@ function TripCard({
   const [qaSeenAns, setQaSeenAns] = useState(0);
   useEffect(() => {
     try { setQaSeenAns(parseInt(window.localStorage.getItem(`qa-ans-seen-${trip.id}`) ?? "0") || 0); } catch {}
-  }, [trip.id]);
+  }, [trip.id, qaRefresh]);
   const qaUnread = Math.max(qaAnswered - qaSeenAns, 0);
   const qaState = qaUnread > 0 ? "unread" : qaOpen > 0 ? "open" : "read";
   const qaColor = qaState === "unread" ? "#C8893A" : "#9ca3af";
@@ -382,6 +384,7 @@ export default function MyTripsPage() {
   const [activeTab, setActiveTab] = useState<"registered" | "waitlist" | "interested" | "selfguided" | "history" | "cancelled">("registered");
   const [purchases, setPurchases] = useState<Array<{ id: string; accessExpiresAt: string | null; purchasedAt: string; trip: { id: string; title: string; region: string; images: string[]; price?: number; durationMin?: number } }>>([]);
   const [qaModal, setQaModal] = useState<{ id: string; title: string } | null>(null);
+  const [qaRefresh, setQaRefresh] = useState(0);
   const [reviewFor, setReviewFor] = useState<{ id: string; title: string } | null>(null);
 
   const load = useCallback(async () => {
@@ -542,14 +545,14 @@ export default function MyTripsPage() {
         ) : (
           <div className="flex flex-col gap-3">
             {currentList.map((reg) => (
-              <TripCard key={reg.id} reg={reg} onCancel={removeReg} onOpenQa={(id, title) => setQaModal({ id, title })} />
+              <TripCard key={reg.id} reg={reg} onCancel={removeReg} qaRefresh={qaRefresh} onOpenQa={(id, title) => setQaModal({ id, title })} />
             ))}
           </div>
         )}
       </div>
 
       {qaModal && (
-        <QAModal tripId={qaModal.id} tripTitle={qaModal.title} onClose={() => setQaModal(null)} />
+        <QAModal tripId={qaModal.id} tripTitle={qaModal.title} onClose={() => { setQaModal(null); setQaRefresh((x) => x + 1); }} />
       )}
 
       {reviewFor && (

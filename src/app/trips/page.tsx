@@ -132,7 +132,7 @@ function RideshareIndicator({ trip, hasAccess, onOpen }: { trip: Trip; hasAccess
 //  • grey  + count → open (unanswered) questions
 //  • grey icon, no count → caught up (questions exist, all seen & answered)
 //  • hidden → no questions at all
-function QAIndicator({ trip, hasAccess, onOpen }: { trip: Trip; hasAccess: boolean; onOpen: () => void }) {
+function QAIndicator({ trip, hasAccess, onOpen, refreshKey }: { trip: Trip; hasAccess: boolean; onOpen: () => void; refreshKey?: number }) {
   const tcard = useTranslations("card");
   const total = trip.qaCount ?? 0;
   const open = trip.qaOpen ?? 0;
@@ -142,7 +142,7 @@ function QAIndicator({ trip, hasAccess, onOpen }: { trip: Trip; hasAccess: boole
     if (typeof window === "undefined") return;
     const v = window.localStorage.getItem(`qa-ans-seen-${trip.id}`);
     setSeenAns(v != null ? parseInt(v) || 0 : 0);
-  }, [trip.id]);
+  }, [trip.id, refreshKey]);
 
   if (!hasAccess || total === 0) return null;
   const unreadAns = Math.max(answered - seenAns, 0);
@@ -229,6 +229,7 @@ export default function TripsPage() {
   const [rideDrawer, setRideDrawer] = useState<string | null>(null);
   const [registrantsModal, setRegistrantsModal] = useState<{ id: string; title: string } | null>(null);
   const [qaModal, setQaModal] = useState<{ id: string; title: string } | null>(null);
+  const [qaRefresh, setQaRefresh] = useState(0);
   const [guides, setGuides] = useState<GuideCard[]>([]);
   const [guidesLoaded, setGuidesLoaded] = useState(false);
   const [guideRegions, setGuideRegions] = useState<string[]>([]);
@@ -1066,6 +1067,7 @@ export default function TripsPage() {
                             trip={trip}
                             hasAccess={!!myStatus && myStatus !== "CANCELLED"}
                             onOpen={() => setQaModal({ id: trip.id, title: trip.title })}
+                            refreshKey={qaRefresh}
                           />
                           <RideshareIndicator
                             trip={trip}
@@ -1198,7 +1200,7 @@ export default function TripsPage() {
       )}
 
       {qaModal && (
-        <QAModal tripId={qaModal.id} tripTitle={qaModal.title} onClose={() => setQaModal(null)} />
+        <QAModal tripId={qaModal.id} tripTitle={qaModal.title} onClose={() => { setQaModal(null); setQaRefresh((x) => x + 1); }} />
       )}
     </div>
   );
