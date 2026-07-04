@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
+import { useLabels } from "@/components/useLabels";
 import Link from "next/link";
 import NotificationBell from "@/components/NotificationBell";
 import CalendarView from "@/components/CalendarView";
@@ -39,7 +40,6 @@ const DIFF_STYLE: Record<string, { bg: string; color: string }> = {
   HARD:    { bg: "#FADBD8", color: "#791F1F" },
   EXTREME: { bg: "#E8D0D0", color: "#4A0F0F" },
 };
-const DIFF_LABEL: Record<string, string> = { EASY: "קל", MEDIUM: "בינוני", HARD: "קשה", EXTREME: "קיצוני" };
 const AVATAR_COLORS = ["#854F0B","#3B6D11","#185FA5","#6B3B87","#1A6B4A"];
 
 function avatarColor(name: string | null) {
@@ -207,6 +207,7 @@ export default function TripsPage() {
   const { data: session } = useSession();
   const ts = useTranslations("search");
   const tc = useTranslations("common");
+  const L = useLabels();
 
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
@@ -584,7 +585,7 @@ export default function TripsPage() {
                   className={`shrink-0 text-[11px] rounded-full px-3 py-1.5 border ${guideRegions.length === 0 ? "bg-[#1A6B4A] text-white border-[#1A6B4A]" : "bg-surface text-fg-muted border-border"}`}>כל האזורים</button>
                 {REGIONS.map((r) => (
                   <button key={r} type="button" onClick={() => setGuideRegions((prev) => toggle(prev, r))}
-                    className={`shrink-0 text-[11px] rounded-full px-3 py-1.5 border ${guideRegions.includes(r) ? "bg-[#1A6B4A] text-white border-[#1A6B4A]" : "bg-surface text-fg-muted border-border"}`}>{r}</button>
+                    className={`shrink-0 text-[11px] rounded-full px-3 py-1.5 border ${guideRegions.includes(r) ? "bg-[#1A6B4A] text-white border-[#1A6B4A]" : "bg-surface text-fg-muted border-border"}`}>{L.region(r)}</button>
                 ))}
               </div>
               {allSpecialties.length > 0 && (
@@ -766,13 +767,13 @@ export default function TripsPage() {
             {filters.regions.map((r) => (
               <button key={r} type="button" onClick={() => clearFilter("regions", r)}
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap bg-[#D6EDE3] border border-[#1A6B4A] text-[#0F5038] flex-shrink-0">
-                📍 {r} <span className="font-bold">✕</span>
+                📍 {L.region(r)} <span className="font-bold">✕</span>
               </button>
             ))}
             {filters.difficulties.map((d) => (
               <button key={d} type="button" onClick={() => clearFilter("difficulties", d)}
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs whitespace-nowrap bg-[#D6EDE3] border border-[#1A6B4A] text-[#0F5038] flex-shrink-0">
-                🏔 {DIFF_LABEL[d]} <span className="font-bold">✕</span>
+                🏔 {L.difficulty(d)} <span className="font-bold">✕</span>
               </button>
             ))}
             {activeCount > 0 && (
@@ -787,14 +788,14 @@ export default function TripsPage() {
           {panelOpen && (
             <div className="bg-surface rounded-xl p-4 mb-2">
               <div className="mb-4">
-                <div className="text-[11px] text-fg-muted mb-2">איזור בארץ</div>
+                <div className="text-[11px] text-fg-muted mb-2">{ts("region")}</div>
                 <div className="flex flex-wrap gap-1.5">
                   {REGIONS.map((r) => (
                     <button key={r} type="button"
                       onClick={() => updateFilters({ regions: toggle(filters.regions, r) })}
                       className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
                         filters.regions.includes(r) ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-border text-fg-muted"}`}>
-                      {r}
+                      {L.region(r)}
                     </button>
                   ))}
                 </div>
@@ -807,7 +808,7 @@ export default function TripsPage() {
                       onClick={() => updateFilters({ difficulties: toggle(filters.difficulties, d.value) })}
                       className={`flex-1 py-1.5 rounded-full text-xs border transition-colors ${
                         filters.difficulties.includes(d.value) ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-border text-fg-muted"}`}>
-                      {d.label}
+                      {L.difficulty(d.value)}
                     </button>
                   ))}
                 </div>
@@ -839,7 +840,7 @@ export default function TripsPage() {
                       onClick={() => updateFilters({ tags: toggle(filters.tags, t.value) })}
                       className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
                         filters.tags.includes(t.value) ? "bg-[#D6EDE3] border-[#1A6B4A] text-[#0F5038]" : "border-border text-fg-muted"}`}>
-                      {t.label}
+                      {L.tag(t.value)}
                     </button>
                   ))}
                 </div>
@@ -948,11 +949,11 @@ export default function TripsPage() {
                         </span>
                       )}
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: "rgba(255,255,255,0.92)", color: "#27500A" }}>
-                        📍 {trip.region}
+                        📍 {L.region(trip.region)}
                       </span>
                       {diff && (
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-medium" style={diff}>
-                          {DIFF_LABEL[trip.difficulty]}
+                          {L.difficulty(trip.difficulty)}
                         </span>
                       )}
                     </div>
