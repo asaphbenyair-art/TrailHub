@@ -117,7 +117,9 @@ function TripCard({
   const guideName = trip.guide?.user?.name ?? "מדריך";
 
   const daysUntil = Math.ceil((new Date(trip.date).getTime() - now.getTime()) / 86400000);
-  const showAlert = isConfirmed && !isPast && daysUntil <= 3 && daysUntil > 0;
+  const isFree = reg.totalPrice === 0;
+  // Refund-window alert only applies to PAID trips (free trips have no charge/refund).
+  const showAlert = isConfirmed && !isPast && daysUntil <= 3 && daysUntil > 0 && !isFree;
 
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -257,20 +259,20 @@ function TripCard({
               <a href={googleCalendarUrl({ title: trip.title, dateISO: trip.date, startTime: trip.startTime, location: trip.meetingPoint })}
                 target="_blank" rel="noreferrer"
                 className="px-2.5 py-1 border border-[#185FA5]/30 text-[#185FA5] rounded-full text-[11px]">📅 ליומן</a>
-              <button type="button" onClick={() => router.push(`/trips/${trip.id}?scroll=qa-section`)}
-                className="px-2.5 py-1 border border-border rounded-full text-[11px] text-fg-muted">
-                שאלה למדריך
-              </button>
               {reg.participantCount > 1 && (
                 <button type="button" onClick={doPartialCancel}
                   className="px-2.5 py-1 border border-[#E8A020] text-[#7A5010] rounded-full text-[11px]">
                   בטל 1 מ-{reg.participantCount}
                 </button>
               )}
-              <button type="button" onClick={() => setConfirmCancel(true)}
-                className="px-2.5 py-1 border border-[#C0392B] text-[#C0392B] rounded-full text-[11px]">
-                ביטול
-              </button>
+              {/* Free trips: simple cancel here (no refund window/alert). Paid trips
+                  cancel via the refund-window alert above (or the trip page). */}
+              {isFree && (
+                <button type="button" onClick={() => setConfirmCancel(true)}
+                  className="px-2.5 py-1 border border-[#C0392B] text-[#C0392B] rounded-full text-[11px]">
+                  בטל הרשמה
+                </button>
+              )}
             </>
           )}
         </div>
@@ -278,10 +280,13 @@ function TripCard({
 
       {/* Cancel confirmation — intermediate screen with exact refund + timing */}
       {confirmCancel && (() => {
-        const refund = isConfirmed ? computeRefund(trip.cancellationPolicy, trip.date, reg.totalPrice) : null;
+        const refund = isConfirmed && !isFree ? computeRefund(trip.cancellationPolicy, trip.date, reg.totalPrice) : null;
         return (
           <div className="px-3 py-3 bg-[#FDF6F5] border-t border-[#C0392B]/20">
-            {isConfirmed ? (
+            {isFree ? (
+              // Free trips: simple cancellation, no refund logic.
+              <div className="text-xs text-[#791F1F] mb-2">לבטל את ההרשמה לטיול?</div>
+            ) : isConfirmed ? (
               <>
                 <div className="text-xs text-[#791F1F] mb-1.5">ביטול ההרשמה — לפי מדיניות הביטולים, בעת ביטול כעת:</div>
                 <div className="bg-surface rounded-lg border border-[#C0392B]/15 p-2.5 mb-2">
