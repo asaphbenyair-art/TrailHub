@@ -1,47 +1,67 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Heart, Star, Mountain, Clock, Calendar, MapPin } from "lucide-react";
-import { coverImages } from "@/lib/tripImage";
-import { useDateFmt } from "@/components/CalendarModeProvider";
+import { useState, useEffect, ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useLabels } from "@/components/useLabels";
+import { useDateFmt } from "@/components/CalendarModeProvider";
+import { coverImages } from "@/lib/tripImage";
 
-export interface TripCardData {
-  id: string;
-  title: string;
-  region: string;
-  difficulty: string;
-  status: string;
-  date: string;
-  startTime: string;
-  durationMin: number;
-  distanceKm: number;
-  price: number;
-  maxSpots: number;
-  spotsBooked: number;
-  images: string[];
-  tripType?: string;
-  dayCount?: number;
-  accessWindowDays?: number | null;
-  cardLogo?: string | null;
-  guideName: string | null;
-  guideRating?: number;
-}
+// ── Shared trip-card visual — single source of truth for every surface ──
+// (search results, My Trips, guide dashboard, guides directory). The hero,
+// tags, title/guide overlay, meta stats and capacity bar are identical
+// everywhere; surface-specific pieces (status strip, indicators, action row)
+// are passed in as slots.
 
+const DIFF_STYLE: Record<string, { bg: string; color: string }> = {
+  EASY:    { bg: "#EAF3DE", color: "#27500A" },
+  MEDIUM:  { bg: "#FAEEDA", color: "#633806" },
+  HARD:    { bg: "#FADBD8", color: "#791F1F" },
+  EXTREME: { bg: "#E8D0D0", color: "#4A0F0F" },
+};
 const AVATAR_COLORS = ["#854F0B", "#3B6D11", "#185FA5", "#6B3B87", "#1A6B4A"];
 
-function avatarColor(name: string | null) {
-  if (!name) return "#777";
+export function avatarColor(name: string | null) {
+  if (!name) return "#999";
   let h = 0;
   for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff;
   return AVATAR_COLORS[h % AVATAR_COLORS.length];
 }
-function initials(name: string | null) {
+export function initials(name: string | null) {
   if (!name) return "?";
   return name.split(" ").map((n) => n[0]).join("").slice(0, 2);
 }
-/** Staggered cross-fade cover — never a hard swap. */
-function Cover({ images, title }: { images: string[]; title: string }) {
+// Remaining access time for a purchased self-guided trip.
+export function accessRemaining(iso: string | null | undefined): { text: string; color: string } {
+  if (!iso) return { text: "🔓 גישה פעילה", color: "#1A6B4A" };
+  const days = Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000);
+  if (days <= 0) return { text: "⏳ פג תוקף", color: "#9ca3af" };
+  if (days < 2) return { text: "⏳ פג תוקף בעוד יומיים", color: "#C0392B" };
+  const color = days > 7 ? "#1A6B4A" : "#B45309";
+  return { text: `⏳ זמין עוד ${days} ימים`, color };
+}
+
+export interface TripCardTrip {
+  id: string; title: string; region: string; difficulty: string; status?: string;
+  date: string; startTime?: string; durationMin?: number; distanceKm?: number;
+  price?: number; maxSpots?: number; spotsBooked?: number; images: string[];
+  tripType?: string; endDate?: string | null; _count?: { days: number }; accessWindowDays?: number | null;
+  cardLogo?: string | null; genderRestriction?: string;
+  guide?: { rating?: number; user?: { name: string | null } } | null;
+  guides?: { role: string; guide: { user: { name: string | null } } }[];
+}
+
+export function tripDayCount(t: TripCardTrip): number {
+  if (t._count?.days) return t._count.days;
+  if (t.endDate) {
+    const days = Math.round((new Date(t.endDate).getTime() - new Date(t.date).getTime()) / 86400000) + 1;
+    return Math.max(days, 2);
+  }
+  return 0;
+}
+
+// Sliding image hero with staggered cross-fade.
+function TripCardHero({ images, title }: { images: string[]; title: string }) {
   const [idx, setIdx] = useState(0);
   useEffect(() => {
     if (images.length <= 1) return;
@@ -49,153 +69,196 @@ function Cover({ images, title }: { images: string[]; title: string }) {
     return () => clearInterval(t);
   }, [images.length]);
   if (images.length === 0) {
-    return <div className="absolute inset-0" style={{ background: "linear-gradient(160deg,#2f5330,#0f2210)" }} />;
+    return <div className="w-full h-full" style={{ background: "linear-gradient(160deg,#3d6b35,#1a3d16)" }} />;
   }
   return (
     <>
       {images.map((src, i) => (
         // eslint-disable-next-line @next/next/no-img-element
         <img key={i} src={src} alt={title}
-          className="absolute inset-0 w-full h-full object-cover transition-opacity ease-in-out"
-          style={{ opacity: i === idx ? 1 : 0, transitionDuration: "1100ms" }} />
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ opacity: i === idx ? 1 : 0, transition: "opacity 1400ms ease-in-out", willChange: "opacity" }} />
       ))}
     </>
   );
 }
 
-/**
- * Editorial trip card (Design System): large full-width photo (~60% height),
- * dark gradient overlay, Playfair title over the image, minimal guide row on
- * the photo, stats row + capacity bar below.
- */
-export default function TripCard({
-  trip,
-  onClick,
-  favorite,
-  onToggleFavorite,
-}: {
-  trip: TripCardData;
-  onClick?: () => void;
+interface TripCardProps {
+  trip: TripCardTrip;
+  href?: string;                     // whole-card navigation (default /trips/[id])
+  onCardClick?: () => void;          // overrides href navigation
   favorite?: boolean;
-  onToggleFavorite?: () => void;
-}) {
-  const dfmt = useDateFmt();
+  onToggleFav?: () => void;          // heart hidden if omitted
+  isPurchased?: boolean;             // self-guided: purchased
+  accessExpiresAt?: string | null;   // self-guided: remaining-access meta
+  topStrip?: ReactNode;              // banner above the hero (status)
+  indicators?: ReactNode;            // Q&A + rideshare cluster in the stats row
+  onOpenParticipants?: () => void;   // capacity "participant list" link
+  footer?: ReactNode;                // price/action row under the capacity bar
+  dateLabelOverride?: string;        // e.g. My Trips dual dates
+}
+
+export default function TripCard({
+  trip, href, onCardClick, favorite, onToggleFav, isPurchased, accessExpiresAt,
+  topStrip, indicators, onOpenParticipants, footer, dateLabelOverride,
+}: TripCardProps) {
+  const router = useRouter();
+  const tcard = useTranslations("card");
   const L = useLabels();
-  const isSelfGuided = trip.tripType === "SELF_GUIDED";
-  const isJourney = (trip.dayCount ?? 0) > 1;
-  const spotsLeft = Math.max(trip.maxSpots - trip.spotsBooked, 0);
-  const occ = trip.maxSpots > 0 ? trip.spotsBooked / trip.maxSpots : 0;
-  const isFull = !isSelfGuided && (trip.status === "FULL" || occ >= 1);
-  const guideName = trip.guideName ?? "מדריך";
-  const hours = trip.durationMin ? Math.round(trip.durationMin / 60) : 0;
+  const dfmt = useDateFmt();
+
+  const isSG = trip.tripType === "SELF_GUIDED";
+  const isJourney = !!trip.tripType && trip.tripType !== "DAY_HIKE" && !isSG;
+  const maxSpots = trip.maxSpots ?? 0;
+  const spotsBooked = trip.spotsBooked ?? 0;
+  const spotsLeft = Math.max(maxSpots - spotsBooked, 0);
+  const occupancy = maxSpots > 0 ? spotsBooked / maxSpots : 0;
+  const isFull = trip.status === "FULL" || occupancy >= 1;
+  const guideName = trip.guide?.user?.name ?? null;
+  const diff = DIFF_STYLE[trip.difficulty];
+  const nDays = tripDayCount(trip);
+
+  const dateMeta = dateLabelOverride
+    ? `📅 ${dateLabelOverride}`
+    : `📅 ${dfmt(trip.date, { greg: { weekday: "short", day: "numeric", month: "short" } })}`;
+
+  const meta: { t: string; color?: string }[] = isSG
+    ? [
+        { t: `🎒 ${tcard("selfGuided")}` },
+        ...(trip.price === 0
+          ? [{ t: `♾ ${tcard("freeAccess")}` }]
+          : [isPurchased
+              ? (() => { const r = accessRemaining(accessExpiresAt); return { t: r.text, color: r.color }; })()
+              : { t: `🔓 ${tcard("accessDays", { n: trip.accessWindowDays ?? 30 })}` }]),
+        ...((trip.distanceKm ?? 0) > 0 ? [{ t: `📍 ${trip.distanceKm} ${tcard("km")}` }] : []),
+      ]
+    : isJourney
+    ? [
+        { t: `${dateMeta}${trip.endDate ? `–${dfmt(trip.endDate, { greg: { day: "numeric", month: "short" } })}` : ""}` },
+        ...(nDays > 1 ? [{ t: `🌙 ${tcard("nights", { n: nDays - 1 })}` }] : []),
+        ...((trip.distanceKm ?? 0) > 0 ? [{ t: `📍 ${trip.distanceKm} ${tcard("kmTotal")}` }] : []),
+      ]
+    : [
+        { t: dateMeta },
+        ...(trip.startTime ? [{ t: `🕖 ${trip.startTime}` }] : []),
+        ...((trip.distanceKm ?? 0) > 0 ? [{ t: `📍 ${trip.distanceKm} ${tcard("km")}` }] : []),
+        ...((trip.durationMin ?? 0) > 0 ? [{ t: `⏱ ${Math.round((trip.durationMin ?? 0) / 60)} ${tcard("hrs")}` }] : []),
+      ];
+  const gender = trip.genderRestriction && trip.genderRestriction !== "ALL"
+    ? [{ t: trip.genderRestriction === "MEN" ? tcard("menOnly") : tcard("womenOnly"), color: "#7A5010" }]
+    : [];
+
+  const secName = trip.guides?.find((g) => g.role === "SECONDARY")?.guide?.user?.name ?? null;
+
+  function navigate() {
+    if (onCardClick) onCardClick();
+    else router.push(href ?? `/trips/${trip.id}`);
+  }
 
   return (
-    <article
-      onClick={onClick}
-      className="rounded-3xl overflow-hidden bg-surface border border-border cursor-pointer"
-      style={{ opacity: isFull ? 0.85 : 1 }}
-    >
-      {/* Cover ~ 60% of the card */}
-      <div className="relative w-full" style={{ height: 220 }}>
-        <Cover images={coverImages(trip.images, trip.id, { region: trip.region, title: trip.title })} title={trip.title} />
-        <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.82) 4%, rgba(0,0,0,0.15) 45%, rgba(0,0,0,0.15))" }} />
+    <div className="bg-surface rounded-2xl overflow-hidden border border-border cursor-pointer" onClick={navigate}>
+      {topStrip}
 
-        {/* Top row: badges + favorite */}
-        <div className="absolute top-3 inset-x-3 flex items-start justify-between">
-          <div className="flex gap-1.5 items-center">
-            {isJourney && (
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold text-white backdrop-blur-sm" style={{ background: "rgba(200,137,58,0.92)" }}>
-                מסע · {trip.dayCount} ימים
-              </span>
-            )}
-            {isSelfGuided && (
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold text-white backdrop-blur-sm" style={{ background: "rgba(61,143,95,0.92)" }}>
-                טיול עצמאי
-              </span>
-            )}
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium text-white/95 backdrop-blur-sm bg-black/35">
+      {/* Hero */}
+      <div className="relative overflow-hidden" style={{ height: 160 }}>
+        <TripCardHero images={coverImages(trip.images, trip.id, { region: trip.region, title: trip.title })} title={trip.title} />
+
+        <div className={`absolute top-2.5 ${L.en ? "left-2.5" : "right-2.5"} flex gap-1.5 z-10`} dir={L.dir}>
+          {trip.tripType && trip.tripType !== "DAY_HIKE" && !isSG && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: "#2C5F8A", color: "#fff" }}>
+              {tcard("journeyDays", { n: nDays || 0 })}
+            </span>
+          )}
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: "rgba(255,255,255,0.92)", color: "#27500A" }}>
+            📍 {L.region(trip.region)}
+          </span>
+          {diff && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium" style={diff}>
               {L.difficulty(trip.difficulty)}
             </span>
-          </div>
-          {onToggleFavorite && (
-            <button type="button" onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
-              className="w-8 h-8 rounded-full bg-black/35 backdrop-blur-sm flex items-center justify-center">
-              <Heart size={16} className="text-white" fill={favorite ? "#fff" : "none"} />
-            </button>
           )}
         </div>
 
-        {isFull && (
-          <span className="absolute top-1/2 right-3 -translate-y-1/2 px-2.5 py-1 rounded-full text-[11px] font-semibold text-white bg-danger">
-            מלא
-          </span>
+        {trip.images?.length > 1 && (
+          <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-1 z-10">
+            {trip.images.map((_, i) => (<div key={i} className="w-1 h-1 rounded-full bg-surface/60" />))}
+          </div>
         )}
 
-        {/* Company/organization logo — bottom-left, on the gradient */}
+        {onToggleFav && (
+          <button type="button" onClick={(e) => { e.stopPropagation(); onToggleFav(); }}
+            className={`absolute top-2.5 ${L.en ? "right-2.5" : "left-2.5"} bg-black/40 rounded-full w-7 h-7 flex items-center justify-center text-sm z-10`}
+            style={{ color: favorite ? "#ff6b81" : "#fff" }}>
+            {favorite ? "♥" : "♡"}
+          </button>
+        )}
         {trip.cardLogo && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={trip.cardLogo} alt="" className="absolute bottom-3 left-3 w-10 h-10 rounded-lg bg-white object-contain p-1 shadow-md z-20" />
+          <img src={trip.cardLogo} alt="" className={`absolute bottom-2.5 ${L.en ? "right-2.5" : "left-2.5"} w-10 h-10 rounded-lg bg-white object-contain p-1 shadow-md z-20`} />
         )}
-
-        {/* Bottom of image: title + guide */}
-        <div className="absolute bottom-0 inset-x-0 p-4">
-          <div className="flex items-center gap-1 text-white/85 text-[11px] mb-1">
-            <MapPin size={11} /> {L.region(trip.region)}
-          </div>
-          <h3 className="font-display text-white text-xl leading-tight mb-2">{trip.title}</h3>
-          <div className="flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-semibold text-white"
-              style={{ background: avatarColor(guideName) }}>
-              {initials(guideName)}
-            </span>
-            <span className="text-white/90 text-xs">{guideName}</span>
-            {trip.guideRating != null && trip.guideRating > 0 && (
-              <span className="flex items-center gap-0.5 text-white/90 text-xs">
-                <Star size={11} fill="#e8b84a" color="#e8b84a" /> {trip.guideRating.toFixed(1)}
-              </span>
-            )}
+        <div className="absolute bottom-0 left-0 right-0 px-3 py-2.5 z-10" dir="rtl"
+          style={{ background: "linear-gradient(to top,rgba(0,0,0,0.68),transparent)" }}>
+          <div className="text-[13px] font-medium text-white leading-snug mb-1.5 text-right">{trip.title}</div>
+          <div className="flex items-center gap-1.5 text-[11px] text-white/85">
+            <div className="flex flex-shrink-0">
+              <div className="w-[17px] h-[17px] rounded-full flex items-center justify-center text-[8px] font-medium text-white border border-white/40"
+                style={{ background: avatarColor(guideName) }}>
+                {initials(guideName)}
+              </div>
+              {secName && (
+                <div className="w-[17px] h-[17px] rounded-full flex items-center justify-center text-[8px] font-medium text-white border border-white/40"
+                  style={{ background: avatarColor(secName), marginRight: -6 }}>
+                  {initials(secName)}
+                </div>
+              )}
+            </div>
+            {secName ? `${guideName || "מדריך"} ו${secName}` : (guideName || "מדריך")}
+            {(trip.guide?.rating ?? 0) > 0 ? ` · ★${trip.guide!.rating!.toFixed(1)}` : ""}
           </div>
         </div>
       </div>
 
-      {/* Stats row + capacity */}
-      <div className="p-3.5">
-        <div className="flex items-center justify-between text-fg-muted text-xs">
-          <div className="flex items-center gap-3">
-            {trip.distanceKm > 0 && (
-              <span className="flex items-center gap-1"><Mountain size={13} /> {trip.distanceKm} ק״מ</span>
-            )}
-            {hours > 0 && (
-              <span className="flex items-center gap-1"><Clock size={13} /> {hours} שע׳</span>
-            )}
-            {!isSelfGuided && (
-              <span className="flex items-center gap-1"><Calendar size={13} /> {dfmt(trip.date, { greg: { weekday: "short", day: "numeric", month: "short" } })}</span>
-            )}
+      {/* Meta + capacity + footer */}
+      <div className="px-3 pt-2 pb-2.5">
+        <div className="flex items-end justify-between gap-2 mb-2">
+          <div className="flex flex-wrap" style={{ gap: 0 }}>
+            {[...gender, ...meta].map((m, i, arr) => (
+              <span key={i} className="text-[11px] text-fg-muted"
+                style={{ paddingLeft: i < arr.length - 1 ? 8 : 0, marginLeft: i < arr.length - 1 ? 8 : 0, borderLeft: i < arr.length - 1 ? "1px solid #eee" : "none", ...(m.color ? { color: m.color, fontWeight: 600 } : {}) }}>
+                {m.t}
+              </span>
+            ))}
           </div>
-          <span className="text-fg font-semibold text-sm">
-            ₪{trip.price.toLocaleString("he-IL")}
-          </span>
+          {indicators && <div className="flex items-start gap-3 shrink-0">{indicators}</div>}
         </div>
-
-        {!isSelfGuided ? (
-          <div className="mt-3">
-            <div className="h-[5px] rounded-full overflow-hidden" style={{ background: "var(--surface-2)" }}>
+        {!isSG && maxSpots > 0 && (
+          <div className="mb-2">
+            <div className="h-[3px] bg-surface-2 rounded-full overflow-hidden">
               <div className="h-full rounded-full transition-all"
-                style={{ width: `${Math.min(occ * 100, 100)}%`, background: isFull ? "var(--danger)" : "var(--accent)" }} />
+                style={{ width: `${Math.min(occupancy * 100, 100)}%`, background: isFull ? "#C0392B" : "#1A6B4A" }} />
             </div>
             <div className="flex justify-between text-[10px] text-fg-faint mt-1">
-              <span>{trip.spotsBooked}/{trip.maxSpots} רשומים</span>
-              <span style={{ color: isFull ? "var(--danger)" : "var(--accent)" }}>
-                {isFull ? "רשימת המתנה" : `${spotsLeft} מקומות`}
+              <span>
+                {tcard("registeredOf", { booked: spotsBooked, max: maxSpots })}
+                {onOpenParticipants && (
+                  <>
+                    {" · "}
+                    <button type="button"
+                      onClick={(e) => { e.stopPropagation(); onOpenParticipants(); }}
+                      className="text-[#185FA5] underline underline-offset-2 hover:text-[#134e73] cursor-pointer">
+                      {tcard("participantList")}
+                    </button>
+                  </>
+                )}
+              </span>
+              <span style={{ color: isFull ? "#C0392B" : "#1A6B4A", fontWeight: 500 }}>
+                {isFull ? tcard("full") : tcard("spotsRemaining", { n: spotsLeft })}
               </span>
             </div>
           </div>
-        ) : (
-          <div className="mt-2 text-[10px] text-fg-faint">
-            זמין תמיד · גישה ל-{trip.accessWindowDays ?? 30} ימים
-          </div>
         )}
+        {footer && <div onClick={(e) => e.stopPropagation()}>{footer}</div>}
       </div>
-    </article>
+    </div>
   );
 }

@@ -11,6 +11,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import LanguageToggle from "@/components/LanguageToggle";
 import ModeIndicator from "@/components/ModeIndicator";
 import QAModal from "@/components/QAModal";
+import TripCardVisual, { TripCardTrip } from "@/components/TripCard";
 import { useDateFmt, useCalendarMode } from "@/components/CalendarModeProvider";
 import { useTranslations } from "next-intl";
 import { useDir } from "@/components/useLabels";
@@ -73,16 +74,6 @@ interface Registration {
   autoRegister: boolean;
   createdAt: string;
   trip: RegistrationTrip;
-}
-
-// Remaining access time for a purchased self-guided trip (green >7d, amber 2-7d, red <2d, muted expired).
-function accessRemaining(iso: string | null | undefined): { text: string; color: string } {
-  if (!iso) return { text: "🔓 גישה פעילה", color: "#1A6B4A" };
-  const days = Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000);
-  if (days <= 0) return { text: "⏳ פג תוקף", color: "#9ca3af" };
-  if (days < 2) return { text: "⏳ פג תוקף בעוד יומיים", color: "#C0392B" };
-  const color = days > 7 ? "#1A6B4A" : "#B45309";
-  return { text: `⏳ זמין עוד ${days} ימים`, color };
 }
 
 const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }> = {
@@ -168,7 +159,6 @@ function TripCard({
   const isCancelled = status === "CANCELLED";
 
   const badge = STATUS_STYLE[status] ?? STATUS_STYLE.PENDING;
-  const guideName = trip.guide?.user?.name ?? "מדריך";
 
   const daysUntil = Math.ceil((new Date(trip.date).getTime() - now.getTime()) / 86400000);
   const isFree = reg.totalPrice === 0;
@@ -205,51 +195,29 @@ function TripCard({
     if (res.ok) window.location.reload();
   }
 
-  return (
-    <div className="bg-surface rounded-2xl border border-border overflow-hidden" style={{ opacity: isCancelled ? 0.7 : 1 }}>
-      <div className="flex">
-        {/* Image */}
-        <div className="w-24 flex-shrink-0" style={{ minHeight: 90 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={coverImages(trip.images, trip.id, { region: trip.region, title: trip.title })[0]} alt="" className="w-full h-full object-cover" />
+  // Status-specific info + refund alert, shown at the top of the card footer.
+  const statusInfo = (
+    <>
+      {isWaitlist && reg.waitlistPosition && (
+        <div className="inline-flex items-center gap-1 text-[11px] text-[#185FA5] bg-[#E6F1FB] rounded-full px-2 py-0.5 mb-1.5">
+          👥 מקום {reg.waitlistPosition} ברשימה
         </div>
-
-        {/* Body */}
-        <div className="flex-1 p-3 min-w-0">
-          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium mb-1.5"
-            style={{ background: badge.bg, color: badge.color }}>
-            {badge.label}
-          </div>
-          <div className="text-sm font-medium text-fg leading-snug mb-1 truncate">{trip.title}</div>
-          <div className="flex flex-col gap-0.5 text-xs text-fg-muted">
-            <span>📅 {formatDualDate(trip.date, mode)} · {trip.startTime}</span>
-            <span>👤 {guideName}</span>
-            {trip.meetingPoint && <span>📍 {trip.meetingPoint}</span>}
-          </div>
-          {isWaitlist && reg.waitlistPosition && (
-            <div className="inline-flex items-center gap-1 text-[11px] text-[#185FA5] bg-[#E6F1FB] rounded-full px-2 py-0.5 mt-1.5">
-              👥 מקום {reg.waitlistPosition} ברשימה
-            </div>
-          )}
-          {isPending && reg.conditions && reg.conditions.length > 0 && (
-            <div className="text-[11px] text-[#7A5010] bg-[#FDF3DC] rounded-lg px-2 py-1 mt-1.5">
-              ⚙ {reg.autoRegister ? "אירשם אוטומטית אם" : "התראה אם"}: {reg.conditions.join(" וגם ")}
-            </div>
-          )}
-          {isPending && reg.interestThreshold && (
-            <div className="text-[11px] text-[#185FA5] bg-[#EEF5FC] rounded-lg px-2 py-1 mt-1.5">
-              🔔 התראה כשנותרו {reg.interestThreshold} מקומות
-            </div>
-          )}
-          {isPending && !reg.conditions?.length && !reg.interestThreshold && reg.notes && (
-            <div className="text-[11px] text-fg-faint mt-1 truncate">⚙ {reg.notes}</div>
-          )}
+      )}
+      {isPending && reg.conditions && reg.conditions.length > 0 && (
+        <div className="text-[11px] text-[#7A5010] bg-[#FDF3DC] rounded-lg px-2 py-1 mb-1.5">
+          ⚙ {reg.autoRegister ? "אירשם אוטומטית אם" : "התראה אם"}: {reg.conditions.join(" וגם ")}
         </div>
-      </div>
-
-      {/* Alert strip for upcoming paid trips close to non-refundable */}
+      )}
+      {isPending && reg.interestThreshold && (
+        <div className="text-[11px] text-[#185FA5] bg-[#EEF5FC] rounded-lg px-2 py-1 mb-1.5">
+          🔔 התראה כשנותרו {reg.interestThreshold} מקומות
+        </div>
+      )}
+      {isPending && !reg.conditions?.length && !reg.interestThreshold && reg.notes && (
+        <div className="text-[11px] text-fg-faint mb-1 truncate">⚙ {reg.notes}</div>
+      )}
       {showAlert && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-[#FDF3DC] border-t border-[#EF9F27]">
+        <div className="flex items-center gap-2 px-2 py-2 mb-2 bg-[#FDF3DC] rounded-lg border border-[#EF9F27]">
           <span className="text-xs text-[#633806] flex-1">
             ⏰ החיוב יתבצע ב-{dfmt(trip.date, { greg: { weekday: "short", day: "numeric", month: "short" } })} — עוד {daysUntil} ימים
           </span>
@@ -259,9 +227,23 @@ function TripCard({
           </button>
         </div>
       )}
+    </>
+  );
 
-      {/* Footer */}
-      <div className="flex items-center justify-between px-3 py-2 border-t border-border bg-surface-2/60">
+  return (
+    <TripCardVisual
+      trip={trip as unknown as TripCardTrip}
+      href={`/trips/${trip.id}`}
+      dateLabelOverride={`${formatDualDate(trip.date, mode)}${trip.startTime ? ` · ${trip.startTime}` : ""}`}
+      topStrip={
+        <div className="px-3 py-1.5 text-xs font-medium" style={{ background: badge.bg, color: badge.color }}>
+          {badge.label}
+        </div>
+      }
+      footer={
+        <>
+          {statusInfo}
+          <div className="flex items-center justify-between pt-2 mt-1 border-t border-border">
         {reg.totalPrice === 0 ? (
           // Free trips: show "חינם" in green, no payment status.
           <span className="text-xs font-bold" style={{ color: "#1A6B4A" }}>חינם</span>
@@ -371,7 +353,9 @@ function TripCard({
           </div>
         );
       })()}
-    </div>
+        </>
+      }
+    />
   );
 }
 
@@ -481,26 +465,21 @@ export default function MyTripsPage() {
                 const isFree = p.trip.price === 0;
                 const expired = !isFree && p.accessExpiresAt ? new Date(p.accessExpiresAt) < new Date() : false;
                 return (
-                  <div key={p.id} className="bg-surface rounded-2xl border border-border overflow-hidden flex">
-                    <div className="w-24 flex-shrink-0" style={{ minHeight: 90 }}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={coverImages(p.trip.images, p.trip.id, { region: p.trip.region, title: p.trip.title })[0]} alt="" className="w-full h-full object-cover" />
-                    </div>
-                    <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
-                      <div>
-                        <div className="text-sm font-medium text-fg truncate">{p.trip.title}</div>
-                        <div className="text-xs text-fg-faint mt-0.5">📍 {p.trip.region}</div>
-                        {isFree ? (
-                          <div className="text-[11px] mt-1 font-semibold" style={{ color: "#1A6B4A" }}>♾ גישה חופשית · חינם</div>
-                        ) : (() => { const r = accessRemaining(p.accessExpiresAt); return (
-                          <div className="text-[11px] mt-1 font-semibold" style={{ color: r.color }}>{r.text}</div>
-                        ); })()}
-                      </div>
-                      {expired ? (
+                  <TripCardVisual
+                    key={p.id}
+                    trip={{
+                      id: p.trip.id, title: p.trip.title, region: p.trip.region, difficulty: "",
+                      date: p.purchasedAt, images: p.trip.images, tripType: "SELF_GUIDED", price: p.trip.price,
+                    }}
+                    href={`/trips/${p.trip.id}`}
+                    isPurchased
+                    accessExpiresAt={p.accessExpiresAt}
+                    footer={
+                      expired ? (
                         <button type="button" onClick={() => router.push(`/trips/${p.trip.id}`)}
-                          className="self-start mt-2 px-3 py-1.5 rounded-full text-[11px] font-medium border border-[#C0392B] text-[#C0392B]">פג תוקף — רכוש מחדש</button>
+                          className="mt-1 px-3 py-1.5 rounded-full text-[11px] font-medium border border-[#C0392B] text-[#C0392B]">פג תוקף — רכוש מחדש</button>
                       ) : (
-                        <div className="flex gap-1.5 mt-2 flex-wrap">
+                        <div className="flex gap-1.5 mt-1 flex-wrap">
                           <button type="button" onClick={() => router.push(`/trips/${p.trip.id}/start?mode=field`)}
                             className="px-3 py-1.5 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">▶ התחל / המשך</button>
                           <button type="button" onClick={() => router.push(`/trips/${p.trip.id}/start?mode=browse`)}
@@ -518,9 +497,9 @@ export default function MyTripsPage() {
                             );
                           })()}
                         </div>
-                      )}
-                    </div>
-                  </div>
+                      )
+                    }
+                  />
                 );
               })}
             </div>
