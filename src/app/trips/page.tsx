@@ -85,6 +85,7 @@ interface Trip {
 
 // Rideshare indicator for the trip-card stats row — 5 states (CLAUDE.md spec).
 function RideshareIndicator({ trip, hasAccess, onOpen }: { trip: Trip; hasAccess: boolean; onOpen: () => void }) {
+  const tcard = useTranslations("card");
   const spots = trip.rideSpots ?? 0;
   const seekers = trip.rideSeekers ?? 0;
   const MUTED = "#9ca3af", BLUE = "#185FA5", GREEN = "#1A6B4A";
@@ -92,8 +93,8 @@ function RideshareIndicator({ trip, hasAccess, onOpen }: { trip: Trip; hasAccess
   // State 1 — no access (not registered/interested): locked, not clickable
   if (!hasAccess) {
     return (
-      <div className="flex flex-col items-end shrink-0" title="הירשם לטיול כדי לגשת ללוח הטרמפים">
-        <span className="text-[9px] leading-none mb-1" style={{ color: MUTED }}>טרמפים</span>
+      <div className="flex flex-col items-end shrink-0">
+        <span className="text-[9px] leading-none mb-1" style={{ color: MUTED }}>{tcard("rides")}</span>
         <span className="flex items-center gap-0.5" style={{ color: MUTED, opacity: 0.5 }}>
           <Car size={14} /><Lock size={10} />
         </span>
@@ -104,7 +105,7 @@ function RideshareIndicator({ trip, hasAccess, onOpen }: { trip: Trip; hasAccess
   const labelColor = spots > 0 ? GREEN : seekers > 0 ? BLUE : MUTED;
   return (
     <button type="button" onClick={(e) => { e.stopPropagation(); onOpen(); }} className="flex flex-col items-end shrink-0">
-      <span className="text-[9px] leading-none mb-1" style={{ color: labelColor }}>טרמפים</span>
+      <span className="text-[9px] leading-none mb-1" style={{ color: labelColor }}>{tcard("rides")}</span>
       {spots > 0 && seekers > 0 ? (
         // State 5 — both rides and seekers
         <span className="flex items-center gap-1.5">
@@ -113,13 +114,13 @@ function RideshareIndicator({ trip, hasAccess, onOpen }: { trip: Trip; hasAccess
         </span>
       ) : spots > 0 ? (
         // State 4 — rides available
-        <span className="flex items-center gap-0.5 text-[10px] font-semibold" style={{ color: GREEN }}><Car size={13} />{spots} מקומות</span>
+        <span className="flex items-center gap-0.5 text-[10px] font-semibold" style={{ color: GREEN }}><Car size={13} />{tcard("ridesSpots", { n: spots })}</span>
       ) : seekers > 0 ? (
         // State 3 — only seekers
-        <span className="flex items-center gap-0.5 text-[10px] font-semibold" style={{ color: BLUE }}><UserSearch size={13} />{seekers} מחפשים</span>
+        <span className="flex items-center gap-0.5 text-[10px] font-semibold" style={{ color: BLUE }}><UserSearch size={13} />{tcard("ridesSeeking", { n: seekers })}</span>
       ) : (
         // State 2 — registered, no rides yet
-        <span className="flex items-center gap-0.5 text-[10px]" style={{ color: MUTED }}><Car size={13} />אין עדיין</span>
+        <span className="flex items-center gap-0.5 text-[10px]" style={{ color: MUTED }}><Car size={13} />{tcard("ridesNone")}</span>
       )}
     </button>
   );
@@ -132,6 +133,7 @@ function RideshareIndicator({ trip, hasAccess, onOpen }: { trip: Trip; hasAccess
 //  • grey icon, no count → caught up (questions exist, all seen & answered)
 //  • hidden → no questions at all
 function QAIndicator({ trip, hasAccess, onOpen }: { trip: Trip; hasAccess: boolean; onOpen: () => void }) {
+  const tcard = useTranslations("card");
   const total = trip.qaCount ?? 0;
   const open = trip.qaOpen ?? 0;
   const answered = Math.max(total - open, 0);
@@ -149,8 +151,8 @@ function QAIndicator({ trip, hasAccess, onOpen }: { trip: Trip; hasAccess: boole
   const color = state === "read" ? MUTED : state === "unread" ? AMBER : MUTED;
 
   return (
-    <button type="button" onClick={(e) => { e.stopPropagation(); onOpen(); }} className="flex flex-col items-end shrink-0" title="שאלות ותשובות">
-      <span className="text-[9px] leading-none mb-1" style={{ color }}>שו״ת</span>
+    <button type="button" onClick={(e) => { e.stopPropagation(); onOpen(); }} className="flex flex-col items-end shrink-0">
+      <span className="text-[9px] leading-none mb-1" style={{ color }}>{tcard("qa")}</span>
       <span className="flex items-center gap-0.5 text-[10px] font-semibold" style={{ color }}>
         <MessageCircle size={13} />
         {state === "unread" ? unreadAns : state === "open" ? open : null}
@@ -207,6 +209,7 @@ export default function TripsPage() {
   const { data: session } = useSession();
   const ts = useTranslations("search");
   const tc = useTranslations("common");
+  const tcard = useTranslations("card");
   const L = useLabels();
 
   const [trips, setTrips] = useState<Trip[]>([]);
@@ -924,28 +927,29 @@ export default function TripsPage() {
                       myStatus === "CONFIRMED" ? "bg-[#D6EDE3] text-[#0F5038]" :
                       myStatus === "WAITLIST"  ? "bg-[#FDF3DC] text-[#7A5010]" : "bg-surface-2 text-fg-muted"
                     }`}>
-                      <span>{myStatus === "CONFIRMED" ? "✓ רשום לטיול" :
-                       myStatus === "WAITLIST"  ? `⏳ ממתין למקום${myRegPos[trip.id] ? ` — מיקום ${myRegPos[trip.id]} בתור` : ""}` : "👀 מתעניין"}</span>
+                      <span>{myStatus === "CONFIRMED" ? tcard("registeredLabel") :
+                       myStatus === "WAITLIST"  ? `${tcard("waitlisted")}${myRegPos[trip.id] ? ` · ${myRegPos[trip.id]}` : ""}` : tcard("interestedStatus")}</span>
                       {(myStatus === "CONFIRMED" || myStatus === "WAITLIST") && (
                         <button type="button" onClick={(e) => { e.stopPropagation(); cancelReg(trip.id); }}
-                          className="mr-auto border border-current rounded-full px-2.5 py-0.5 text-[11px] font-medium hover:bg-black/5">
-                          {myStatus === "WAITLIST" ? "בטל המתנה" : "בטל הרשמה"}
+                          className="ms-auto border border-current rounded-full px-2.5 py-0.5 text-[11px] font-medium hover:bg-black/5">
+                          {myStatus === "WAITLIST" ? tcard("cancel") : tcard("cancelReg")}
                         </button>
                       )}
                     </div>
                   )}
                   {isSG && isPurchased && (
-                    <div className="px-3 py-1.5 flex items-center gap-1.5 text-xs font-medium bg-[#D6EDE3] text-[#0F5038]">✓ הטיול נרכש</div>
+                    <div className="px-3 py-1.5 flex items-center gap-1.5 text-xs font-medium bg-[#D6EDE3] text-[#0F5038]">{tcard("purchased")}</div>
                   )}
 
                   {/* Hero with image slideshow */}
                   <div className="relative overflow-hidden" style={{ height: 160 }}>
                     <TripCardHero images={coverImages(trip.images, trip.id, { region: trip.region, title: trip.title })} title={trip.title} />
 
-                    <div className="absolute top-2.5 right-2.5 flex gap-1.5 z-10">
+                    {/* Tags: right in RTL (Hebrew), left in LTR (English) */}
+                    <div className={`absolute top-2.5 ${L.en ? "left-2.5" : "right-2.5"} flex gap-1.5 z-10`} dir={L.dir}>
                       {trip.tripType && trip.tripType !== "DAY_HIKE" && (
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: "#2C5F8A", color: "#fff" }}>
-                          {trip.tripType === "MULTI_SITE" ? "מרובה אתרים" : `מסע · ${tripDayCount(trip) || ""} ימים`}
+                          {trip.tripType === "MULTI_SITE" ? tcard("multiSite") : tcard("journeyDays", { n: tripDayCount(trip) || 0 })}
                         </span>
                       )}
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: "rgba(255,255,255,0.92)", color: "#27500A" }}>
@@ -967,18 +971,20 @@ export default function TripsPage() {
                       </div>
                     )}
 
+                    {/* Heart: left in RTL, right in LTR (opposite of tags) */}
                     <button type="button" onClick={(e) => { e.stopPropagation(); toggleFav(trip.id); }}
-                      className="absolute top-2.5 left-2.5 bg-black/40 rounded-full w-7 h-7 flex items-center justify-center text-sm z-10"
+                      className={`absolute top-2.5 ${L.en ? "right-2.5" : "left-2.5"} bg-black/40 rounded-full w-7 h-7 flex items-center justify-center text-sm z-10`}
                       style={{ color: favIds.has(trip.id) ? "#ff6b81" : "#fff" }}>
                       {favIds.has(trip.id) ? "♥" : "♡"}
                     </button>
                     {trip.cardLogo && (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={trip.cardLogo} alt="" className="absolute bottom-2.5 left-2.5 w-10 h-10 rounded-lg bg-white object-contain p-1 shadow-md z-20" />
+                      <img src={trip.cardLogo} alt="" className={`absolute bottom-2.5 ${L.en ? "right-2.5" : "left-2.5"} w-10 h-10 rounded-lg bg-white object-contain p-1 shadow-md z-20`} />
                     )}
-                    <div className="absolute bottom-0 left-0 right-0 px-3 py-2.5 z-10"
+                    {/* Trip + guide name stay Hebrew, always right-aligned */}
+                    <div className="absolute bottom-0 left-0 right-0 px-3 py-2.5 z-10" dir="rtl"
                       style={{ background: "linear-gradient(to top,rgba(0,0,0,0.68),transparent)" }}>
-                      <div className="text-[13px] font-medium text-white leading-snug mb-1.5">{trip.title}</div>
+                      <div className="text-[13px] font-medium text-white leading-snug mb-1.5 text-right">{trip.title}</div>
                       {(() => {
                         const secName = trip.guides?.find((g) => g.role === "SECONDARY")?.guide?.user?.name ?? null;
                         return (
@@ -1005,10 +1011,10 @@ export default function TripsPage() {
 
                   {isFull && !myStatus && (
                     <div className="mx-3 mt-2.5 px-3 py-2 bg-[#FDF3DC] rounded-lg flex items-center justify-between gap-2 text-xs text-[#633806]">
-                      <span>⏰ הטיול מלא</span>
+                      <span>⏰ {tcard("tripFull")}</span>
                       <button type="button" onClick={(e) => { e.stopPropagation(); router.push(`/trips/${trip.id}/register?flow=waitlist`); }}
                         className="shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold text-white bg-[#E8A020] hover:bg-[#c8891a] transition-colors">
-                        הצטרף לרשימת המתנה
+                        {tcard("joinWaitlist")}
                       </button>
                     </div>
                   )}
@@ -1018,30 +1024,30 @@ export default function TripsPage() {
                     const nDays = tripDayCount(trip);
                     const meta: { t: string; color?: string }[] = isSG
                       ? [
-                          { t: `🎒 טיול עצמאי` },
+                          { t: `🎒 ${tcard("selfGuided")}` },
                           // Free trips: unlimited access, no window. Paid: show the
                           // access window, or (once purchased) the remaining time.
                           ...(trip.price === 0
-                            ? [{ t: "♾ גישה חופשית" }]
+                            ? [{ t: `♾ ${tcard("freeAccess")}` }]
                             : [isPurchased
                                 ? (() => { const r = accessRemaining(purchaseExpiry[trip.id]); return { t: r.text, color: r.color }; })()
-                                : { t: `🔓 גישה ל-${trip.accessWindowDays ?? 30} ימים` }]),
-                          ...(trip.distanceKm > 0 ? [{ t: `📍 ${trip.distanceKm} ק"מ` }] : []),
+                                : { t: `🔓 ${tcard("accessDays", { n: trip.accessWindowDays ?? 30 })}` }]),
+                          ...(trip.distanceKm > 0 ? [{ t: `📍 ${trip.distanceKm} ${tcard("km")}` }] : []),
                         ]
                       : isJourney
                       ? [
                           { t: `📅 ${dfmt(trip.date, { greg: { weekday: "short", day: "numeric", month: "short" } })}${trip.endDate ? `–${dfmt(trip.endDate, { greg: { day: "numeric", month: "short" } })}` : ""}` },
-                          ...(nDays > 1 ? [{ t: `🌙 ${nDays - 1} לילות` }] : []),
-                          ...(trip.distanceKm > 0 ? [{ t: `📍 ${trip.distanceKm} ק"מ סה"כ` }] : []),
+                          ...(nDays > 1 ? [{ t: `🌙 ${tcard("nights", { n: nDays - 1 })}` }] : []),
+                          ...(trip.distanceKm > 0 ? [{ t: `📍 ${trip.distanceKm} ${tcard("kmTotal")}` }] : []),
                         ]
                       : [
                           { t: `📅 ${dfmt(trip.date, { greg: { weekday: "short", day: "numeric", month: "short" } })}` },
                           { t: `🕖 ${trip.startTime}` },
-                          ...(trip.distanceKm > 0 ? [{ t: `📍 ${trip.distanceKm} ק"מ` }] : []),
-                          ...(trip.durationMin > 0 ? [{ t: `⏱ ${Math.round(trip.durationMin / 60)} שע'` }] : []),
+                          ...(trip.distanceKm > 0 ? [{ t: `📍 ${trip.distanceKm} ${tcard("km")}` }] : []),
+                          ...(trip.durationMin > 0 ? [{ t: `⏱ ${Math.round(trip.durationMin / 60)} ${tcard("hrs")}` }] : []),
                         ];
                     const gender = trip.genderRestriction && trip.genderRestriction !== "ALL"
-                      ? [{ t: trip.genderRestriction === "MEN" ? "👨 גברים בלבד" : "👩 נשים בלבד", color: "#7A5010" }]
+                      ? [{ t: trip.genderRestriction === "MEN" ? tcard("menOnly") : tcard("womenOnly"), color: "#7A5010" }]
                       : [];
                     return (
                   <div className="px-3 pt-2 pb-2.5">
@@ -1077,16 +1083,16 @@ export default function TripsPage() {
                       </div>
                       <div className="flex justify-between text-[10px] text-fg-faint mt-1">
                         <span>
-                          {trip.spotsBooked} מתוך {trip.maxSpots} רשומים
+                          {tcard("registeredOf", { booked: trip.spotsBooked, max: trip.maxSpots })}
                           {" · "}
                           <button type="button"
                             onClick={(e) => { e.stopPropagation(); setRegistrantsModal({ id: trip.id, title: trip.title }); }}
                             className="text-[#185FA5] underline underline-offset-2 hover:text-[#134e73] cursor-pointer">
-                            לרשימת המשתתפים
+                            {tcard("participantList")}
                           </button>
                         </span>
                         <span style={{ color: isFull ? "#C0392B" : "#1A6B4A", fontWeight: 500 }}>
-                          {isFull ? "מלא" : `${spotsLeft} מקומות נותרו`}
+                          {isFull ? tcard("full") : tcard("spotsRemaining", { n: spotsLeft })}
                         </span>
                       </div>
                     </div>
@@ -1096,11 +1102,11 @@ export default function TripsPage() {
                     <div className="flex items-center justify-between pt-2 border-t border-border">
                       <div>
                         {trip.price === 0 ? (
-                          <span className="text-[15px] font-bold px-2 py-0.5 rounded-full" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>חינם</span>
+                          <span className="text-[15px] font-bold px-2 py-0.5 rounded-full" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>{tcard("free")}</span>
                         ) : (
                           <>
-                            <span className="text-[17px] font-medium text-fg">₪{trip.price.toLocaleString("he-IL")}</span>
-                            <span className="text-[11px] text-fg-faint mr-1">{isSG ? "לחבילה" : trip.tripType && trip.tripType !== "DAY_HIKE" ? "למסע" : "לאדם"}</span>
+                            <span className="text-[17px] font-medium text-fg">₪{trip.price.toLocaleString(L.en ? "en-US" : "he-IL")}</span>
+                            <span className="text-[11px] text-fg-faint mx-1">{isSG ? tcard("perPackage") : trip.tripType && trip.tripType !== "DAY_HIKE" ? tcard("perJourney") : tcard("perPerson")}</span>
                           </>
                         )}
                       </div>
@@ -1115,44 +1121,44 @@ export default function TripsPage() {
                             </>
                           ) : (
                             <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)}
-                              className="px-3.5 py-1.5 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">{trip.price === 0 ? "הירשם בחינם" : "רכוש"}</button>
+                              className="px-3.5 py-1.5 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">{trip.price === 0 ? tcard("registerFree") : tcard("purchase")}</button>
                           )
                         ) : myStatus === "CONFIRMED" ? (
                           <>
-                            <span className="px-2.5 py-1.5 rounded-full text-[11px] font-medium bg-[#D6EDE3] text-[#0F5038]">✓ רשום לטיול</span>
+                            <span className="px-2.5 py-1.5 rounded-full text-[11px] font-medium bg-[#D6EDE3] text-[#0F5038]">{tcard("registeredLabel")}</span>
                             <button type="button" onClick={() => cancelReg(trip.id)}
                               className="px-3 py-1.5 border border-[#C0392B] text-[#C0392B] rounded-full text-[11px] font-medium">
-                              בטל הרשמה
+                              {tcard("cancelReg")}
                             </button>
                           </>
                         ) : myStatus === "WAITLIST" ? (
                           <>
-                            <span className="px-2.5 py-1.5 rounded-full text-[11px] font-medium bg-[#D4E4F0] text-[#185FA5]">⏰ ברשימת המתנה</span>
+                            <span className="px-2.5 py-1.5 rounded-full text-[11px] font-medium bg-[#D4E4F0] text-[#185FA5]">{tcard("waitlisted")}</span>
                             <button type="button" onClick={() => cancelReg(trip.id)}
                               className="px-3 py-1.5 border border-[#C0392B] text-[#C0392B] rounded-full text-[11px] font-medium">
-                              בטל
+                              {tcard("cancel")}
                             </button>
                           </>
                         ) : myStatus === "PENDING" ? (
                           <>
-                            <span className="px-2.5 py-1.5 rounded-full text-[11px] font-medium bg-surface-2 text-fg-muted">👀 מתעניין</span>
+                            <span className="px-2.5 py-1.5 rounded-full text-[11px] font-medium bg-surface-2 text-fg-muted">{tcard("interestedStatus")}</span>
                             {!isFull && (
                               <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)}
-                                className="px-3.5 py-1.5 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">להרשמה</button>
+                                className="px-3.5 py-1.5 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">{tcard("register")}</button>
                             )}
                             <button type="button" onClick={() => cancelReg(trip.id)}
-                              className="px-3 py-1.5 border border-border text-fg-muted rounded-full text-[11px]">הסר</button>
+                              className="px-3 py-1.5 border border-border text-fg-muted rounded-full text-[11px]">{tcard("remove")}</button>
                           </>
                         ) : (
                           <>
                             <button type="button" onClick={() => router.push(`/trips/${trip.id}/register?flow=interest`)}
                               className="px-3 py-1.5 bg-surface-2 border border-border text-fg-muted rounded-full text-[11px]">
-                              מתעניין
+                              {tcard("interested")}
                             </button>
                             {!isFull && (
                               <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)}
                                 className="px-3.5 py-1.5 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">
-                                להרשמה
+                                {tcard("register")}
                               </button>
                             )}
                           </>
