@@ -125,21 +125,36 @@ interface TripDay {
   id: string; dayNumber: number; title: string | null; description: string | null;
   distanceKm: number | null; durationMin: number | null; startPoint: string | null;
   endPoint: string | null; date: string | null; startTime: string | null;
+  estimatedEndTime?: string | null; difficulty?: string | null;
   isRestDay: boolean; equipment: string | null;
 }
 
 function JourneyTimeline({ days }: { days: TripDay[] }) {
   const dfmt = useDateFmt();
-  const [open, setOpen] = useState<number | null>(days[0]?.dayNumber ?? null);
+  // Collapsed by default; each day toggles independently.
+  const [open, setOpen] = useState<Set<number>>(new Set());
+  const allOpen = days.length > 0 && open.size === days.length;
+  function toggle(n: number) {
+    setOpen((prev) => { const s = new Set(prev); if (s.has(n)) s.delete(n); else s.add(n); return s; });
+  }
+  function toggleAll() {
+    setOpen(allOpen ? new Set() : new Set(days.map((d) => d.dayNumber)));
+  }
   return (
     <div>
-      <Heading icon={MapPin}>מסלול המסע — {days.length} ימים</Heading>
+      <div className="flex items-center justify-between">
+        <Heading icon={MapPin}>מסלול המסע — {days.length} ימים</Heading>
+        <button type="button" onClick={toggleAll}
+          className="text-xs font-medium text-accent border border-accent/40 rounded-full px-3 py-1 hover:bg-accent/10 transition-colors shrink-0">
+          {allOpen ? "צמצם הכל" : "הרחב הכל"}
+        </button>
+      </div>
       <div className="flex flex-col gap-2">
         {days.map((d) => {
-          const isOpen = open === d.dayNumber;
+          const isOpen = open.has(d.dayNumber);
           return (
             <div key={d.id} className="border border-border rounded-2xl overflow-hidden bg-surface">
-              <button type="button" onClick={() => setOpen(isOpen ? null : d.dayNumber)}
+              <button type="button" onClick={() => toggle(d.dayNumber)}
                 className="w-full flex items-center gap-3 px-3 py-3 text-right">
                 <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
                   style={{ background: "var(--surface-2)", color: "var(--accent)" }}>
@@ -163,6 +178,9 @@ function JourneyTimeline({ days }: { days: TripDay[] }) {
                   {d.description && <p className="leading-relaxed">{d.description}</p>}
                   {!d.isRestDay && (d.startPoint || d.endPoint) && (
                     <div>📍 {d.startPoint || "—"} ← {d.endPoint || "—"}</div>
+                  )}
+                  {(d.startTime || d.estimatedEndTime) && (
+                    <div dir="ltr" className="text-right">🕐 {d.startTime || "—"}{d.estimatedEndTime ? ` – ${d.estimatedEndTime}` : ""}</div>
                   )}
                   {!d.isRestDay && d.durationMin ? <div>⏱ {Math.round(d.durationMin / 60)} שעות</div> : null}
                   {d.equipment && <div>🎒 {d.equipment}</div>}

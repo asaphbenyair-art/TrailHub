@@ -8,8 +8,12 @@ export interface TripDayData {
   endPoint: string;
   date: string;
   startTime: string;
+  estimatedEndTime: string;
+  difficulty?: string;
   isRestDay: boolean;
   equipment: string;
+  gpxData?: string;
+  waypointsJson?: WaypointData[];
   sources?: SourceMaterial[];
 }
 

@@ -43,6 +43,7 @@ function tripToWizard(trip: Record<string, unknown>): WizardData {
         endPoint: String(d.endPoint ?? ""),
         date: d.date ? new Date(d.date as string).toISOString().slice(0, 10) : "",
         startTime: String(d.startTime ?? ""),
+        estimatedEndTime: String(d.estimatedEndTime ?? ""),
         isRestDay: Boolean(d.isRestDay),
         equipment: String(d.equipment ?? ""),
         sources: Array.isArray(d.sourceMaterials) ? (d.sourceMaterials as SourceMaterial[]) : undefined,

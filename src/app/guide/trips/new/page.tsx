@@ -60,7 +60,9 @@ export default function NewTripWizard() {
   }
 
   function goTo(n: number) {
-    if (n < step) { setError(""); setStep(n); }
+    // Free navigation — clicking any step name jumps there directly.
+    setError("");
+    setStep(n);
   }
 
   async function resolveImageUrl(url: string): Promise<string> {

@@ -557,6 +557,8 @@ model TripDay {
 
   date        DateTime?
   startTime   String?
+  estimatedEndTime String?
+  difficulty  Difficulty?
   isRestDay   Boolean  @default(false)
   gpxData     String?  @db.Text
   equipment   String?

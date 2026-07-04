@@ -2418,3 +2418,90 @@ If waypoint has an audio file: start playing it automatically on arrival (with a
 
 ### TTS fallback
 If waypoint has guidance text but NO audio file: offer TTS (text-to-speech) to read it aloud. User can tap to start/stop.
+
+---
+
+## Self-Guided Trip — Two Modes After Purchase
+
+### Two separate entry points on the trip card (in My Trips → עצמאיים):
+1. **"התחל / המשך"** — field mode (for when you're actually hiking)
+2. **"עיין בטיול"** — browse mode (for planning at home)
+
+### "התחל / המשך" — Field Mode
+Shows only what's needed in the field:
+- Map with GPX route + current GPS location (auto-zoom to show both user and route even if 30km away)
+- Elevation profile chart
+- Share with other users (search by platform username, not email) — up to 3 people
+- "על הטיול" — basic trip info
+- NO waypoint details — these are revealed during the hike as user arrives at each one
+
+### "עיין בטיול" — Browse Mode
+Shows full trip content for planning:
+- All trip details and description
+- All waypoints with full content (text, PDFs, audio)
+- Source materials
+- Elevation profile
+- Map with full route and all waypoint markers
+- Share with other users (same as field mode)
+
+### Sharing
+- Search by platform username (not email)
+- Available in both modes
+- Up to 3 additional people
+
+---
+
+## Self-Guided Trip — Reviews
+
+### Where to write a review
+- In "עצמאיים" tab (My Trips): "כתוב ביקורת" button on each purchased trip card
+- On the trip detail page after purchase
+
+### Unlock logic
+- Review unlocks after: (trip duration in hours - 2) hours from purchase time
+- Example: 5-hour trip → review unlocks 3 hours after purchase
+- Minimum: if trip is 2 hours or less → unlock immediately after purchase
+- Applies to self-guided trips only (not journeys — separate spec needed)
+
+### If trying before unlock
+- Show: "ביקורת תתאפשר בעוד X שעות" (countdown)
+
+---
+
+## Self-Guided Trip — Reviews Clarification
+Review button for self-guided trips appears ONLY in "עצמאיים" tab (My Trips) — NOT on the trip detail page itself.
+
+---
+
+## Journey (מסע) — Full Spec
+
+### Trip-level fields (defined once for the whole journey):
+- Journey name
+- Start and end dates (days auto-generated from date range — no manual "הוסף יום" button)
+- Guide(s)
+- Base equipment list (shared across all days)
+- Price
+- Cancellation policy
+- Trip manager assignment
+
+### Day-level fields (per each auto-generated day):
+- Date: auto-assigned from start date + day index (not manually editable)
+- Departure time
+- Estimated end time (same as single-day trip — needed for review unlock)
+- Difficulty level
+- GPX file for that specific day (uploaded separately per day)
+- Waypoints (based on that day's GPX)
+- Additional equipment specific to that day (supplements the base list)
+- Day description
+- Day-level Q&A (if needed)
+
+### UI — Accordion
+- Each day is collapsed by default showing: day number + date + departure time
+- Click to expand/collapse
+- "הרחב הכל / צמצם הכל" button at top
+- Applies both in guide creation wizard and hiker trip detail view
+
+### GPX per day
+- Each day has its own GPX upload field
+- Waypoints are tied to that day's GPX
+- Same waypoint logic as single-day trips (10m proximity validation, blocked until GPX uploaded)
