@@ -464,11 +464,11 @@ export default function TripDetailPage() {
   }
 
   if (loading) {
-    return <div dir="rtl" className="min-h-screen bg-bg flex items-center justify-center"><div className="text-fg-faint text-sm">טוען…</div></div>;
+    return <div dir={L.dir} className="min-h-screen bg-bg flex items-center justify-center"><div className="text-fg-faint text-sm">טוען…</div></div>;
   }
   if (notFound || !trip) {
     return (
-      <div dir="rtl" className="min-h-screen bg-bg flex flex-col items-center justify-center gap-4">
+      <div dir={L.dir} className="min-h-screen bg-bg flex flex-col items-center justify-center gap-4">
         <div className="text-fg-muted">הטיול לא נמצא</div>
         <button type="button" onClick={() => router.push("/trips")} className="text-accent text-sm">← חזרה לגלה טיולים</button>
       </div>
@@ -548,7 +548,7 @@ export default function TripDetailPage() {
     });
 
   return (
-    <div dir="rtl" className="min-h-screen bg-bg flex justify-center pb-28">
+    <div dir={L.dir} className="min-h-screen bg-bg flex justify-center pb-28">
       <div className="w-full max-w-[480px]">
 
         {/* ── Registered: sticky top status bar with cancel (replaces bottom CTA) ── */}
@@ -1147,7 +1147,7 @@ export default function TripDetailPage() {
       {drawer && (
         <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setDrawer(null)}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-          <div dir="rtl" className="relative w-full max-w-[480px] bg-surface rounded-t-3xl p-5 pb-8 max-h-[70vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div dir={L.dir} className="relative w-full max-w-[480px] bg-surface rounded-t-3xl p-5 pb-8 max-h-[70vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: "var(--border)" }} />
             <div className="flex items-start justify-between mb-3">
               <h3 className="font-display text-xl text-fg flex items-center gap-2"><MapPin size={16} style={{ color: "var(--accent)" }} /> {drawer.label || "תחנה"}</h3>
@@ -1171,7 +1171,7 @@ export default function TripDetailPage() {
 
       {/* ── Floating registration bar (hidden once registered — the top bar takes over) ── */}
       {(isSelfGuided || !(myRegStatus === "CONFIRMED" || myRegStatus === "WAITLIST")) && (
-      <div className="fixed bottom-0 inset-x-0 flex justify-center z-40" dir="rtl">
+      <div className="fixed bottom-0 inset-x-0 flex justify-center z-40" dir={L.dir}>
         <div className="w-full max-w-[480px] bg-surface/95 backdrop-blur-xl border-t border-border" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
           {session && myRegStatus && myRegStatus !== "CANCELLED" && (
             <button type="button" onClick={() => router.push(`/trips/${trip.id}/chat`)}

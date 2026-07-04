@@ -13,6 +13,7 @@ import ModeIndicator from "@/components/ModeIndicator";
 import QAModal from "@/components/QAModal";
 import { useDateFmt, useCalendarMode } from "@/components/CalendarModeProvider";
 import { useTranslations } from "next-intl";
+import { useDir } from "@/components/useLabels";
 import { formatDualDate } from "@/lib/hebrewDate";
 
 const DIFF_LABEL: Record<string, string> = { EASY: "קל", MEDIUM: "בינוני", HARD: "קשה", EXTREME: "קיצוני" };
@@ -318,6 +319,7 @@ function TripCard({
 export default function MyTripsPage() {
   const router = useRouter();
   const tm = useTranslations("myTrips");
+  const dir = useDir();
   const [regs, setRegs] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"registered" | "waitlist" | "interested" | "selfguided" | "history" | "cancelled">("registered");
@@ -366,7 +368,7 @@ export default function MyTripsPage() {
     : history;
 
   return (
-    <div dir="rtl" className="min-h-screen bg-bg">
+    <div dir={dir} className="min-h-screen bg-bg">
       <div className="max-w-[480px] mx-auto px-3 py-3 pb-24">
 
         {/* Top bar */}

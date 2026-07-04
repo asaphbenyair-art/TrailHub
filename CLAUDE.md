@@ -2311,3 +2311,110 @@ TTS (text-to-speech) reads the guidance text if no audio file uploaded
 - Forward (default): waypoints in original order
 - Reverse: if user is detected near the end of the route, app asks if they want to do it in reverse
 - No other order options in Phase 1
+
+---
+
+## Internationalization (i18n) — Hebrew + English
+
+### Scope
+- Translate: buttons, labels, headings, error messages, placeholders, filters, tags, system states (רשום, ממתין, מלא etc.)
+- Do NOT translate: user-generated content (trip names, descriptions, Q&A, reviews, broadcasts, waypoint content)
+- User-generated content: add a small "Translate" button next to it that opens Google Translate or translates inline
+
+### Implementation
+- Use `next-intl` package
+- Two translation files: `he.json` and `en.json`
+- All hardcoded UI strings replaced with `t('key')` calls
+- Claude Code should scan ALL components and extract every hardcoded Hebrew string into the translation files
+
+### Language toggle
+- Small `עב / EN` toggle in the top navigation bar
+- Saves preference to localStorage + user DB field
+- Switches language instantly without page reload
+- Default: Hebrew
+
+### RTL/LTR
+- Hebrew: `direction: rtl`
+- English: `direction: ltr`
+- Use logical CSS properties (`margin-inline-end` instead of `margin-right`) where possible
+
+### Translate button on user content
+- Small "Translate" link/icon next to trip descriptions, Q&A answers, reviews
+- Clicking opens Google Translate with the text, or translates inline using Google Translate API
+
+---
+
+## i18n — Full Scope Clarification
+
+When user switches to English, ALL of the following must change:
+
+### Layout & Direction
+- Full LTR layout — everything flips: nav, menus, cards, modals, drawers
+- Banner/hero text alignment flips to left
+- All flex/grid directions reverse
+
+### UI Strings (comprehensive list)
+- All buttons, labels, headings
+- All status tags: "פתוח" → "Open", "מלא" → "Full", "קשה" → "Hard", "עצמאי" → "Self-Guided", "ציבורי" → "Public", "טיוטא" → "Draft" etc.
+- All filter names and options
+- All menu items and navigation labels
+- All system messages and notifications
+- Trip type labels, difficulty levels, attributes
+
+### Geographic names
+- All Israeli region names translated to English: גליל עליון → Upper Galilee, נגב → Negev, כרמל → Carmel, גולן → Golan Heights, ירושלים → Jerusalem, ים המלח → Dead Sea, אפרים ומנשה → Ephraim and Manasseh, ארץ בנימין → Land of Benjamin, יהודה → Judea, שפלה → Shephelah etc.
+
+### What stays in original language
+- User-generated content: trip names, descriptions, Q&A, reviews, waypoint content, broadcast messages
+- These get a "Translate" button instead
+
+---
+
+## Self-Guided Trip — Navigation Start Flow (Detailed)
+
+### On pressing "התחל טיול"
+App checks GPS proximity to ALL waypoints:
+
+1. **Within 20m of first waypoint (start):** Begin navigation immediately
+2. **Within 20m of last waypoint (end):** Ask "האם תרצה לעשות את המסלול בכיוון הפוך?"
+3. **Within 20m of any middle waypoint:** Ask "נראה שאתה קרוב לנקודה X — האם תרצה להצטרף מכאן?"
+4. **Not near any waypoint:** Show two options:
+   - "נווט לנקודת ההתחלה עם Waze"
+   - "נווט לנקודת ההתחלה עם Google Maps"
+
+### When user navigates via Waze/Google Maps
+- App continues running in background tracking GPS
+- When user comes within 20 meters of the starting waypoint: send a push notification "הגעת לנקודת ההתחלה! לחץ להפעלת הטיול"
+- Tapping notification brings user back to the app and immediately activates navigation mode
+
+### During active navigation
+- App map shows: GPX route line, current GPS blue dot, next waypoint highlighted
+- Directional arrow + distance to next waypoint shown (e.g. "280 מטר צפון-מזרח")
+- Waze/Google Maps used ONLY for getting to the trailhead — all in-trail navigation is in-app
+- When within 20m of next waypoint: vibration + sound alert → waypoint content screen opens automatically
+- User confirms "הגעתי" → next waypoint becomes active
+
+---
+
+## Self-Guided Trip — Waypoint Arrival Experience
+
+### Detection
+- When user comes within 20 meters of the next waypoint: trigger arrival
+
+### On arrival
+- Vibration + sound alert
+- Waypoint content screen opens automatically showing:
+  - Waypoint name and number
+  - Content buttons based on what guide uploaded (text / PDF / audio) — only show buttons for content that exists
+  - "יצאתי לדרך →" button at the bottom
+
+### Leaving the waypoint
+Two ways the app detects departure:
+1. **Manual:** user taps "יצאתי לדרך →" — immediately moves to next waypoint mode
+2. **Automatic:** if user moves more than 50 meters away from the waypoint without tapping — app detects departure and silently advances to tracking the next waypoint
+
+### Auto-play audio
+If waypoint has an audio file: start playing it automatically on arrival (with a pause button). User can stop it manually.
+
+### TTS fallback
+If waypoint has guidance text but NO audio file: offer TTS (text-to-speech) to read it aloud. User can tap to start/stop.

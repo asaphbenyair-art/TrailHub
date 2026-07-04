@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
+import { useDir } from "@/components/useLabels";
 import { FileText, XCircle, MessageCircle, Mail, Bell, ChevronRight, Check } from "lucide-react";
 import AvatarMenu from "@/components/AvatarMenu";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -39,6 +40,7 @@ function relTime(iso: string) {
 export default function NotificationsPage() {
   const router = useRouter();
   const tnf = useTranslations("notifications");
+  const dir = useDir();
   const { data: session, status } = useSession();
   const meId = (session?.user as { id?: string })?.id;
   const [notifs, setNotifs] = useState<Notif[]>([]);
@@ -82,7 +84,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div dir="rtl" className="min-h-screen bg-bg pb-24">
+    <div dir={dir} className="min-h-screen bg-bg pb-24">
       <div className="max-w-[480px] mx-auto px-4 pt-6">
         <div className="flex items-center justify-between mb-5">
           <h1 className="font-display text-3xl text-fg">{tnf("title")}</h1>

@@ -471,7 +471,7 @@ export default function TripsPage() {
     filters.tags.length + (filters.favoriteGuides ? 1 : 0);
 
   return (
-    <div dir="rtl" className="min-h-screen bg-bg">
+    <div dir={L.dir} className="min-h-screen bg-bg">
       <style>{`@keyframes fadeIn{from{opacity:0}to{opacity:1}}`}</style>
 
       {/* Search intent flow */}

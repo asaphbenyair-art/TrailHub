@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useDir } from "@/components/useLabels";
 import { Bell, CalendarDays, SlidersHorizontal, Clock, Sparkles, Heart, ChevronLeft } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import LanguageToggle from "@/components/LanguageToggle";
@@ -48,6 +49,7 @@ const INTENT_CARDS = [
 export default function HikerHome() {
   const router = useRouter();
   const th = useTranslations("home");
+  const dir = useDir();
   const [trips, setTrips] = useState<HomeTrip[]>([]);
   const [regions, setRegions] = useState<string[]>([]);
   const [visit, setVisit] = useState(1);
@@ -167,7 +169,7 @@ export default function HikerHome() {
   }
 
   return (
-    <div dir="rtl" className="min-h-screen bg-bg pb-24">
+    <div dir={dir} className="min-h-screen bg-bg pb-24">
       {/* ── Top bar ── */}
       <header className="sticky top-0 z-30 bg-bg/80 backdrop-blur-xl border-b border-border">
         <div className="max-w-[480px] mx-auto px-4 h-14 flex items-center justify-between">
