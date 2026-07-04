@@ -8,25 +8,26 @@ import Step3 from "./steps/Step3";
 import Step4 from "./steps/Step4";
 import Step5 from "./steps/Step5";
 import { WizardData, DEFAULT_WIZARD_DATA, TripDayData, PriceTier, CouponData, WaypointData, SourceMaterial } from "./types";
+import { useLabels } from "@/components/useLabels";
 
 // Step sets differ by trip type. Self-guided skips the payment/cancellation step
 // (single fixed price set in Parameters) — see QA items 8-11, 14-15.
 const REGULAR_STEPS = [
-  { label: "פרטים" }, { label: "מסלול" }, { label: "פרמטרים" }, { label: "תשלום" }, { label: "פרסום" },
+  { label: "פרטים", labelEn: "Details" }, { label: "מסלול", labelEn: "Route" }, { label: "פרמטרים", labelEn: "Parameters" }, { label: "תשלום", labelEn: "Payment" }, { label: "פרסום", labelEn: "Publish" },
 ];
 const SELF_GUIDED_STEPS = [
-  { label: "פרטים" }, { label: "מסלול" }, { label: "פרמטרים" }, { label: "פרסום" },
+  { label: "פרטים", labelEn: "Details" }, { label: "מסלול", labelEn: "Route" }, { label: "פרמטרים", labelEn: "Parameters" }, { label: "פרסום", labelEn: "Publish" },
 ];
 
-function validateStep(step: number, data: WizardData, isSelfGuided: boolean): string | null {
+function validateStep(step: number, data: WizardData, isSelfGuided: boolean, en: boolean): string | null {
   if (step === 1) {
-    if (!data.title.trim()) return "נא להזין שם טיול";
-    if (!isSelfGuided && !data.date) return "נא לבחור תאריך";
-    if (!data.region) return "נא לבחור איזור";
+    if (!data.title.trim()) return en ? "Please enter a trip name" : "נא להזין שם טיול";
+    if (!isSelfGuided && !data.date) return en ? "Please pick a date" : "נא לבחור תאריך";
+    if (!data.region) return en ? "Please select a region" : "נא לבחור איזור";
   }
   // Price lives in Parameters (step 3) for self-guided, in Payment (step 4) otherwise
   if ((isSelfGuided && step === 3) || (!isSelfGuided && step === 4)) {
-    if (!data.price && data.price !== "0") return "נא להזין מחיר (0 לחינם)";
+    if (!data.price && data.price !== "0") return en ? "Please enter a price (0 for free)" : "נא להזין מחיר (0 לחינם)";
   }
   return null;
 }
@@ -34,6 +35,7 @@ function validateStep(step: number, data: WizardData, isSelfGuided: boolean): st
 export default function NewTripWizard() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { en } = useLabels();
   const isSelfGuided = searchParams.get("type") === "self_guided";
   const [step, setStep] = useState(1);
   const [data, setData] = useState<WizardData>(() =>
@@ -48,7 +50,7 @@ export default function NewTripWizard() {
   }
 
   function goNext() {
-    const err = validateStep(step, data, isSelfGuided);
+    const err = validateStep(step, data, isSelfGuided, en);
     if (err) { setError(err); return; }
     setError("");
     setStep((s) => Math.min(s + 1, STEPS.length));
@@ -162,7 +164,7 @@ export default function NewTripWizard() {
     setSaving(false);
 
     if (!res.ok) {
-      let msg = "שגיאה בשמירה";
+      let msg = en ? "Error saving" : "שגיאה בשמירה";
       try { const d = await res.json(); msg = d.error ?? msg; } catch {}
       setError(msg);
       return;
@@ -175,7 +177,7 @@ export default function NewTripWizard() {
     <div className="min-h-screen p-4 flex items-start justify-center">
       <div className="w-full max-w-[480px]">
         <div className="mb-4">
-          <h1 className="text-lg font-semibold text-fg">יצירת טיול חדש</h1>
+          <h1 className="text-lg font-semibold text-fg">{en ? "Create new trip" : "יצירת טיול חדש"}</h1>
         </div>
 
         <div className="bg-surface rounded-2xl border border-border overflow-hidden shadow-sm">
@@ -212,7 +214,7 @@ export default function NewTripWizard() {
                       isActive ? "text-[#1A6B4A] font-medium" : "text-fg-faint"
                     }`}
                   >
-                    {s.label}
+                    {en ? s.labelEn : s.label}
                   </span>
                 </button>
               );
@@ -231,10 +233,10 @@ export default function NewTripWizard() {
           <div className="flex items-center justify-between gap-2 px-5 py-2.5 border-t border-border bg-surface">
             <button
               type="button"
-              onClick={() => { if (window.confirm("לבטל את יצירת הטיול? השינויים לא יישמרו.")) router.push("/guide/dashboard"); }}
+              onClick={() => { if (window.confirm(en ? "Cancel trip creation? Your changes won't be saved." : "לבטל את יצירת הטיול? השינויים לא יישמרו.")) router.push("/guide/dashboard"); }}
               className="px-3 py-1.5 text-xs text-red-500 border border-red-500/30 rounded-full hover:bg-red-500/10 transition-colors"
             >
-              בטל טיול
+              {en ? "Cancel trip" : "בטל טיול"}
             </button>
             <button
               type="button"
@@ -242,7 +244,7 @@ export default function NewTripWizard() {
               disabled={saving}
               className="px-3 py-1.5 text-xs text-[#1A6B4A] border border-[#1A6B4A]/40 rounded-full hover:bg-[#D6EDE3] transition-colors disabled:opacity-60"
             >
-              {saving ? "שומר..." : "💾 שמור טיוטא"}
+              {saving ? (en ? "Saving..." : "שומר...") : (en ? "💾 Save draft" : "💾 שמור טיוטא")}
             </button>
           </div>
 
@@ -255,14 +257,14 @@ export default function NewTripWizard() {
                 step === 1 ? "invisible" : ""
               }`}
             >
-              חזור
+              {en ? "Back" : "חזור"}
             </button>
 
             <div className="flex flex-col items-center gap-1">
               {error && (
                 <span className="text-xs text-red-500">{error}</span>
               )}
-              <span className="text-xs text-fg-faint">שלב {step} מתוך {STEPS.length}</span>
+              <span className="text-xs text-fg-faint">{en ? `Step ${step} of ${STEPS.length}` : `שלב ${step} מתוך ${STEPS.length}`}</span>
             </div>
 
             {step < STEPS.length ? (
@@ -271,7 +273,7 @@ export default function NewTripWizard() {
                 onClick={goNext}
                 className="px-5 py-2 text-xs bg-[#1A6B4A] text-white rounded-full font-medium hover:bg-[#155a3e] transition-colors"
               >
-                המשך
+                {en ? "Continue" : "המשך"}
               </button>
             ) : (
               <button
@@ -280,7 +282,7 @@ export default function NewTripWizard() {
                 disabled={saving}
                 className="px-5 py-2 text-xs bg-[#1A6B4A] text-white rounded-full font-medium hover:bg-[#155a3e] transition-colors disabled:opacity-60"
               >
-                {saving ? "שומר..." : "שמור"}
+                {saving ? (en ? "Saving..." : "שומר...") : (en ? "Save" : "שמור")}
               </button>
             )}
           </div>

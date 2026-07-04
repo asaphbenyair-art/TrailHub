@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useRef, useState, useCallback, useMemo, useEffect } from "react";
 import { WizardData, WaypointData } from "../types";
 import SourceMaterialsEditor from "./SourceMaterialsEditor";
+import { useLabels } from "@/components/useLabels";
 
 const TripMap = dynamic(() => import("./TripMap"), { ssr: false });
 import ElevationChart, { parseTrack } from "@/components/ElevationChart";
@@ -37,9 +38,9 @@ function metersToRoute(wp: LL, route: LL[]): number {
 }
 
 const ROUTE_TYPES = [
-  { value: "one-way", label: "חד-כיווני" },
-  { value: "circular-nature", label: "מעגלי — שטח" },
-  { value: "circular-urban", label: "מעגלי — עירוני" },
+  { value: "one-way", label: "חד-כיווני", labelEn: "One-way" },
+  { value: "circular-nature", label: "מעגלי — שטח", labelEn: "Circular — nature" },
+  { value: "circular-urban", label: "מעגלי — עירוני", labelEn: "Circular — urban" },
 ];
 
 interface Props {
@@ -61,14 +62,15 @@ function WaypointAudio({
   onSet: (audio: { audioUrl: string; audioName: string; audioDuration: number }) => void;
   onClear: () => void;
 }) {
+  const { en } = useLabels();
   const ref = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   function pick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     const ok = /audio\/(mpeg|mp3|mp4|x-m4a|aac|wav|wave|x-wav)/i.test(file.type) || /\.(mp3|m4a|wav)$/i.test(file.name);
-    if (!ok) { alert("קובץ אודיו נתמך: MP3 / M4A / WAV"); if (ref.current) ref.current.value = ""; return; }
-    if (file.size > 8 * 1024 * 1024) { alert("הקובץ גדול מדי — עד 8MB"); if (ref.current) ref.current.value = ""; return; }
+    if (!ok) { alert(en ? "Supported audio: MP3 / M4A / WAV" : "קובץ אודיו נתמך: MP3 / M4A / WAV"); if (ref.current) ref.current.value = ""; return; }
+    if (file.size > 8 * 1024 * 1024) { alert(en ? "File too large — up to 8MB" : "הקובץ גדול מדי — עד 8MB"); if (ref.current) ref.current.value = ""; return; }
     setBusy(true);
     const reader = new FileReader();
     reader.onload = () => {
@@ -84,18 +86,18 @@ function WaypointAudio({
   }
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-[11px] font-medium text-fg-muted">🎙 אודיו הדרכה (MP3/M4A/WAV) <span className="text-fg-faint">— עדיף על הקראה אוטומטית</span></label>
+      <label className="text-[11px] font-medium text-fg-muted">🎙 {en ? "Guidance audio (MP3/M4A/WAV)" : "אודיו הדרכה (MP3/M4A/WAV)"} <span className="text-fg-faint">— {en ? "preferred over text-to-speech" : "עדיף על הקראה אוטומטית"}</span></label>
       {wp.audioUrl ? (
         <div className="bg-surface-2 rounded-lg px-3 py-1.5 flex items-center gap-2 text-xs">
           <span>🎵</span>
-          <span className="flex-1 truncate text-fg">{wp.audioName || "אודיו"}</span>
+          <span className="flex-1 truncate text-fg">{wp.audioName || (en ? "Audio" : "אודיו")}</span>
           {wp.audioDuration ? <span className="text-fg-faint">{fmtDur(wp.audioDuration)}</span> : null}
-          <button type="button" onClick={onClear} className="text-fg-faint hover:text-red-400" aria-label="מחק אודיו">✕</button>
+          <button type="button" onClick={onClear} className="text-fg-faint hover:text-red-400" aria-label={en ? "Delete audio" : "מחק אודיו"}>✕</button>
         </div>
       ) : (
         <button type="button" onClick={() => ref.current?.click()} disabled={busy}
           className="text-xs text-[#1A6B4A] border border-dashed border-[#1A6B4A]/40 rounded-lg py-1.5 hover:bg-[#F0FAF5] disabled:opacity-50">
-          {busy ? "מעלה..." : "🎙 העלה אודיו"}
+          {busy ? (en ? "Uploading..." : "מעלה...") : (en ? "🎙 Upload audio" : "🎙 העלה אודיו")}
         </button>
       )}
       <input ref={ref} type="file" accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/aac,audio/wav,.mp3,.m4a,.wav" className="hidden" onChange={pick} />
@@ -104,8 +106,9 @@ function WaypointAudio({
 }
 
 export default function Step2({ data, onChange }: Props) {
+  const { en } = useLabels();
   const gpxRef = useRef<HTMLInputElement>(null);
-  const [gpxName, setGpxName] = useState<string>(data.routeGpx ? "מסלול קיים" : "");
+  const [gpxName, setGpxName] = useState<string>(data.routeGpx ? (en ? "Existing route" : "מסלול קיים") : "");
   const gpxContent = data.routeGpx;
   const mapWaypoints = data.waypointsJson;
   const routePoints = useMemo(() => parseGpxPoints(gpxContent), [gpxContent]);
@@ -130,7 +133,9 @@ export default function Step2({ data, onChange }: Props) {
   // GPX file dialog closes — GPX must only draw the route, never add a waypoint.
   const gpxPickedAt = useRef(0);
 
-  const GPX_REMOVE_WARNING = "מחיקת קובץ ה-GPX תמחק את כל נקודות העניין שהגדרת. האם להמשיך?";
+  const GPX_REMOVE_WARNING = en
+    ? "Removing the GPX file will delete all the waypoints you defined. Continue?"
+    : "מחיקת קובץ ה-GPX תמחק את כל נקודות העניין שהגדרת. האם להמשיך?";
 
   function handleGpxFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -153,9 +158,9 @@ export default function Step2({ data, onChange }: Props) {
 
   const addWaypointAt = useCallback((lat: number, lng: number) => {
     const idx = mapWaypoints.length;
-    onChange("waypointsJson", [...mapWaypoints, { lat, lng, name: `נקודת עצירה ${idx + 1}`, description: "" }]);
+    onChange("waypointsJson", [...mapWaypoints, { lat, lng, name: en ? `Stop ${idx + 1}` : `נקודת עצירה ${idx + 1}`, description: "" }]);
     setPendingFocus(idx);
-  }, [mapWaypoints, onChange]);
+  }, [mapWaypoints, onChange, en]);
 
   const handleMapClick = useCallback((lat: number, lng: number) => {
     if (Date.now() - gpxPickedAt.current < 700) return; // ignore post-dialog synthetic click
@@ -179,18 +184,18 @@ export default function Step2({ data, onChange }: Props) {
 
   return (
     <div className="p-5 flex flex-col gap-4">
-      <div className="text-sm font-medium text-fg border-b border-border pb-3 mb-1">מסלול</div>
+      <div className="text-sm font-medium text-fg border-b border-border pb-3 mb-1">{en ? "Route" : "מסלול"}</div>
 
       {/* Route type */}
       <div className="flex flex-col gap-2">
-        <label className="text-xs font-medium text-fg-muted">סוג מסלול</label>
+        <label className="text-xs font-medium text-fg-muted">{en ? "Route type" : "סוג מסלול"}</label>
         <div className="flex gap-2 flex-wrap">
           {ROUTE_TYPES.map((t) => (
             <button key={t.value} type="button" onClick={() => onChange("routeType", t.value)}
               className={`flex-1 min-w-[80px] py-2 px-2 rounded-lg border text-xs transition-colors ${
                 data.routeType === t.value ? "border-[#1A6B4A] bg-[#D6EDE3] text-[#0F5038]" : "border-border text-fg-muted hover:border-border"
               }`}>
-              {t.label}
+              {en ? t.labelEn : t.label}
             </button>
           ))}
         </div>
@@ -198,7 +203,7 @@ export default function Step2({ data, onChange }: Props) {
 
       {/* GPX upload */}
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-medium text-fg-muted">קובץ GPX <span className="text-danger">(חובה)</span></label>
+        <label className="text-xs font-medium text-fg-muted">{en ? "GPX file" : "קובץ GPX"} <span className="text-danger">{en ? "(required)" : "(חובה)"}</span></label>
         {gpxName ? (
           <div className="flex items-center gap-2 border border-[#1A6B4A] bg-[#D6EDE3] rounded-lg px-3 py-2.5">
             <span className="text-lg">🗺</span>
@@ -209,8 +214,8 @@ export default function Step2({ data, onChange }: Props) {
           <div onClick={() => gpxRef.current?.click()}
             className="border border-dashed border-border rounded-lg p-5 text-center text-fg-faint text-sm cursor-pointer hover:border-[#1A6B4A] hover:bg-surface-2 transition-colors select-none">
             <div className="text-2xl mb-1">🗺</div>
-            <div>לחץ להעלאת קובץ GPX</div>
-            <div className="text-xs text-fg-faint mt-1">המסלול יוצג על המפה אוטומטית ויישמר עם הטיול</div>
+            <div>{en ? "Click to upload a GPX file" : "לחץ להעלאת קובץ GPX"}</div>
+            <div className="text-xs text-fg-faint mt-1">{en ? "The route will be shown on the map automatically and saved with the trip" : "המסלול יוצג על המפה אוטומטית ויישמר עם הטיול"}</div>
           </div>
         )}
         <input ref={gpxRef} type="file" accept=".gpx,application/gpx+xml" className="hidden" onChange={handleGpxFile} />
@@ -220,7 +225,7 @@ export default function Step2({ data, onChange }: Props) {
       {!hasGpx ? (
         <div className="rounded-xl border border-dashed border-border bg-surface-2/50 py-10 px-4 text-center opacity-70 select-none">
           <div className="text-2xl mb-2">🗺</div>
-          <div className="text-sm text-fg-muted">יש להעלות קובץ GPX תחילה כדי להוסיף נקודות עניין</div>
+          <div className="text-sm text-fg-muted">{en ? "Upload a GPX file first to add waypoints" : "יש להעלות קובץ GPX תחילה כדי להוסיף נקודות עניין"}</div>
         </div>
       ) : (
       <div className="flex flex-col gap-1.5">
@@ -228,15 +233,17 @@ export default function Step2({ data, onChange }: Props) {
           <div className="inline-flex bg-surface-2 rounded-full p-0.5">
             <button type="button" onClick={() => setMapMode("edit")}
               className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${mapMode === "edit" ? "bg-[#1A6B4A] text-white" : "text-fg-muted"}`}>
-              ✏️ עריכה
+              ✏️ {en ? "Edit" : "עריכה"}
             </button>
             <button type="button" onClick={() => setMapMode("view")}
               className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${mapMode === "view" ? "bg-[#185FA5] text-white" : "text-fg-muted"}`}>
-              👁 צפייה
+              👁 {en ? "View" : "צפייה"}
             </button>
           </div>
           <span className="text-[11px] font-medium" style={{ color: mapMode === "edit" ? "#1A6B4A" : "#185FA5" }}>
-            {mapMode === "edit" ? "מצב עריכה — הקש על המפה להוספת תחנה" : "מצב צפייה — ניתן לגרור ולהגדיל בלבד"}
+            {mapMode === "edit"
+              ? (en ? "Edit mode — tap the map to add a stop" : "מצב עריכה — הקש על המפה להוספת תחנה")
+              : (en ? "View mode — pan and zoom only" : "מצב צפייה — ניתן לגרור ולהגדיל בלבד")}
           </span>
         </div>
         <div className="relative">
@@ -264,12 +271,12 @@ export default function Step2({ data, onChange }: Props) {
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <label className="text-xs font-medium text-fg-muted">
-            {data.tripType === "SELF_GUIDED" ? "תחנות ניווט" : "נקודות עצירה"} ({mapWaypoints.length})
+            {data.tripType === "SELF_GUIDED" ? (en ? "Navigation stops" : "תחנות ניווט") : (en ? "Waypoints" : "נקודות עצירה")} ({mapWaypoints.length})
           </label>
-          {hasGpx && <span className="text-[11px] text-fg-faint">הקש על המפה במצב עריכה כדי להוסיף</span>}
+          {hasGpx && <span className="text-[11px] text-fg-faint">{en ? "Tap the map in edit mode to add" : "הקש על המפה במצב עריכה כדי להוסיף"}</span>}
         </div>
         {data.tripType === "SELF_GUIDED" && mapWaypoints.length === 0 && (
-          <p className="text-[11px] text-fg-faint">כל תחנה כוללת הוראות ניווט צעד-אחר-צעד, חומר הדרכה שיוקרא בקול, ואזהרת בטיחות — הם מחליפים את המדריך החי.</p>
+          <p className="text-[11px] text-fg-faint">{en ? "Each stop includes step-by-step navigation instructions, guidance material read aloud, and a safety warning — they replace the live guide." : "כל תחנה כוללת הוראות ניווט צעד-אחר-צעד, חומר הדרכה שיוקרא בקול, ואזהרת בטיחות — הם מחליפים את המדריך החי."}</p>
         )}
         {mapWaypoints.length > 0 && (
           <>
@@ -280,24 +287,24 @@ export default function Step2({ data, onChange }: Props) {
               <div className="flex items-center gap-2">
                 <span className="text-[#1A6B4A] font-medium text-xs shrink-0">📍 {i + 1}</span>
                 <input ref={(el) => { nameInputRefs.current[i] = el; }} type="text" value={wp.name} onChange={(e) => patchWaypoint(i, { name: e.target.value })}
-                  placeholder="שם הנקודה" className="flex-1 border border-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+                  placeholder={en ? "Point name" : "שם הנקודה"} className="flex-1 border border-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-[#1A6B4A]" />
                 <button type="button" onClick={() => removeWaypoint(i)} className="text-fg-faint hover:text-red-400 px-1">✕</button>
               </div>
               {offRoute && (
                 <div className="text-[11px] text-[#7A5010] bg-[#FDF6E8] border border-[#E8A020]/30 rounded-lg px-2 py-1">
-                  ⚠ הנקודה רחוקה מהמסלול — האם אתה בטוח?
+                  ⚠ {en ? "The point is far from the route — are you sure?" : "הנקודה רחוקה מהמסלול — האם אתה בטוח?"}
                 </div>
               )}
               <input type="text" value={wp.description} onChange={(e) => patchWaypoint(i, { description: e.target.value })}
-                placeholder="תיאור קצר (אופציונלי)" className="border border-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1A6B4A]" />
+                placeholder={en ? "Short description (optional)" : "תיאור קצר (אופציונלי)"} className="border border-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1A6B4A]" />
               {data.tripType === "SELF_GUIDED" && (
                 <div className="flex flex-col gap-1.5 mt-1 pt-1.5 border-t border-border">
                   <input type="text" value={wp.navInstructions ?? ""} onChange={(e) => patchWaypoint(i, { navInstructions: e.target.value })}
-                    placeholder="🧭 הוראות ניווט (למשל: אחרי 200מ' פנה שמאל בעץ הגדול)" className="border border-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1A6B4A]" />
+                    placeholder={en ? "🧭 Navigation instructions (e.g. after 200m turn left at the big tree)" : "🧭 הוראות ניווט (למשל: אחרי 200מ' פנה שמאל בעץ הגדול)"} className="border border-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1A6B4A]" />
                   <textarea value={wp.guidance ?? ""} onChange={(e) => patchWaypoint(i, { guidance: e.target.value })} rows={2}
-                    placeholder="📖 חומר הדרכה (יוקרא בקול — מחליף את המדריך)" className="border border-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1A6B4A] resize-none" />
+                    placeholder={en ? "📖 Guidance material (read aloud — replaces the guide)" : "📖 חומר הדרכה (יוקרא בקול — מחליף את המדריך)"} className="border border-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1A6B4A] resize-none" />
                   <input type="text" value={wp.safety ?? ""} onChange={(e) => patchWaypoint(i, { safety: e.target.value })}
-                    placeholder="⚠ אזהרת בטיחות לקטע זה" className="border border-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1A6B4A]" />
+                    placeholder={en ? "⚠ Safety warning for this segment" : "⚠ אזהרת בטיחות לקטע זה"} className="border border-border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1A6B4A]" />
                   <WaypointAudio
                     wp={wp}
                     onSet={(audio) => patchWaypoint(i, audio)}
@@ -306,7 +313,7 @@ export default function Step2({ data, onChange }: Props) {
                 </div>
               )}
               <div className="mt-1 pt-1.5 border-t border-border">
-                <SourceMaterialsEditor label="חומרי מקור לנקודה זו" materials={wp.sources ?? []}
+                <SourceMaterialsEditor label={en ? "Source materials for this point" : "חומרי מקור לנקודה זו"} materials={wp.sources ?? []}
                   onChange={(next) => patchWaypoint(i, { sources: next })} />
               </div>
             </div>
@@ -319,13 +326,13 @@ export default function Step2({ data, onChange }: Props) {
       {/* Distance + Duration */}
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-fg-muted">אורך (ק"מ)</label>
+          <label className="text-xs font-medium text-fg-muted">{en ? "Length (km)" : "אורך (ק\"מ)"}</label>
           <input type="number" step="0.1" min="0" value={data.distanceKm}
             onChange={(e) => onChange("distanceKm", e.target.value)} placeholder="12.4"
             className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" dir="ltr" />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-fg-muted">משך (שעות)</label>
+          <label className="text-xs font-medium text-fg-muted">{en ? "Duration (hours)" : "משך (שעות)"}</label>
           <input type="number" step="0.5" min="0" value={data.durationHours}
             onChange={(e) => onChange("durationHours", e.target.value)} placeholder="5"
             className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" dir="ltr" />

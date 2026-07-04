@@ -1,10 +1,21 @@
 "use client";
 
 import { WizardData, PriceTier, CouponData } from "../types";
+import { useLabels } from "@/components/useLabels";
 
 const REFUND_OPTIONS = ["100%", "75%", "50%", "25%", "0%"];
 
 const PRICE_TIER_PRESETS = ["ילדים", "סטודנטים", "חיילים", "גמלאים", "בעלי מוגבלות"];
+
+// English display labels for the preset chips. The stored value stays Hebrew
+// (used for logic and saved data) — only the on-screen label translates.
+const PRICE_TIER_PRESET_EN: Record<string, string> = {
+  "ילדים": "Children",
+  "סטודנטים": "Students",
+  "חיילים": "Soldiers",
+  "גמלאים": "Seniors",
+  "בעלי מוגבלות": "People with disabilities",
+};
 
 interface Props {
   data: WizardData;
@@ -12,6 +23,8 @@ interface Props {
 }
 
 export default function Step4({ data, onChange }: Props) {
+  const { en } = useLabels();
+
   function addPriceTier() {
     onChange("priceTiers", [...data.priceTiers, { label: "", price: "" }]);
   }
@@ -41,58 +54,70 @@ export default function Step4({ data, onChange }: Props) {
   return (
     <div className="p-5 flex flex-col gap-4">
       <div className="text-sm font-medium text-fg border-b border-border pb-3 mb-1">
-        תשלום וביטולים
+        {en ? "Payment & cancellation" : "תשלום וביטולים"}
       </div>
 
       {/* Base price */}
       <div className="flex flex-col gap-1">
         <label className="text-xs font-medium text-fg-muted">
-          {data.tripType !== "DAY_HIKE" ? "מחיר למסע שלם (₪)" : "מחיר רגיל לאדם (₪)"}
+          {data.tripType !== "DAY_HIKE"
+            ? (en ? "Price for full journey (₪)" : "מחיר למסע שלם (₪)")
+            : (en ? "Standard price per person (₪)" : "מחיר רגיל לאדם (₪)")}
         </label>
         <input
           type="number"
           min="0"
           value={data.price}
           onChange={(e) => onChange("price", e.target.value)}
-          placeholder="0 = חינם"
+          placeholder={en ? "0 = free" : "0 = חינם"}
           className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
           dir="ltr"
         />
-        <p className="text-xs text-fg-faint mt-1">עמלת הפלטפורמה תנוכה אוטומטית</p>
+        <p className="text-xs text-fg-faint mt-1">
+          {en ? "The platform fee is deducted automatically" : "עמלת הפלטפורמה תנוכה אוטומטית"}
+        </p>
       </div>
 
       {/* Per-day price for journeys with individual-day registration */}
       {data.registrationMode === "INDIVIDUAL_DAYS" && (
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-fg-muted">מחיר ליום בודד (₪)</label>
+          <label className="text-xs font-medium text-fg-muted">
+            {en ? "Price per single day (₪)" : "מחיר ליום בודד (₪)"}
+          </label>
           <input
             type="number"
             min="0"
             value={data.individualDayPrice}
             onChange={(e) => onChange("individualDayPrice", e.target.value)}
-            placeholder="מחיר להרשמה ליום אחד"
+            placeholder={en ? "Price for registering for one day" : "מחיר להרשמה ליום אחד"}
             className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
             dir="ltr"
           />
-          <p className="text-xs text-fg-faint mt-1">מאחר שאיפשרת הרשמה לימים בודדים</p>
+          <p className="text-xs text-fg-faint mt-1">
+            {en ? "Since you allowed registration for individual days" : "מאחר שאיפשרת הרשמה לימים בודדים"}
+          </p>
         </div>
       )}
 
       {/* Price tiers for special groups */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-medium text-fg-muted">מחירים מופחתים לקבוצות</label>
+          <label className="text-xs font-medium text-fg-muted">
+            {en ? "Reduced prices for groups" : "מחירים מופחתים לקבוצות"}
+          </label>
           <button
             type="button"
             onClick={addPriceTier}
             className="text-xs text-[#1A6B4A] font-medium border border-[#1A6B4A] rounded-full px-3 py-1 hover:bg-[#D6EDE3] transition-colors"
           >
-            + הוסף מחיר
+            {en ? "+ Add price" : "+ הוסף מחיר"}
           </button>
         </div>
 
         {data.priceTiers.length === 0 && (
-          <p className="text-xs text-fg-faint">לחץ להוספת מחיר מופחת (ילדים, סטודנטים, חיילים...)</p>
+          <p className="text-xs text-fg-faint">
+            {en ? "Tap to add a reduced price (children, students, soldiers...)" : "לחץ להוספת מחיר מופחת (ילדים, סטודנטים, חיילים...)"}
+          </p>
         )}
 
         {/* Preset chips — stay visible after selecting, so multiple groups can be
@@ -106,7 +131,7 @@ export default function Step4({ data, onChange }: Props) {
                 onClick={() => onChange("priceTiers", [...data.priceTiers, { label, price: "" }])}
                 className="text-xs border border-border rounded-full px-2.5 py-1 text-fg-muted hover:border-[#1A6B4A] hover:text-[#1A6B4A] transition-colors"
               >
-                + {label}
+                + {en ? (PRICE_TIER_PRESET_EN[label] ?? label) : label}
               </button>
             ))}
           </div>
@@ -116,7 +141,7 @@ export default function Step4({ data, onChange }: Props) {
           <div key={idx} className="flex items-center gap-2 border border-border rounded-xl p-3">
             <input
               type="text"
-              placeholder="שם קבוצה (למשל: ילדים)"
+              placeholder={en ? "Group name (e.g. Children)" : "שם קבוצה (למשל: ילדים)"}
               value={tier.label}
               onChange={(e) => updatePriceTier(idx, "label", e.target.value)}
               className="flex-1 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]"
@@ -147,35 +172,39 @@ export default function Step4({ data, onChange }: Props) {
       {/* Coupon codes */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-medium text-fg-muted">קודי קופון</label>
+          <label className="text-xs font-medium text-fg-muted">{en ? "Coupon codes" : "קודי קופון"}</label>
           <button
             type="button"
             onClick={addCoupon}
             className="text-xs text-[#1A6B4A] font-medium border border-[#1A6B4A] rounded-full px-3 py-1 hover:bg-[#D6EDE3] transition-colors"
           >
-            + הוסף קופון
+            {en ? "+ Add coupon" : "+ הוסף קופון"}
           </button>
         </div>
 
         {data.coupons.length === 0 && (
-          <p className="text-xs text-fg-faint">הוסף קוד קופון להנחה באחוזים</p>
+          <p className="text-xs text-fg-faint">
+            {en ? "Add a coupon code for a percentage discount" : "הוסף קוד קופון להנחה באחוזים"}
+          </p>
         )}
 
         {data.coupons.map((coupon, idx) => (
           <div key={idx} className="border border-border rounded-xl p-3 flex flex-col gap-2">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-semibold text-fg-muted">קופון {idx + 1}</span>
+              <span className="text-xs font-semibold text-fg-muted">
+                {en ? `Coupon ${idx + 1}` : `קופון ${idx + 1}`}
+              </span>
               <button
                 type="button"
                 onClick={() => removeCoupon(idx)}
                 className="text-xs text-red-400 hover:text-red-600"
               >
-                הסר
+                {en ? "Remove" : "הסר"}
               </button>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] text-fg-faint">קוד</label>
+                <label className="text-[10px] text-fg-faint">{en ? "Code" : "קוד"}</label>
                 <input
                   type="text"
                   placeholder="SAVE20"
@@ -186,7 +215,7 @@ export default function Step4({ data, onChange }: Props) {
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] text-fg-faint">הנחה (%)</label>
+                <label className="text-[10px] text-fg-faint">{en ? "Discount (%)" : "הנחה (%)"}</label>
                 <input
                   type="number"
                   placeholder="10"
@@ -199,10 +228,10 @@ export default function Step4({ data, onChange }: Props) {
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] text-fg-faint">שימושים מקסימום</label>
+                <label className="text-[10px] text-fg-faint">{en ? "Max uses" : "שימושים מקסימום"}</label>
                 <input
                   type="number"
-                  placeholder="ללא הגבלה"
+                  placeholder={en ? "Unlimited" : "ללא הגבלה"}
                   min="1"
                   value={coupon.maxUses}
                   onChange={(e) => updateCoupon(idx, "maxUses", e.target.value)}
@@ -211,7 +240,7 @@ export default function Step4({ data, onChange }: Props) {
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] text-fg-faint">תפוגה</label>
+                <label className="text-[10px] text-fg-faint">{en ? "Expiry" : "תפוגה"}</label>
                 <input
                   type="date"
                   value={coupon.expiresAt}
@@ -228,12 +257,12 @@ export default function Step4({ data, onChange }: Props) {
       {/* Cancellation policy */}
       <div className="flex flex-col gap-3">
         <label className="text-xs font-medium text-fg-muted">
-          מדיניות ביטולים — מדרגות החזר
+          {en ? "Cancellation policy — refund tiers" : "מדיניות ביטולים — מדרגות החזר"}
         </label>
-        <p className="text-xs text-fg-faint">הגדר עד 3 מדרגות</p>
+        <p className="text-xs text-fg-faint">{en ? "Define up to 3 tiers" : "הגדר עד 3 מדרגות"}</p>
 
         <div className="flex items-center gap-2 flex-wrap border border-border rounded-lg p-3">
-          <span className="text-fg-muted text-xs">עד</span>
+          <span className="text-fg-muted text-xs">{en ? "Up to" : "עד"}</span>
           <input
             type="number"
             value={data.cancelTier1Hours}
@@ -241,7 +270,7 @@ export default function Step4({ data, onChange }: Props) {
             className="w-14 border border-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-[#1A6B4A]"
             dir="ltr"
           />
-          <span className="text-fg-muted text-xs">שעות לפני — החזר</span>
+          <span className="text-fg-muted text-xs">{en ? "hours before — refund" : "שעות לפני — החזר"}</span>
           <select
             value={data.cancelTier1Refund}
             onChange={(e) => onChange("cancelTier1Refund", e.target.value)}
@@ -252,7 +281,7 @@ export default function Step4({ data, onChange }: Props) {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap border border-border rounded-lg p-3">
-          <span className="text-fg-muted text-xs">עד</span>
+          <span className="text-fg-muted text-xs">{en ? "Up to" : "עד"}</span>
           <input
             type="number"
             value={data.cancelTier2Hours}
@@ -260,7 +289,7 @@ export default function Step4({ data, onChange }: Props) {
             className="w-14 border border-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-[#1A6B4A]"
             dir="ltr"
           />
-          <span className="text-fg-muted text-xs">שעות לפני — החזר</span>
+          <span className="text-fg-muted text-xs">{en ? "hours before — refund" : "שעות לפני — החזר"}</span>
           <select
             value={data.cancelTier2Refund}
             onChange={(e) => onChange("cancelTier2Refund", e.target.value)}
@@ -271,7 +300,11 @@ export default function Step4({ data, onChange }: Props) {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap border border-border rounded-lg p-3">
-          <span className="text-fg-muted text-xs">פחות מ-{data.cancelTier2Hours || 24} שעות — החזר</span>
+          <span className="text-fg-muted text-xs">
+            {en
+              ? `Less than ${data.cancelTier2Hours || 24} hours — refund`
+              : `פחות מ-${data.cancelTier2Hours || 24} שעות — החזר`}
+          </span>
           <select
             value={data.cancelTier3Refund}
             onChange={(e) => onChange("cancelTier3Refund", e.target.value)}

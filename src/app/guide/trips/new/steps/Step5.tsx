@@ -2,17 +2,14 @@
 
 import { WizardData } from "../types";
 import SourceMaterialsEditor from "./SourceMaterialsEditor";
+import { useLabels } from "@/components/useLabels";
 
 // Order (RTL, right→left): טיוטה → פרסום פרטי → ציבורי
 const PUBLISH_OPTIONS = [
-  { key: "DRAFT",   status: "DRAFT", visibility: "PUBLIC",  icon: "📄", label: "טיוטה", desc: "שמור, גלוי רק לך" },
-  { key: "PRIVATE", status: "OPEN",  visibility: "PRIVATE", icon: "🔗", label: "פרסום פרטי", desc: "רק דרך לינק ישיר" },
-  { key: "PUBLIC",  status: "OPEN",  visibility: "PUBLIC",  icon: "🌍", label: "פרסום ציבורי", desc: "גלוי בחיפוש" },
+  { key: "DRAFT",   status: "DRAFT", visibility: "PUBLIC",  icon: "📄", label: "טיוטה", labelEn: "Draft", desc: "שמור, גלוי רק לך", descEn: "Saved, visible only to you" },
+  { key: "PRIVATE", status: "OPEN",  visibility: "PRIVATE", icon: "🔗", label: "פרסום פרטי", labelEn: "Private", desc: "רק דרך לינק ישיר", descEn: "Via direct link only" },
+  { key: "PUBLIC",  status: "OPEN",  visibility: "PUBLIC",  icon: "🌍", label: "פרסום ציבורי", labelEn: "Public", desc: "גלוי בחיפוש", descEn: "Visible in search" },
 ] as const;
-
-const DIFFICULTY_LABELS: Record<string, string> = {
-  EASY: "קל", MEDIUM: "בינוני", HARD: "קשה", EXTREME: "קיצוני",
-};
 
 interface Props {
   data: WizardData;
@@ -39,45 +36,46 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export default function Step5({ data, onChange }: Props) {
+  const { en, difficulty } = useLabels();
   const isSelfGuided = data.tripType === "SELF_GUIDED";
   return (
     <div className="p-5 flex flex-col gap-4">
       <div className="text-sm font-medium text-fg border-b border-border pb-3 mb-1">
-        סקירה ופרסום
+        {en ? "Review & publish" : "סקירה ופרסום"}
       </div>
 
-      <Section title="פרטים בסיסיים">
-        <Row label="שם" value={data.title || "—"} />
-        {!isSelfGuided && <Row label="תאריך" value={data.date ? `${data.date} · ${data.startTime}` : "—"} />}
-        <Row label="איזור" value={data.region || "—"} />
-        {!isSelfGuided && <Row label="נקודת מפגש" value={data.meetingPoint} />}
-        {isSelfGuided && <Row label="חלון גישה" value={`${data.accessWindowDays || "30"} ימים`} />}
+      <Section title={en ? "Basic details" : "פרטים בסיסיים"}>
+        <Row label={en ? "Name" : "שם"} value={data.title || "—"} />
+        {!isSelfGuided && <Row label={en ? "Date" : "תאריך"} value={data.date ? `${data.date} · ${data.startTime}` : "—"} />}
+        <Row label={en ? "Region" : "איזור"} value={data.region || "—"} />
+        {!isSelfGuided && <Row label={en ? "Meeting point" : "נקודת מפגש"} value={data.meetingPoint} />}
+        {isSelfGuided && <Row label={en ? "Access window" : "חלון גישה"} value={`${data.accessWindowDays || "30"} ${en ? "days" : "ימים"}`} />}
       </Section>
 
-      <Section title="מסלול">
-        <Row label="סוג" value={data.routeType === "one-way" ? "חד-כיווני" : data.routeType === "circular-nature" ? "מעגלי — שטח" : data.routeType === "circular-urban" ? "מעגלי — עירוני" : "—"} />
-        <Row label={`אורך`} value={data.distanceKm ? `${data.distanceKm} ק"מ` : "—"} />
-        <Row label="משך" value={data.durationHours ? `${data.durationHours} שע'` : "—"} />
-        {isSelfGuided && <Row label="תחנות ניווט" value={String(data.waypointsJson.length)} />}
+      <Section title={en ? "Route" : "מסלול"}>
+        <Row label={en ? "Type" : "סוג"} value={data.routeType === "one-way" ? (en ? "One-way" : "חד-כיווני") : data.routeType === "circular-nature" ? (en ? "Circular — nature" : "מעגלי — שטח") : data.routeType === "circular-urban" ? (en ? "Circular — urban" : "מעגלי — עירוני") : "—"} />
+        <Row label={en ? "Length" : "אורך"} value={data.distanceKm ? `${data.distanceKm} ${en ? "km" : "ק\"מ"}` : "—"} />
+        <Row label={en ? "Duration" : "משך"} value={data.durationHours ? `${data.durationHours} ${en ? "hrs" : "שע'"}` : "—"} />
+        {isSelfGuided && <Row label={en ? "Navigation stops" : "תחנות ניווט"} value={String(data.waypointsJson.length)} />}
       </Section>
 
-      <Section title={isSelfGuided ? "פרמטרים ומחיר" : "פרמטרים ותשלום"}>
-        <Row label="קושי" value={DIFFICULTY_LABELS[data.difficulty] || "—"} />
-        {!isSelfGuided && <Row label="גיל" value={data.ageMin ? `${data.ageMin}+` : undefined} />}
-        {!isSelfGuided && <Row label="מקסימום" value={data.maxSpots || "—"} />}
-        <Row label="מחיר" value={data.price ? `₪${data.price}` : "חינם"} />
+      <Section title={en ? (isSelfGuided ? "Parameters & price" : "Parameters & payment") : (isSelfGuided ? "פרמטרים ומחיר" : "פרמטרים ותשלום")}>
+        <Row label={en ? "Difficulty" : "קושי"} value={difficulty(data.difficulty) || "—"} />
+        {!isSelfGuided && <Row label={en ? "Age" : "גיל"} value={data.ageMin ? `${data.ageMin}+` : undefined} />}
+        {!isSelfGuided && <Row label={en ? "Max" : "מקסימום"} value={data.maxSpots || "—"} />}
+        <Row label={en ? "Price" : "מחיר"} value={data.price ? `₪${data.price}` : (en ? "Free" : "חינם")} />
       </Section>
 
       {/* Source materials (trip-level) */}
       <div className="flex flex-col gap-2 border-t border-border pt-3">
         <SourceMaterialsEditor
-          label="חומרי מקור לטיול (פסוקים, מאמרים, רקע היסטורי)"
+          label={en ? "Source materials for the trip (verses, articles, historical background)" : "חומרי מקור לטיול (פסוקים, מאמרים, רקע היסטורי)"}
           materials={data.sourceMaterials || []}
           onChange={(next) => onChange("sourceMaterials" as keyof WizardData, next as unknown as string)}
         />
         {(data.sourceMaterials || []).length > 0 && (
           <div className="flex gap-2">
-            {([["preview", "גלוי מראש (תצוגה מקדימה)"], ["during", "רק במהלך הטיול"]] as const).map(([val, lbl]) => (
+            {([["preview", en ? "Visible in advance (preview)" : "גלוי מראש (תצוגה מקדימה)"], ["during", en ? "Only during the trip" : "רק במהלך הטיול"]] as const).map(([val, lbl]) => (
               <button key={val} type="button"
                 onClick={() => onChange("sourceMaterialsVisibility" as keyof WizardData, val as unknown as string)}
                 className={`flex-1 py-1.5 rounded-lg border text-xs transition-colors ${
@@ -90,7 +88,7 @@ export default function Step5({ data, onChange }: Props) {
       </div>
 
       <div className="flex flex-col gap-2">
-        <label className="text-xs font-medium text-fg-muted">בחר מצב פרסום</label>
+        <label className="text-xs font-medium text-fg-muted">{en ? "Choose publication state" : "בחר מצב פרסום"}</label>
         <div className="flex gap-2">
           {PUBLISH_OPTIONS.map((opt) => {
             const selected = opt.key === "DRAFT"
@@ -107,9 +105,9 @@ export default function Step5({ data, onChange }: Props) {
               >
                 <span className="text-xl block mb-1">{opt.icon}</span>
                 <div className={`text-xs font-medium ${selected ? "text-[#0F5038]" : "text-fg"}`}>
-                  {opt.label}
+                  {en ? opt.labelEn : opt.label}
                 </div>
-                <div className="text-xs text-fg-faint mt-0.5">{opt.desc}</div>
+                <div className="text-xs text-fg-faint mt-0.5">{en ? opt.descEn : opt.desc}</div>
               </button>
             );
           })}
