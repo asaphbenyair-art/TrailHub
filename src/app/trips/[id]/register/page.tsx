@@ -148,6 +148,7 @@ function TripSummary({ trip }: { trip: Trip }) {
 
 // ── Full registration flow ──
 function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: (alertHours: number) => void }) {
+  const isFree = trip.price === 0; // free trips: no payment, no policy, no refund
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [policyOpen, setPolicyOpen] = useState(false);
@@ -203,7 +204,7 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: (alertHours:
       for (let i = 0; i < count; i++) if (!(participants[i]?.name ?? "").trim()) { setError(`נא להזין שם משתתף ${i + 1}`); return; }
     }
     if (trip.healthDeclarationUrl && !healthText.trim()) { setError("נא לחתום על הצהרת הבריאות"); return; }
-    if (!signed) { setError("נא לאשר את מדיניות הביטולים"); return; }
+    if (!isFree && !signed) { setError("נא לאשר את מדיניות הביטולים"); return; }
     setSaving(true); setError("");
     try {
       const res = await fetch("/api/registrations", {
@@ -230,7 +231,8 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: (alertHours:
 
   return (
     <>
-      {/* Step 1: cancellation policy + confirmation checkbox */}
+      {/* Step 1: cancellation policy + confirmation checkbox — paid trips only */}
+      {!isFree && (
       <div className="p-4 border-b border-border">
         <div className="flex items-center gap-2 mb-2"><StepDot n={1} /><span className="text-sm font-medium text-fg">מדיניות ביטולים</span></div>
         <div className="rounded-xl p-3 border border-border" style={{ background: "var(--surface-2)" }}>
@@ -253,6 +255,7 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: (alertHours:
           <span className="text-xs text-fg-muted leading-relaxed">קראתי ואני מאשר/ת את מדיניות הביטולים של הטיול</span>
         </button>
       </div>
+      )}
 
       {/* Multi-person + per-participant price category */}
       {(isMulti || hasTiers) && (
@@ -374,6 +377,15 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: (alertHours:
         {compCode.trim() && <p className="text-[11px] text-accent mt-1">עם קוד מתנדב ההרשמה ללא תשלום</p>}
       </div>
 
+      {/* Free trips: no payment step / price summary / threshold alert */}
+      {isFree ? (
+        <div className="p-4 border-b border-border">
+          <div className="rounded-xl p-3 border border-border text-sm text-fg-muted" style={{ background: "var(--surface-2)" }}>
+            🎉 טיול חינם — אין תשלום, אין מדיניות ביטול. אפשר לבטל את ההרשמה בכל עת.
+          </div>
+        </div>
+      ) : (
+      <>
       {/* Step 3: payment */}
       <div className={`p-4 border-b border-border ${compCode.trim() ? "hidden" : ""}`}>
         <div className="flex items-center gap-2 mb-3"><StepDot n={3} /><span className="text-sm font-medium text-fg">תשלום</span></div>
@@ -412,6 +424,8 @@ function RegisterFlow({ trip, onSuccess }: { trip: Trip; onSuccess: (alertHours:
           שעות לפני
         </div>
       </div>
+      </>
+      )}
 
       {/* Privacy: visibility in the fellow-registrants list */}
       <div className="p-4 border-b border-border">
@@ -450,6 +464,7 @@ function SuccessScreen({ trip, alertHours }: { trip: Trip; alertHours: number })
   const router = useRouter();
   const dfmt = useDateFmt();
   const total = trip.price;
+  const isFree = total === 0;
   const chargeDate = dfmt(new Date(new Date(trip.date).getTime() - 24 * 3600 * 1000), { greg: { day: "numeric", month: "short" } });
   return (
     <div className="p-6 text-center">
@@ -457,15 +472,14 @@ function SuccessScreen({ trip, alertHours }: { trip: Trip; alertHours: number })
         <Check size={26} style={{ color: "var(--accent)" }} />
       </div>
       <div className="text-lg font-semibold text-fg mb-1">נרשמת בהצלחה!</div>
-      <div className="text-sm text-fg-muted mb-4 leading-relaxed">אישור נשלח למייל. הכרטיס יחויב לאחר סגירת חלון ביטול מלא.</div>
+      <div className="text-sm text-fg-muted mb-4 leading-relaxed">{isFree ? "אישור נשלח למייל. טיול חינם — ללא חיוב." : "אישור נשלח למייל. הכרטיס יחויב לאחר סגירת חלון ביטול מלא."}</div>
       <div className="rounded-xl p-3 text-right mb-4 border border-border" style={{ background: "var(--surface-2)" }}>
         {[
           ["טיול", trip.title],
           ["תאריך ושעה", `${dfmt(trip.date, { long: true, weekday: true, greg: FULL_GREG })} · ${trip.startTime}`],
           ["מדריך", trip.guide?.user?.name || "מדריך"],
-          ["סכום", total === 0 ? "חינם" : `₪${total}`],
-          ["מועד חיוב", `${chargeDate} · אם לא בוטל`],
-          ["התראת ביטול", `${alertHours} שעות לפני חלון החיוב`],
+          ["סכום", isFree ? "חינם" : `₪${total}`],
+          ...(isFree ? [] : [["מועד חיוב", `${chargeDate} · אם לא בוטל`], ["התראת ביטול", `${alertHours} שעות לפני חלון החיוב`]] as [string, string][]),
         ].map(([label, val]) => (
           <div key={label} className="flex justify-between text-sm py-1">
             <span className="text-fg-muted">{label}</span>

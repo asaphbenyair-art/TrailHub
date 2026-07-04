@@ -1124,7 +1124,7 @@ export default function TripDetailPage() {
           )}
 
           {/* ── 17. Cancellation policy ── */}
-          {cancellationLines.length > 0 && (
+          {trip.price > 0 && cancellationLines.length > 0 && (
             <div>
               <Heading icon={FileText}>{tt("cancellationPolicy")}</Heading>
               <div className="rounded-2xl p-3.5 border border-border bg-surface flex flex-col gap-1.5">
