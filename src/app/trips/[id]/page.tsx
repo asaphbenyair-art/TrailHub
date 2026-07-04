@@ -10,6 +10,7 @@ import ElevationChart, { parseTrack } from "@/components/ElevationChart";
 import TranslateButton from "@/components/TranslateButton";
 import { useTranslations } from "next-intl";
 import { useLabels } from "@/components/useLabels";
+import { EQUIPMENT_EN } from "@/lib/labels";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { coverImages } from "@/lib/tripImage";
 import { useDateFmt, useDualDate } from "@/components/CalendarModeProvider";
@@ -688,9 +689,9 @@ export default function TripDetailPage() {
           {/* ── 5. Quick stats (km / hours / min age) ── */}
           <div className="grid grid-cols-3 gap-3">
             {[
-              { icon: Mountain, val: trip.distanceKm > 0 ? trip.distanceKm : "—", label: "ק״מ" },
-              { icon: Clock, val: isSelfGuided ? parsedWaypoints.length : (trip.durationMin > 0 ? formatDuration(trip.durationMin) : "—"), label: isSelfGuided ? "תחנות" : "שעות" },
-              { icon: Users, val: trip.minAge != null ? `${trip.minAge}+` : "כל גיל", label: "גיל מינ׳" },
+              { icon: Mountain, val: trip.distanceKm > 0 ? trip.distanceKm : "—", label: L.en ? "km" : "ק״מ" },
+              { icon: Clock, val: isSelfGuided ? parsedWaypoints.length : (trip.durationMin > 0 ? formatDuration(trip.durationMin) : "—"), label: isSelfGuided ? (L.en ? "stops" : "תחנות") : (L.en ? "hours" : "שעות") },
+              { icon: Users, val: trip.minAge != null ? `${trip.minAge}+` : (L.en ? "All ages" : "כל גיל"), label: L.en ? "Min age" : "גיל מינ׳" },
             ].map(({ icon: Icon, val, label }, i) => (
               <div key={i} className="rounded-2xl p-3.5 border border-border bg-surface text-center">
                 <Icon size={16} className="mx-auto mb-1.5" style={{ color: "var(--fg-faint)" }} />
@@ -865,13 +866,13 @@ export default function TripDetailPage() {
                 </div>
                 <button type="button" onClick={copyEquipment}
                   className="text-xs flex items-center gap-1" style={{ color: copied ? "var(--accent)" : "var(--fg-muted)" }}>
-                  {copied ? <><Check size={13} /> הועתק</> : <><Copy size={13} /> {tt("copyList")}</>}
+                  {copied ? <><Check size={13} /> {L.en ? "Copied" : "הועתק"}</> : <><Copy size={13} /> {tt("copyList")}</>}
                 </button>
               </div>
               <div className="flex flex-wrap gap-2">
                 {equipment.map((item) => (
                   <span key={item} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs text-fg-muted border border-border">
-                    <Check size={11} style={{ color: "var(--accent)" }} /> {item}
+                    <Check size={11} style={{ color: "var(--accent)" }} /> {L.en ? (EQUIPMENT_EN[item] ?? item) : item}
                   </span>
                 ))}
               </div>
@@ -998,7 +999,7 @@ export default function TripDetailPage() {
                   <span className="text-xs text-fg-muted">{tq("registerToAsk")}</span>
                   <button type="button" onClick={() => router.push(`/trips/${trip.id}/register?flow=interest`)}
                     className="px-3 py-1.5 text-xs rounded-full font-medium shrink-0" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}>
-                    שאל שאלה — הירשם תחילה
+                    {L.en ? "Ask a question — register first" : "שאל שאלה — הירשם תחילה"}
                   </button>
                 </div>
               ) : (

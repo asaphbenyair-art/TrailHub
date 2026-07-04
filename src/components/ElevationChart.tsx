@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { TrendingUp } from "lucide-react";
+import { useLabels } from "@/components/useLabels";
 
 export interface TrackPt { lat: number; lon: number; ele: number }
 
@@ -47,6 +48,16 @@ export default function ElevationChart({
   onHover?: (coord: [number, number] | null) => void;
 }) {
   const [hoverX, setHoverX] = useState<number | null>(null);
+  const { en } = useLabels();
+  const T = {
+    profile: en ? "Elevation profile" : "פרופיל גובה",
+    distance: en ? "Distance" : "מרחק",
+    ascent: en ? "Ascent" : "טיפוס",
+    descent: en ? "Descent" : "ירידה",
+    elevation: en ? "Elevation" : "גובה",
+    km: en ? "km" : "ק״מ",
+    m: en ? "m" : "מ׳",
+  };
   if (track.length < 2) return null;
 
   const W = 320, H = 108, padX = 6, padTop = 8, padBot = 6;
@@ -128,14 +139,14 @@ export default function ElevationChart({
   return (
     <div className="rounded-2xl p-3.5 border border-border bg-surface">
       <div className="flex items-center gap-1 text-[11px] text-fg-faint mb-2">
-        <TrendingUp size={12} /> פרופיל גובה
+        <TrendingUp size={12} /> {T.profile}
       </div>
       {/* Stats row */}
-      <div className="flex items-stretch mb-2 divide-x divide-x-reverse divide-border" dir="rtl">
-        {stat("מרחק", `${totalKm.toFixed(1)} ק״מ`)}
-        {stat("טיפוס", `${Math.round(ascent)} מ׳`)}
-        {stat("ירידה", `${Math.round(descent)} מ׳`)}
-        {stat("גובה", `${Math.round(min)}–${Math.round(max)} מ׳`)}
+      <div className="flex items-stretch mb-2 divide-x divide-x-reverse divide-border" dir={en ? "ltr" : "rtl"}>
+        {stat(T.distance, `${totalKm.toFixed(1)} ${T.km}`)}
+        {stat(T.ascent, `${Math.round(ascent)} ${T.m}`)}
+        {stat(T.descent, `${Math.round(descent)} ${T.m}`)}
+        {stat(T.elevation, `${Math.round(min)}–${Math.round(max)} ${T.m}`)}
       </div>
       {/* Chart */}
       <div className="relative" style={{ direction: "ltr" }}>
@@ -180,7 +191,7 @@ export default function ElevationChart({
         {hover && (
           <div className="absolute pointer-events-none px-2 py-1 rounded-lg text-[10px] font-medium text-white shadow-lg whitespace-nowrap"
             style={{ left: `${Math.min(Math.max((hover.x / W) * 100, 14), 86)}%`, top: -4, transform: "translateX(-50%)", background: "rgba(0,0,0,0.85)" }}>
-            {Math.round(hover.ele)} מ׳ · {hover.km.toFixed(1)} ק״מ
+            {Math.round(hover.ele)} {T.m} · {hover.km.toFixed(1)} {T.km}
             {hover.wp ? <span className="block text-[9px] text-white/80">📍 {hover.wp}</span> : null}
           </div>
         )}

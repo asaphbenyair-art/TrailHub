@@ -40,6 +40,18 @@ export const SPECIALTY_EN: Record<string, string> = {
 export const DIFFICULTY_HE: Record<string, string> = { EASY: "קל", MEDIUM: "בינוני", HARD: "קשה", EXTREME: "קיצוני" };
 export const DIFFICULTY_EN: Record<string, string> = { EASY: "Easy", MEDIUM: "Medium", HARD: "Hard", EXTREME: "Extreme" };
 
+// Predefined equipment presets (guide-suggested list). User-typed items pass through untranslated.
+export const EQUIPMENT_EN: Record<string, string> = {
+  "נעלי הליכה": "Hiking shoes",
+  "כובע ושמשייה": "Hat & sun protection",
+  "מים (2 ליטר)": "Water (2 liters)",
+  "מים (3 ליטר)": "Water (3 liters)",
+  "אוכל לצהריים": "Lunch",
+  "מקל הליכה": "Trekking pole",
+  "ערכת עזרה ראשונה": "First-aid kit",
+  "קרם הגנה": "Sunscreen",
+};
+
 export const STATUS_HE: Record<string, string> = {
   OPEN: "פתוח", FULL: "מלא", DRAFT: "טיוטה", PENDING_REVIEW: "ממתין לאישור",
   REJECTED: "נדחה", POSTPONED: "נדחה", CANCELLED: "בוטל", COMPLETED: "הושלם",
