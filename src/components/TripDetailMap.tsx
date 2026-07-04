@@ -42,6 +42,8 @@ interface Props {
   showWaypoints?: boolean;
   /** Called with the waypoint index when its pin is tapped (opens a drawer). */
   onWaypointClick?: (index: number) => void;
+  /** Field mode: on each GPS fix, fit bounds to show BOTH user + route, even if far apart. */
+  fitUserAndRoute?: boolean;
 }
 
 export default function TripDetailMap({
@@ -56,6 +58,7 @@ export default function TripDetailMap({
   routeLine,
   showWaypoints = true,
   onWaypointClick,
+  fitUserAndRoute = false,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -207,7 +210,18 @@ export default function TripDetailMap({
         } else {
           dotRef.current.setLatLng([latitude, longitude]);
         }
-        if (first) { map.setView([latitude, longitude], Math.max(map.getZoom(), 14)); first = false; }
+        if (fitUserAndRoute) {
+          // Field mode: frame BOTH the user and the whole route, even if far apart.
+          const pts: [number, number][] = [[latitude, longitude]];
+          if (routeLine && routeLine.length) for (const p of routeLine) pts.push(p);
+          else for (const w of waypoints) if (Number.isFinite(w.lat) && Number.isFinite(w.lng)) pts.push([w.lat, w.lng]);
+          if (pts.length >= 2) {
+            try { map.fitBounds(L.latLngBounds(pts), { padding: [36, 36], maxZoom: 15 }); } catch {}
+          } else if (first) { map.setView([latitude, longitude], Math.max(map.getZoom(), 14)); }
+          first = false;
+        } else if (first) {
+          map.setView([latitude, longitude], Math.max(map.getZoom(), 14)); first = false;
+        }
       },
       () => {},
       { enableHighAccuracy: true, maximumAge: 5000 }
@@ -216,7 +230,8 @@ export default function TripDetailMap({
       navigator.geolocation.clearWatch(watchId);
       if (dotRef.current) { dotRef.current.remove(); dotRef.current = null; }
     };
-  }, [liveLocation, ready]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveLocation, ready, fitUserAndRoute]);
 
   return (
     <div

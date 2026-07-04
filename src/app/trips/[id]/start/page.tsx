@@ -77,6 +77,80 @@ function WaypointAudioPlayer({ src }: { src: string }) {
   );
 }
 
+// Share access by platform username (not email) — search users, pick up to 3.
+function SharePicker({ tripId, initialEmails }: { tripId: string; initialEmails: string[] }) {
+  const [selected, setSelected] = useState<{ name: string; email: string }[]>(
+    initialEmails.filter(Boolean).map((e) => ({ name: e, email: e }))
+  );
+  const [q, setQ] = useState("");
+  const [results, setResults] = useState<{ id: string; name: string | null; email: string }[]>([]);
+  const [open, setOpen] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  useEffect(() => {
+    if (q.trim().length < 2) { setResults([]); return; }
+    const t = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/users/search?q=${encodeURIComponent(q.trim())}`);
+        const d = r.ok ? await r.json() : [];
+        setResults(Array.isArray(d) ? d : []); setOpen(true);
+      } catch { setResults([]); }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [q]);
+
+  function add(u: { name: string | null; email: string }) {
+    if (selected.length >= 3 || selected.some((s) => s.email === u.email)) return;
+    setSelected([...selected, { name: u.name ?? u.email, email: u.email }]);
+    setQ(""); setResults([]); setOpen(false);
+  }
+  async function save() {
+    const res = await fetch(`/api/trips/${tripId}/purchase`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sharedWith: selected.map((s) => s.email) }),
+    });
+    setMsg(res.ok ? "השיתוף נשמר" : "שגיאה");
+  }
+
+  return (
+    <div className="bg-surface rounded-2xl border border-border p-4 mb-3">
+      <div className="text-sm font-semibold text-fg mb-1">שתף גישה (עד 3 אנשים)</div>
+      <div className="text-[11px] text-fg-faint mb-2">חפש משתמשים לפי שם המשתמש בפלטפורמה — הם יקבלו גישה מלאה לתוכן.</div>
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {selected.map((s) => (
+            <span key={s.email} className="inline-flex items-center gap-1 bg-[#D6EDE3] text-[#0F5038] rounded-full px-2.5 py-1 text-[11px]">
+              {s.name}
+              <button type="button" onClick={() => setSelected(selected.filter((x) => x.email !== s.email))} className="font-bold">✕</button>
+            </span>
+          ))}
+        </div>
+      )}
+      {selected.length < 3 && (
+        <div className="relative">
+          <input type="text" value={q} onChange={(e) => setQ(e.target.value)}
+            placeholder="חפש לפי שם משתמש…"
+            className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
+          {open && results.length > 0 && (
+            <div className="absolute z-20 mt-1 w-full bg-surface border border-border rounded-lg shadow-lg overflow-hidden max-h-52 overflow-y-auto">
+              {results.map((u) => (
+                <button key={u.id} type="button" onClick={() => add(u)}
+                  className="w-full text-right px-3 py-2 text-xs hover:bg-surface-2 flex justify-between gap-2">
+                  <span className="text-fg">{u.name ?? u.email}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      <div className="flex items-center gap-2 mt-2">
+        <button type="button" onClick={save} className="px-4 py-1.5 bg-[#1A6B4A] text-white rounded-full text-xs font-medium">שמור שיתוף</button>
+        {msg && <span className="text-[11px] text-[#0F5038]">{msg}</span>}
+      </div>
+    </div>
+  );
+}
+
 export default function SelfGuidedStartPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -84,6 +158,9 @@ export default function SelfGuidedStartPage() {
   // Where to return on exit — set by the entry point (?from=). Never the trip
   // page itself, so exiting fully leaves the trip context (no redirect loop).
   const exitHref = searchParams.get("from") === "search" ? "/trips" : "/my-trips";
+  // Two post-purchase modes: "field" (map+GPS+elevation+share, no waypoint
+  // details — for use on the trail) and "browse" (full content for learning).
+  const [mode, setMode] = useState<"field" | "browse">(searchParams.get("mode") === "browse" ? "browse" : "field");
   const [trip, setTrip] = useState<Trip | null>(null);
   const [allowed, setAllowed] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
@@ -91,7 +168,6 @@ export default function SelfGuidedStartPage() {
   const [offlineMode, setOfflineMode] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [shareEmails, setShareEmails] = useState<string[]>(["", "", ""]);
-  const [shareMsg, setShareMsg] = useState("");
   const [focusWp, setFocusWp] = useState<number | null>(null);
   const [hoverCoord, setHoverCoord] = useState<[number, number] | null>(null);
   const mapWrapRef = useRef<HTMLDivElement>(null);
@@ -195,15 +271,6 @@ export default function SelfGuidedStartPage() {
     return () => navigator.geolocation.clearWatch(wid);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navMode, navReverse, trip]);
-
-  async function saveShare() {
-    const emails = shareEmails.map((e) => e.trim()).filter(Boolean);
-    const res = await fetch(`/api/trips/${id}/purchase`, {
-      method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sharedWith: emails }),
-    });
-    setShareMsg(res.ok ? "השיתוף נשמר" : "שגיאה");
-  }
 
   useEffect(() => {
     const cached = typeof window !== "undefined" ? localStorage.getItem(cacheKey) : null;
@@ -462,14 +529,22 @@ export default function SelfGuidedStartPage() {
             <button type="button" onClick={downloadOffline} className="text-[11px] text-[#185FA5] border border-[#185FA5]/30 rounded-full px-2.5 py-1 shrink-0">📥 הורד לא מקוון</button>
           )}
         </div>
+
+        {/* Field / Browse mode toggle */}
+        <div className="inline-flex bg-surface-2 rounded-full p-0.5 text-[11px] font-medium mb-3">
+          <button type="button" onClick={() => setMode("field")}
+            className={`px-3 py-1.5 rounded-full transition-colors ${mode === "field" ? "bg-[#1A6B4A] text-white" : "text-fg-muted"}`}>🧭 בשטח</button>
+          <button type="button" onClick={() => setMode("browse")}
+            className={`px-3 py-1.5 rounded-full transition-colors ${mode === "browse" ? "bg-[#1A6B4A] text-white" : "text-fg-muted"}`}>📖 למד על הטיול</button>
+        </div>
         {offlineMode && (
           <div className="bg-[#FDF3DC] border border-[#E8A020]/40 rounded-xl px-3 py-2 mb-3 text-[11px] text-[#7A5010]">
             ⚠ מצב לא מקוון — מוצג תוכן שמור (ייתכן שאינו מעודכן). המפה והניווט החי דורשים חיבור.
           </div>
         )}
 
-        {/* Start guided navigation */}
-        {navPts.length > 0 && (
+        {/* Start guided navigation — field mode only */}
+        {mode === "field" && navPts.length > 0 && (
           <div className="bg-surface rounded-2xl border border-border p-4 mb-3">
             <div className="text-sm font-semibold text-fg mb-1">🧭 ניווט מודרך</div>
             <div className="text-[11px] text-fg-faint mb-3">התחל ניווט חי עם זיהוי תחנות אוטומטי (ברדיוס 20 מ׳) וחשיפת תוכן לאורך הדרך.</div>
@@ -515,7 +590,9 @@ export default function SelfGuidedStartPage() {
         )}
 
         <div className="bg-[#EEF5FC] border border-[#185FA5]/20 rounded-2xl p-3 mb-3 text-xs text-[#185FA5]">
-          📍 הנקודה הכחולה במפה מציגה את מיקומך בזמן אמת. כל תחנה כוללת הנחיות והסבר עם אפשרות הקראה.
+          {mode === "field"
+            ? "📍 הנקודה הכחולה במפה מציגה את מיקומך בזמן אמת. התחל ניווט מודרך לחשיפת התוכן תחנה־תחנה לאורך הדרך."
+            : "📖 מצב לימוד — כל התחנות, ההסברים, חומרי המקור והקבצים גלויים כאן להיכרות מראש עם הטיול."}
         </div>
 
         {/* Live map with blue dot + elevation-hover marker */}
@@ -524,8 +601,10 @@ export default function SelfGuidedStartPage() {
             region={trip.region}
             waypoints={mapPts.map((p) => ({ lat: p.lat, lng: p.lng, label: p.label }))}
             routeLine={parseTrack(trip.routeGpx).map((p) => [p.lat, p.lon] as [number, number])}
+            showWaypoints={mode === "browse"}
             focusWaypoint={focusWp}
             hoverCoord={hoverCoord}
+            fitUserAndRoute={mode === "field"}
             height={220}
             liveLocation
           />
@@ -542,24 +621,9 @@ export default function SelfGuidedStartPage() {
           );
         })()}
 
-        {/* Share access (owner only, up to 3 people) */}
+        {/* Share access (owner only, up to 3 people, by platform username) */}
         {isOwner && !offlineMode && (
-          <div className="bg-surface rounded-2xl border border-border p-4 mb-3">
-            <div className="text-sm font-semibold text-fg mb-1">שתף גישה (עד 3 אנשים)</div>
-            <div className="text-[11px] text-fg-faint mb-2">בני משפחה שתשתף יוכלו לגשת לתוכן עם המייל שלהם</div>
-            <div className="flex flex-col gap-1.5">
-              {shareEmails.map((e, i) => (
-                <input key={i} type="email" value={e} dir="ltr"
-                  onChange={(ev) => setShareEmails((prev) => prev.map((x, j) => j === i ? ev.target.value : x))}
-                  placeholder={`אימייל ${i + 1}`}
-                  className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1A6B4A]" />
-              ))}
-            </div>
-            <div className="flex items-center gap-2 mt-2">
-              <button type="button" onClick={saveShare} className="px-4 py-1.5 bg-[#1A6B4A] text-white rounded-full text-xs font-medium">שמור שיתוף</button>
-              {shareMsg && <span className="text-[11px] text-[#0F5038]">{shareMsg}</span>}
-            </div>
-          </div>
+          <SharePicker tripId={id} initialEmails={shareEmails} />
         )}
 
         {trip.description && (
@@ -572,7 +636,20 @@ export default function SelfGuidedStartPage() {
           </div>
         )}
 
+        {/* Full waypoint content — browse mode only (hidden in field mode) */}
+        {mode === "browse" && (
         <div className="flex flex-col gap-2">
+          {/* Trip-level source materials */}
+          {Array.isArray(trip.sourceMaterials) && trip.sourceMaterials.length > 0 && (
+            <div className="bg-surface rounded-2xl border border-border p-4">
+              <div className="text-sm font-semibold text-fg mb-2">📚 חומרי מקור לטיול</div>
+              <div className="flex flex-col gap-1">
+                {trip.sourceMaterials.map((m, j) => (
+                  <a key={j} href={m.url} target="_blank" rel="noreferrer" className="text-xs text-[#185FA5] hover:underline">{m.type === "pdf" ? "📄" : "🔗"} {m.title}</a>
+                ))}
+              </div>
+            </div>
+          )}
           {waypoints.length === 0 && <div className="text-center py-8 text-fg-faint text-sm">אין תחנות מוגדרות</div>}
           {waypoints.map((wp, i) => {
             const hasLoc = wp.lat != null && wp.lng != null;
@@ -618,6 +695,7 @@ export default function SelfGuidedStartPage() {
             );
           })}
         </div>
+        )}
       </div>
     </div>
   );

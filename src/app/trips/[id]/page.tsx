@@ -1202,7 +1202,8 @@ export default function TripDetailPage() {
                 purchase?.purchased && !purchase?.expired ? (
                   <>
                     <button type="button" onClick={requestRefund} className="px-3 py-2.5 text-xs rounded-full" style={{ border: "1px solid var(--danger)", color: "var(--danger)" }}>בקשה להחזר</button>
-                    <button type="button" onClick={() => router.push(`/trips/${trip.id}/start`)} className="px-5 py-2.5 text-sm rounded-full font-semibold flex items-center gap-1" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}><Play size={14} /> {tt("startTrip")}</button>
+                    <button type="button" onClick={() => router.push(`/trips/${trip.id}/start?mode=browse`)} className="px-3 py-2.5 text-xs rounded-full font-medium" style={{ border: "1px solid var(--accent)", color: "var(--accent)" }}>📖 למד</button>
+                    <button type="button" onClick={() => router.push(`/trips/${trip.id}/start?mode=field`)} className="px-5 py-2.5 text-sm rounded-full font-semibold flex items-center gap-1" style={{ background: "var(--accent)", color: "var(--accent-ink)" }}><Play size={14} /> {tt("startTrip")}</button>
                   </>
                 ) : purchase?.purchased && purchase?.expired ? (
                   <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)} className="px-5 py-2.5 text-sm rounded-full font-semibold" style={{ border: "1px solid var(--danger)", color: "var(--danger)" }}>פג תוקף — רכוש מחדש</button>

@@ -439,8 +439,12 @@ export default function MyTripsPage() {
                         <button type="button" onClick={() => router.push(`/trips/${p.trip.id}`)}
                           className="self-start mt-2 px-3 py-1.5 rounded-full text-[11px] font-medium border border-[#C0392B] text-[#C0392B]">פג תוקף — רכוש מחדש</button>
                       ) : (
-                        <button type="button" onClick={() => router.push(`/trips/${p.trip.id}/start`)}
-                          className="self-start mt-2 px-3 py-1.5 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">▶ התחל / המשך</button>
+                        <div className="flex gap-1.5 mt-2">
+                          <button type="button" onClick={() => router.push(`/trips/${p.trip.id}/start?mode=field`)}
+                            className="px-3 py-1.5 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">▶ התחל / המשך</button>
+                          <button type="button" onClick={() => router.push(`/trips/${p.trip.id}/start?mode=browse`)}
+                            className="px-3 py-1.5 border border-[#1A6B4A]/40 text-[#1A6B4A] rounded-full text-[11px] font-medium">📖 למד על הטיול</button>
+                        </div>
                       )}
                     </div>
                   </div>

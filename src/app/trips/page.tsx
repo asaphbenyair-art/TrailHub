@@ -1107,8 +1107,12 @@ export default function TripsPage() {
                       <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
                         {isSG ? (
                           isPurchased ? (
-                            <button type="button" onClick={() => router.push(`/trips/${trip.id}/start?from=search`)}
-                              className="px-3.5 py-1.5 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">▶ התחל</button>
+                            <>
+                              <button type="button" onClick={() => router.push(`/trips/${trip.id}/start?mode=browse&from=search`)}
+                                className="px-3 py-1.5 border border-[#1A6B4A]/40 text-[#1A6B4A] rounded-full text-[11px] font-medium">📖 למד</button>
+                              <button type="button" onClick={() => router.push(`/trips/${trip.id}/start?mode=field&from=search`)}
+                                className="px-3.5 py-1.5 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">▶ התחל</button>
+                            </>
                           ) : (
                             <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)}
                               className="px-3.5 py-1.5 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">{trip.price === 0 ? "הירשם בחינם" : "רכוש"}</button>
