@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Heart, Star, Mountain, Clock, Calendar, MapPin } from "lucide-react";
 import { coverImages } from "@/lib/tripImage";
 import { useDateFmt } from "@/components/CalendarModeProvider";
+import { useLabels } from "@/components/useLabels";
 
 export interface TripCardData {
   id: string;
@@ -27,7 +28,6 @@ export interface TripCardData {
   guideRating?: number;
 }
 
-const DIFF_LABEL: Record<string, string> = { EASY: "קל", MEDIUM: "בינוני", HARD: "קשה", EXTREME: "קיצוני" };
 const AVATAR_COLORS = ["#854F0B", "#3B6D11", "#185FA5", "#6B3B87", "#1A6B4A"];
 
 function avatarColor(name: string | null) {
@@ -80,6 +80,7 @@ export default function TripCard({
   onToggleFavorite?: () => void;
 }) {
   const dfmt = useDateFmt();
+  const L = useLabels();
   const isSelfGuided = trip.tripType === "SELF_GUIDED";
   const isJourney = (trip.dayCount ?? 0) > 1;
   const spotsLeft = Math.max(trip.maxSpots - trip.spotsBooked, 0);
@@ -113,7 +114,7 @@ export default function TripCard({
               </span>
             )}
             <span className="px-2 py-0.5 rounded-full text-[10px] font-medium text-white/95 backdrop-blur-sm bg-black/35">
-              {DIFF_LABEL[trip.difficulty] ?? trip.difficulty}
+              {L.difficulty(trip.difficulty)}
             </span>
           </div>
           {onToggleFavorite && (
@@ -139,7 +140,7 @@ export default function TripCard({
         {/* Bottom of image: title + guide */}
         <div className="absolute bottom-0 inset-x-0 p-4">
           <div className="flex items-center gap-1 text-white/85 text-[11px] mb-1">
-            <MapPin size={11} /> {trip.region}
+            <MapPin size={11} /> {L.region(trip.region)}
           </div>
           <h3 className="font-display text-white text-xl leading-tight mb-2">{trip.title}</h3>
           <div className="flex items-center gap-2">

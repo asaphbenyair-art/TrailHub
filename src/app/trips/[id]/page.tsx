@@ -9,7 +9,7 @@ import RideshareModal from "@/components/RideshareModal";
 import ElevationChart, { parseTrack } from "@/components/ElevationChart";
 import TranslateButton from "@/components/TranslateButton";
 import { useTranslations } from "next-intl";
-import { TAG_LABEL } from "@/lib/tripTags";
+import { useLabels } from "@/components/useLabels";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { coverImages } from "@/lib/tripImage";
 import { useDateFmt, useDualDate } from "@/components/CalendarModeProvider";
@@ -21,10 +21,6 @@ import {
 
 const TripDetailMap = dynamic(() => import("@/components/TripDetailMap"), { ssr: false });
 
-const DIFF_LABEL: Record<string, string> = { EASY: "קל", MEDIUM: "בינוני", HARD: "קשה", EXTREME: "קיצוני" };
-const ROUTE_TYPE_LABEL: Record<string, string> = {
-  "one-way": "חד-כיווני", "circular-nature": "מעגלי — שטח", "circular-urban": "מעגלי — עירוני",
-};
 const FITNESS_LABEL: Record<string, string> = { low: "נמוך", medium: "בינוני", high: "גבוה", excellent: "מצוין" };
 
 const AVATAR_COLORS = ["#854F0B", "#3B6D11", "#185FA5", "#6B3B87", "#1A6B4A"];
@@ -249,6 +245,7 @@ export default function TripDetailPage() {
   const tt = useTranslations("trip");
   const tq = useTranslations("qa");
   const trv = useTranslations("reviews");
+  const L = useLabels();
   const router = useRouter();
   const { data: session } = useSession();
   const [trip, setTrip] = useState<Trip | null>(null);
@@ -592,7 +589,7 @@ export default function TripDetailPage() {
 
           <div className="absolute bottom-0 inset-x-0 px-5 pb-6">
             <div className="flex items-center gap-1.5 text-white/85 text-xs mb-2">
-              <MapPin size={12} /> {trip.region}
+              <MapPin size={12} /> {L.region(trip.region)}
             </div>
             <h1 className="font-display text-white text-[30px] leading-[1.12]">{trip.title}</h1>
           </div>
@@ -650,24 +647,22 @@ export default function TripDetailPage() {
           {/* ── 4. Tags (difficulty, region, attribute tags) ── */}
           <div className="flex flex-wrap gap-2">
             <span className="text-xs px-3 py-1.5 rounded-full font-medium" style={{ background: "var(--surface-2)", color: "var(--accent)" }}>
-              {DIFF_LABEL[trip.difficulty] ?? trip.difficulty}
+              {L.difficulty(trip.difficulty)}
             </span>
-            <span className="text-xs px-3 py-1.5 rounded-full" style={{ background: "var(--surface-2)", color: "var(--fg-muted)" }}>
-              {trip.region}
-            </span>
+            <span className="text-xs px-3 py-1.5 rounded-full" style={{ background: "var(--surface-2)", color: "var(--fg-muted)" }}>{L.region(trip.region)}</span>
             {trip.genderRestriction && trip.genderRestriction !== "ALL" && (
               <span className="text-xs px-3 py-1.5 rounded-full font-medium" style={{ background: "rgba(232,160,32,0.15)", color: "#7A5010" }}>
-                {trip.genderRestriction === "MEN" ? "👨 מיועד לגברים בלבד" : "👩 מיועד לנשים בלבד"}
+                {trip.genderRestriction === "MEN" ? (L.en ? "👨 Men only" : "👨 מיועד לגברים בלבד") : (L.en ? "👩 Women only" : "👩 מיועד לנשים בלבד")}
               </span>
             )}
-            {trip.routeType && ROUTE_TYPE_LABEL[trip.routeType] && (
+            {trip.routeType && L.routeType(trip.routeType) && (
               <span className="text-xs px-3 py-1.5 rounded-full" style={{ background: "var(--surface-2)", color: "var(--fg-muted)" }}>
-                {ROUTE_TYPE_LABEL[trip.routeType]}
+                {L.routeType(trip.routeType)}
               </span>
             )}
             {(trip.attributeTags ?? []).map((t) => (
               <span key={t} className="text-xs px-3 py-1.5 rounded-full" style={{ background: "var(--surface-2)", color: "var(--fg-muted)" }}>
-                {TAG_LABEL[t] ?? t}
+                {L.tag(t)}
               </span>
             ))}
           </div>
