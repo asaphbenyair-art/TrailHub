@@ -92,6 +92,7 @@ interface TripCardProps {
   isPurchased?: boolean;             // self-guided: purchased
   accessExpiresAt?: string | null;   // self-guided: remaining-access meta
   topStrip?: ReactNode;              // banner above the hero (status)
+  heroActions?: ReactNode;           // corner actions on the hero (e.g. guide edit/delete)
   indicators?: ReactNode;            // Q&A + rideshare cluster in the stats row
   onOpenParticipants?: () => void;   // capacity "participant list" link
   footer?: ReactNode;                // price/action row under the capacity bar
@@ -100,7 +101,7 @@ interface TripCardProps {
 
 export default function TripCard({
   trip, href, onCardClick, favorite, onToggleFav, isPurchased, accessExpiresAt,
-  topStrip, indicators, onOpenParticipants, footer, dateLabelOverride,
+  topStrip, heroActions, indicators, onOpenParticipants, footer, dateLabelOverride,
 }: TripCardProps) {
   const router = useRouter();
   const tcard = useTranslations("card");
@@ -191,6 +192,11 @@ export default function TripCard({
             style={{ color: favorite ? "#ff6b81" : "#fff" }}>
             {favorite ? "♥" : "♡"}
           </button>
+        )}
+        {heroActions && (
+          <div className={`absolute top-2.5 ${L.en ? "right-2.5" : "left-2.5"} flex gap-1.5 z-10`} onClick={(e) => e.stopPropagation()}>
+            {heroActions}
+          </div>
         )}
         {trip.cardLogo && (
           // eslint-disable-next-line @next/next/no-img-element

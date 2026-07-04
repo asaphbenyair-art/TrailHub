@@ -16,6 +16,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import LanguageToggle from "@/components/LanguageToggle";
 import RegistrantsModal from "@/components/RegistrantsModal";
 import BroadcastModal from "@/components/BroadcastModal";
+import TripCardVisual, { TripCardTrip } from "@/components/TripCard";
 
 const DIFF_BADGE: Record<string, { bg: string; color: string; label: string }> = {
   EASY: { bg: "#EAF3DE", color: "#27500A", label: "קל" },
@@ -293,176 +294,114 @@ export default function GuideDashboard() {
 
         <div className={`flex flex-col gap-3 ${tab !== "trips" ? "hidden" : ""}`}>
           {trips.map((trip) => {
-            const occupancy = trip.maxSpots > 0 ? trip.spotsBooked / trip.maxSpots : 0;
-            const isFull = trip.status === "FULL" || occupancy >= 1;
-            const diffBadge = DIFF_BADGE[trip.difficulty];
             const statusBadge = STATUS_BADGE[trip.status] ?? STATUS_BADGE.DRAFT;
-            const isPast = new Date(trip.date) < now;
             const isConfirmDelete = confirmId === trip.id;
 
             return (
-              <div
+              <TripCardVisual
                 key={trip.id}
-                className={`bg-surface rounded-2xl overflow-hidden border border-border shadow-sm ${isPast ? "opacity-60" : ""}`}
-              >
-                {/* Image */}
-                <div
-                  className="relative cursor-pointer"
-                  style={{ height: 150 }}
-                  onClick={() => router.push(`/trips/${trip.id}`)}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={coverImages(trip.images, trip.id, { region: trip.region, title: trip.title })[0]} alt={trip.title} className="w-full h-full object-cover" />
-
-                  <div className="absolute top-2.5 right-2.5 flex gap-1.5">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: statusBadge.bg, color: statusBadge.color }}>
-                      {L.status(trip.status)}
-                    </span>
-                    {(trip.status === "OPEN" || trip.status === "FULL") && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium"
-                        style={{ background: trip.visibility === "PRIVATE" ? "rgba(0,0,0,0.6)" : "rgba(44,95,138,0.9)", color: "#fff" }}>
-                        {trip.visibility === "PRIVATE" ? (L.en ? "🔒 Private" : "🔒 פרטי") : (L.en ? "🌍 Public" : "🌍 ציבורי")}
-                      </span>
+                trip={trip as unknown as TripCardTrip}
+                onCardClick={() => router.push(`/trips/${trip.id}`)}
+                heroActions={
+                  <>
+                    <button type="button" onClick={() => router.push(`/guide/trips/${trip.id}/edit`)}
+                      className="bg-black/50 hover:bg-black/70 text-white rounded-full px-2.5 py-1 text-[11px] transition-colors">✏️ עריכה</button>
+                    <button type="button" onClick={() => setConfirmId(isConfirmDelete ? null : trip.id)}
+                      className="bg-black/50 hover:bg-red-600/80 text-white rounded-full px-2.5 py-1 text-[11px] transition-colors">🗑</button>
+                  </>
+                }
+                footer={
+                  <>
+                    {/* Delete confirmation bar */}
+                    {isConfirmDelete && (
+                      <div className="bg-surface-2 border border-red-100 rounded-lg px-3 py-2.5 mb-2 flex items-center justify-between">
+                        <span className="text-xs text-red-700">בטוח? הפעולה לא הפיכה</span>
+                        <div className="flex gap-2">
+                          <button type="button" onClick={() => setConfirmId(null)}
+                            className="text-xs text-fg-muted px-3 py-1 border border-border rounded-full hover:bg-surface-2">ביטול</button>
+                          <button type="button" onClick={() => handleDelete(trip.id)} disabled={deletingId === trip.id}
+                            className="text-xs text-white bg-red-500 hover:bg-red-600 px-3 py-1 rounded-full disabled:opacity-60">
+                            {deletingId === trip.id ? "מוחק..." : "מחק"}</button>
+                        </div>
+                      </div>
                     )}
-                    {diffBadge && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: diffBadge.bg, color: diffBadge.color }}>
-                        {L.difficulty(trip.difficulty)}
+
+                    {/* Status + visibility badges */}
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: statusBadge.bg, color: statusBadge.color }}>
+                        {L.status(trip.status)}
                       </span>
-                    )}
-                  </div>
-
-                  {/* Edit + Delete buttons */}
-                  <div className="absolute top-2.5 left-2.5 flex gap-1.5" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      type="button"
-                      onClick={() => router.push(`/guide/trips/${trip.id}/edit`)}
-                      className="bg-black/50 hover:bg-black/70 text-white rounded-full px-2.5 py-1 text-[11px] transition-colors"
-                    >
-                      ✏️ עריכה
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setConfirmId(isConfirmDelete ? null : trip.id)}
-                      className="bg-black/50 hover:bg-red-600/80 text-white rounded-full px-2.5 py-1 text-[11px] transition-colors"
-                    >
-                      🗑
-                    </button>
-                  </div>
-
-                  <div
-                    className="absolute bottom-0 left-0 right-0 px-3 py-2.5"
-                    style={{ background: "linear-gradient(to top, rgba(0,0,0,0.65), transparent)" }}
-                  >
-                    <div className="text-sm font-medium text-white leading-snug">{trip.title}</div>
-                  </div>
-                </div>
-
-                {/* Delete confirmation bar */}
-                {isConfirmDelete && (
-                  <div className="bg-surface-2 border-b border-red-100 px-3 py-2.5 flex items-center justify-between">
-                    <span className="text-xs text-red-700">בטוח? הפעולה לא הפיכה</span>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setConfirmId(null)}
-                        className="text-xs text-fg-muted px-3 py-1 border border-border rounded-full hover:bg-surface-2"
-                      >
-                        ביטול
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(trip.id)}
-                        disabled={deletingId === trip.id}
-                        className="text-xs text-white bg-red-500 hover:bg-red-600 px-3 py-1 rounded-full disabled:opacity-60"
-                      >
-                        {deletingId === trip.id ? "מוחק..." : "מחק"}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Card body */}
-                <div className="px-3 py-2.5">
-                  <div className="flex flex-wrap gap-x-2.5 gap-y-0.5 mb-2">
-                    <span className="text-[11px] text-fg-muted">📅 {dfmt(trip.date, { greg: { weekday: "short", day: "numeric", month: "short" } })}</span>
-                    <span className="text-[11px] text-fg-muted">🕐 {trip.startTime}</span>
-                    {trip.distanceKm > 0 && <span className="text-[11px] text-fg-muted">📍 {trip.distanceKm} ק"מ</span>}
-                    {trip.durationMin > 0 && <span className="text-[11px] text-fg-muted">⏱ {formatDuration(trip.durationMin)}</span>}
-                  </div>
-
-                  <div className="h-[3px] bg-surface-2 rounded-full overflow-hidden mb-2.5">
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${Math.min(occupancy * 100, 100)}%`, background: isFull ? "#C0392B" : "#1A6B4A" }}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-fg">
-                      ₪{trip.price.toLocaleString("he-IL")}
-                      <span className="text-xs font-normal text-fg-faint mr-1">לאדם</span>
-                    </span>
-                    <button type="button"
-                      onClick={(e) => { e.stopPropagation(); setRegistrantsModal({ id: trip.id, title: trip.title }); }}
-                      className="text-xs text-[#1A6B4A] font-medium hover:underline">
-                      נרשמים · {trip.spotsBooked}/{trip.maxSpots}
-                    </button>
-                  </div>
-
-                  {/* Unmatched ride seekers — informational only */}
-                  {(trip.unmatchedSeekers ?? 0) > 0 && (
-                    <div className="mt-1.5 text-[11px] text-[#185FA5] flex items-center gap-1">
-                      🙋 {trip.unmatchedSeekers} {trip.unmatchedSeekers === 1 ? "מחפש טרמפ" : "מחפשי טרמפ"}
-                    </div>
-                  )}
-
-                  {/* Draft cannot be published directly — must complete required fields in the editor */}
-                  {(trip.status === "DRAFT" || trip.status === "PENDING_REVIEW" || trip.status === "REJECTED") && (
-                    <Link href={`/guide/trips/${trip.id}/edit`} onClick={(e) => e.stopPropagation()}
-                      className="block text-center w-full mt-2 py-1.5 text-xs font-semibold rounded-full border-2 border-dashed border-[#1A6B4A] text-[#1A6B4A] hover:bg-[#D6EDE3] transition-colors">
-                      ✏️ {tg("continueEditing")}
-                    </Link>
-                  )}
-
-                  {/* Communication links */}
-                  <div className="flex gap-2 mt-2.5 pt-2.5 border-t border-border">
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); setRegistrantsModal({ id: trip.id, title: trip.title }); }}
-                      className="flex-1 text-center text-[11px] text-[#7A5010] border border-[#E8A020]/30 bg-[#FDF6E8] rounded-lg py-1.5 hover:bg-[#FBEFD5] transition-colors"
-                    >
-                      👥 {tg("registrants")}
-                    </button>
-                    <Link
-                      href={`/guide/trips/${trip.id}/qa`}
-                      className="flex-1 text-center text-[11px] text-[#1A6B4A] border border-[#1A6B4A]/25 bg-[#F0FAF5] rounded-lg py-1.5 hover:bg-[#D6EDE3] transition-colors"
-                    >
-                      💬 {tg("questions")}
-                    </Link>
-                  </div>
-
-                  {/* Group messages + private link */}
-                  {(trip.status === "OPEN" || trip.status === "FULL") && (
-                    <div className="flex gap-2 mt-2">
-                      <button type="button" onClick={() => setBroadcastModal({ id: trip.id, title: trip.title })}
-                        className="flex-1 text-center text-[11px] text-fg-muted border border-border rounded-lg py-1.5 hover:bg-surface-2 transition-colors">
-                        📢 {tg("broadcasts")}
-                      </button>
-                      <a href={googleCalendarUrl({ title: trip.title, dateISO: trip.date, startTime: trip.startTime, location: trip.region })}
-                        target="_blank" rel="noreferrer"
-                        className="flex-1 text-center text-[11px] text-[#185FA5] border border-[#185FA5]/30 rounded-lg py-1.5 hover:bg-[#EEF5FC] transition-colors">
-                        📅 {tg("addToCalendar")}
-                      </a>
-                      {trip.visibility === "PRIVATE" && (
-                        <button type="button" onClick={() => copyLink(trip.id)}
-                          className="flex-1 text-center text-[11px] text-[#185FA5] border border-[#185FA5]/25 rounded-lg py-1.5 hover:bg-[#EEF5FC] transition-colors">
-                          {copiedId === trip.id ? "✓ הועתק" : "🔗 העתק לינק"}
-                        </button>
+                      {(trip.status === "OPEN" || trip.status === "FULL") && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-medium"
+                          style={{ background: trip.visibility === "PRIVATE" ? "rgba(0,0,0,0.6)" : "rgba(44,95,138,0.9)", color: "#fff" }}>
+                          {trip.visibility === "PRIVATE" ? (L.en ? "🔒 Private" : "🔒 פרטי") : (L.en ? "🌍 Public" : "🌍 ציבורי")}
+                        </span>
                       )}
                     </div>
-                  )}
-                </div>
-              </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-fg">
+                        ₪{trip.price.toLocaleString("he-IL")}
+                        <span className="text-xs font-normal text-fg-faint mr-1">לאדם</span>
+                      </span>
+                      <button type="button"
+                        onClick={(e) => { e.stopPropagation(); setRegistrantsModal({ id: trip.id, title: trip.title }); }}
+                        className="text-xs text-[#1A6B4A] font-medium hover:underline">
+                        נרשמים · {trip.spotsBooked}/{trip.maxSpots}
+                      </button>
+                    </div>
+
+                    {/* Unmatched ride seekers — informational only */}
+                    {(trip.unmatchedSeekers ?? 0) > 0 && (
+                      <div className="mt-1.5 text-[11px] text-[#185FA5] flex items-center gap-1">
+                        🙋 {trip.unmatchedSeekers} {trip.unmatchedSeekers === 1 ? "מחפש טרמפ" : "מחפשי טרמפ"}
+                      </div>
+                    )}
+
+                    {/* Draft cannot be published directly — must complete required fields in the editor */}
+                    {(trip.status === "DRAFT" || trip.status === "PENDING_REVIEW" || trip.status === "REJECTED") && (
+                      <Link href={`/guide/trips/${trip.id}/edit`} onClick={(e) => e.stopPropagation()}
+                        className="block text-center w-full mt-2 py-1.5 text-xs font-semibold rounded-full border-2 border-dashed border-[#1A6B4A] text-[#1A6B4A] hover:bg-[#D6EDE3] transition-colors">
+                        ✏️ {tg("continueEditing")}
+                      </Link>
+                    )}
+
+                    {/* Communication links */}
+                    <div className="flex gap-2 mt-2.5 pt-2.5 border-t border-border">
+                      <button type="button"
+                        onClick={(e) => { e.stopPropagation(); setRegistrantsModal({ id: trip.id, title: trip.title }); }}
+                        className="flex-1 text-center text-[11px] text-[#7A5010] border border-[#E8A020]/30 bg-[#FDF6E8] rounded-lg py-1.5 hover:bg-[#FBEFD5] transition-colors">
+                        👥 {tg("registrants")}
+                      </button>
+                      <Link href={`/guide/trips/${trip.id}/qa`}
+                        className="flex-1 text-center text-[11px] text-[#1A6B4A] border border-[#1A6B4A]/25 bg-[#F0FAF5] rounded-lg py-1.5 hover:bg-[#D6EDE3] transition-colors">
+                        💬 {tg("questions")}
+                      </Link>
+                    </div>
+
+                    {/* Group messages + private link */}
+                    {(trip.status === "OPEN" || trip.status === "FULL") && (
+                      <div className="flex gap-2 mt-2">
+                        <button type="button" onClick={() => setBroadcastModal({ id: trip.id, title: trip.title })}
+                          className="flex-1 text-center text-[11px] text-fg-muted border border-border rounded-lg py-1.5 hover:bg-surface-2 transition-colors">
+                          📢 {tg("broadcasts")}
+                        </button>
+                        <a href={googleCalendarUrl({ title: trip.title, dateISO: trip.date, startTime: trip.startTime, location: trip.region })}
+                          target="_blank" rel="noreferrer"
+                          className="flex-1 text-center text-[11px] text-[#185FA5] border border-[#185FA5]/30 rounded-lg py-1.5 hover:bg-[#EEF5FC] transition-colors">
+                          📅 {tg("addToCalendar")}
+                        </a>
+                        {trip.visibility === "PRIVATE" && (
+                          <button type="button" onClick={() => copyLink(trip.id)}
+                            className="flex-1 text-center text-[11px] text-[#185FA5] border border-[#185FA5]/25 rounded-lg py-1.5 hover:bg-[#EEF5FC] transition-colors">
+                            {copiedId === trip.id ? "✓ הועתק" : "🔗 העתק לינק"}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </>
+                }
+              />
             );
           })}
         </div>
