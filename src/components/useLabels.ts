@@ -18,12 +18,12 @@ export function useLabels() {
   return {
     en,
     dir: (en ? "ltr" : "rtl") as "ltr" | "rtl",
-    region: (r: string) => (en ? REGION_EN[r] ?? r : r),
-    difficulty: (d: string) => (en ? DIFFICULTY_EN[d] ?? d : DIFFICULTY_HE[d] ?? d),
-    status: (s: string) => (en ? STATUS_EN[s] ?? s : STATUS_HE[s] ?? s),
-    tripType: (t: string) => (en ? TRIP_TYPE_EN[t] ?? t : TRIP_TYPE_HE[t] ?? t),
-    routeType: (t: string) => (en ? ROUTE_TYPE_EN[t] ?? t : ROUTE_TYPE_HE[t] ?? t),
-    tag: (v: string) => (en ? TAG_LABEL_EN[v] ?? v : TAG_LABEL[v] ?? v),
+    region: (r?: string | null) => (r ? (en ? REGION_EN[r] ?? r : r) : ""),
+    difficulty: (d?: string | null) => (d ? (en ? DIFFICULTY_EN[d] ?? d : DIFFICULTY_HE[d] ?? d) : ""),
+    status: (s?: string | null) => (s ? (en ? STATUS_EN[s] ?? s : STATUS_HE[s] ?? s) : ""),
+    tripType: (t?: string | null) => (t ? (en ? TRIP_TYPE_EN[t] ?? t : TRIP_TYPE_HE[t] ?? t) : ""),
+    routeType: (t?: string | null) => (t ? (en ? ROUTE_TYPE_EN[t] ?? t : ROUTE_TYPE_HE[t] ?? t) : ""),
+    tag: (v?: string | null) => (v ? (en ? TAG_LABEL_EN[v] ?? v : TAG_LABEL[v] ?? v) : ""),
   };
 }
 

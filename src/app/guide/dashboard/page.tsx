@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import NotificationBell from "@/components/NotificationBell";
 import ModeIndicator from "@/components/ModeIndicator";
 import { useTranslations } from "next-intl";
+import { useLabels } from "@/components/useLabels";
 import AvatarMenu from "@/components/AvatarMenu";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { coverImages } from "@/lib/tripImage";
@@ -75,6 +76,7 @@ function formatDuration(min: number) {
 export default function GuideDashboard() {
   const router = useRouter();
   const tg = useTranslations("guide");
+  const L = useLabels();
   const dfmt = useDateFmt();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [guide, setGuide] = useState<Guide | null>(null);
@@ -129,7 +131,7 @@ export default function GuideDashboard() {
   const now = new Date();
 
   return (
-    <div dir="rtl" className="min-h-screen bg-bg p-4 flex justify-center">
+    <div dir={L.dir} className="min-h-screen bg-bg p-4 flex justify-center">
       <div className="w-full max-w-5xl flex flex-col gap-3">
 
         {/* Header */}
@@ -189,7 +191,7 @@ export default function GuideDashboard() {
 
                   <div className="absolute top-2.5 right-2.5 flex gap-1.5">
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: statusBadge.bg, color: statusBadge.color }}>
-                      {statusBadge.label}
+                      {L.status(t.status)}
                     </span>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-medium text-white" style={{ background: "rgba(61,143,95,0.92)" }}>🎒 עצמאי</span>
                     {(t.status === "OPEN" || t.status === "FULL") && (
@@ -200,7 +202,7 @@ export default function GuideDashboard() {
                     )}
                     {diffBadge && (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: diffBadge.bg, color: diffBadge.color }}>
-                        {diffBadge.label}
+                        {L.difficulty(t.difficulty)}
                       </span>
                     )}
                   </div>
@@ -314,17 +316,17 @@ export default function GuideDashboard() {
 
                   <div className="absolute top-2.5 right-2.5 flex gap-1.5">
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: statusBadge.bg, color: statusBadge.color }}>
-                      {statusBadge.label}
+                      {L.status(trip.status)}
                     </span>
                     {(trip.status === "OPEN" || trip.status === "FULL") && (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-medium"
                         style={{ background: trip.visibility === "PRIVATE" ? "rgba(0,0,0,0.6)" : "rgba(44,95,138,0.9)", color: "#fff" }}>
-                        {trip.visibility === "PRIVATE" ? "🔒 פרטי" : "🌍 ציבורי"}
+                        {trip.visibility === "PRIVATE" ? (L.en ? "🔒 Private" : "🔒 פרטי") : (L.en ? "🌍 Public" : "🌍 ציבורי")}
                       </span>
                     )}
                     {diffBadge && (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: diffBadge.bg, color: diffBadge.color }}>
-                        {diffBadge.label}
+                        {L.difficulty(trip.difficulty)}
                       </span>
                     )}
                   </div>
