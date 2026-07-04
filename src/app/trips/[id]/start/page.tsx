@@ -38,6 +38,7 @@ function distM(a: [number, number], b: [number, number]): number {
 }
 const wazeUrl = (lat: number, lng: number) => `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
 const ARRIVE_M = 20; // proximity threshold for start + waypoint detection
+const DEPART_M = 50; // moving this far from a reached waypoint = departed → next
 
 // Inline guidance-audio player: play/pause + seekable progress bar.
 function WaypointAudioPlayer({ src }: { src: string }) {
@@ -97,10 +98,18 @@ export default function SelfGuidedStartPage() {
   const [step, setStep] = useState(0);                 // index into the ordered waypoint sequence
   const [myPos, setMyPos] = useState<[number, number] | null>(null);
   const [pendingArrival, setPendingArrival] = useState(false); // within 20m of the current target, awaiting "הגעתי"
+  const [arrived, setArrived] = useState(false);       // arrival effects fired; content auto-opened for this step
+  const [departed, setDeparted] = useState(false);     // "יצאתי לדרך" pressed → auto-advance once 50m away
   const [startPrompt, setStartPrompt] = useState<null | { atStart: boolean; atEnd: boolean; dStart: number; dEnd: number; nearestStep: number }>(null);
   const [locating, setLocating] = useState(false);
   const stepRef = useRef(0);
+  const arrivedRef = useRef(false);
+  const departedRef = useRef(false);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const arrivalAudioRef = useRef<HTMLAudioElement>(null);
   useEffect(() => { stepRef.current = step; }, [step]);
+  useEffect(() => { arrivedRef.current = arrived; }, [arrived]);
+  useEffect(() => { departedRef.current = departed; }, [departed]);
 
   const cacheKey = `trailhub_offline_${id}`;
 
@@ -110,22 +119,77 @@ export default function SelfGuidedStartPage() {
     .map((w) => [w.lat as number, w.lng as number]);
   const orderedPts = navReverse ? [...navPts].reverse() : navPts;
 
-  // Live GPS tracking during navigation → detect arrival within 20m of the target.
+  // A short arrival chime via the Web Audio context (unlocked on nav start).
+  function playChime() {
+    try {
+      const ctx = audioCtxRef.current ?? new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      audioCtxRef.current = ctx;
+      if (ctx.state === "suspended") ctx.resume();
+      const now = ctx.currentTime;
+      [660, 880].forEach((f, i) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = "sine"; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, now + i * 0.18);
+        g.gain.exponentialRampToValueAtTime(0.25, now + i * 0.18 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.18 + 0.16);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(now + i * 0.18); o.stop(now + i * 0.18 + 0.18);
+      });
+    } catch {}
+  }
+
+  // Fire the arrival experience once per waypoint: vibrate + chime + auto-play
+  // the guide's audio (or TTS the guidance text as a fallback).
+  function fireArrival(wp: Waypoint | undefined) {
+    try { navigator.vibrate?.([200, 100, 200]); } catch {}
+    playChime();
+    if (wp?.audioUrl && arrivalAudioRef.current) {
+      const a = arrivalAudioRef.current;
+      a.src = wp.audioUrl;
+      setTimeout(() => a.play().catch(() => {}), 350); // let the chime play first
+    } else if (wp) {
+      const text = [wp.guidance, wp.navInstructions, wp.description].filter(Boolean).join(". ");
+      if (text) setTimeout(() => speak(text), 350);
+    }
+  }
+
+  // Advance to the next waypoint from GPS callbacks (uses the step ref).
+  function advanceFromRef() {
+    arrivedRef.current = false; departedRef.current = false;
+    setArrived(false); setDeparted(false); setPendingArrival(false);
+    const next = stepRef.current + 1;
+    if (next >= orderedWps.length) { setNavMode("done"); }
+    else { stepRef.current = next; setStep(next); setFocusWp(null); }
+  }
+
+  // Live GPS tracking during navigation → arrival (20m) + departure (50m) detection.
   useEffect(() => {
     if (navMode !== "navigating" || typeof navigator === "undefined" || !navigator.geolocation) return;
-    const pts = (trip?.waypointsJson ?? []).filter((w) => w.lat != null && w.lng != null).map((w) => [w.lat as number, w.lng as number] as [number, number]);
-    const ordered = navReverse ? [...pts].reverse() : pts;
+    const full = (trip?.waypointsJson ?? []).filter((w) => w.lat != null && w.lng != null);
+    const orderedFull = navReverse ? [...full].reverse() : full;
+    const ordered = orderedFull.map((w) => [w.lat as number, w.lng as number] as [number, number]);
     const wid = navigator.geolocation.watchPosition(
       (pos) => {
         const cur: [number, number] = [pos.coords.latitude, pos.coords.longitude];
         setMyPos(cur);
-        const target = ordered[stepRef.current];
-        if (target && distM(cur, target) <= ARRIVE_M) setPendingArrival(true);
+        const i = stepRef.current;
+        const target = ordered[i];
+        if (!target) return;
+        const d = distM(cur, target);
+        if (d <= ARRIVE_M && !arrivedRef.current) {
+          arrivedRef.current = true;
+          setArrived(true);
+          setPendingArrival(true);
+          fireArrival(orderedFull[i]);
+        }
+        // After the hiker sets off ("יצאתי לדרך"), moving 50m away → next waypoint.
+        if (departedRef.current && d > DEPART_M) advanceFromRef();
       },
       () => {},
       { enableHighAccuracy: true, maximumAge: 3000 }
     );
     return () => navigator.geolocation.clearWatch(wid);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navMode, navReverse, trip]);
 
   async function saveShare() {
@@ -198,9 +262,17 @@ export default function SelfGuidedStartPage() {
   const distToTarget = myPos && currentTarget ? Math.round(distM(myPos, currentTarget)) : null;
 
   function startFromStep(idx: number, reverse: boolean) {
+    // Unlock audio (chime + guidance auto-play) on this user gesture.
+    try {
+      const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (Ctx) { audioCtxRef.current = audioCtxRef.current ?? new Ctx(); audioCtxRef.current.resume().catch(() => {}); }
+      arrivalAudioRef.current?.load();
+    } catch {}
     setNavReverse(reverse);
     setStep(idx);
-    setPendingArrival(false);
+    stepRef.current = idx;
+    setPendingArrival(false); setArrived(false); setDeparted(false);
+    arrivedRef.current = false; departedRef.current = false;
     setStartPrompt(null);
     setNavMode("navigating");
     setFocusWp(null);
@@ -233,10 +305,11 @@ export default function SelfGuidedStartPage() {
   }
 
   function confirmArrival() {
-    setPendingArrival(false);
+    setPendingArrival(false); setArrived(false); setDeparted(false);
+    arrivedRef.current = false; departedRef.current = false;
     const next = step + 1;
     if (next >= orderedWps.length) setNavMode("done");
-    else { setStep(next); setFocusWp(null); }
+    else { setStep(next); stepRef.current = next; setFocusWp(null); }
   }
 
   // The current waypoint's revealed content (text, safety, audio, PDF/links).
@@ -326,9 +399,16 @@ export default function SelfGuidedStartPage() {
             </div>
           </div>
 
-          {/* Current waypoint content (revealed on arrival — always viewable) */}
+          {/* Arrival banner — auto-opened content screen for the reached waypoint */}
+          {arrived && (
+            <div className="rounded-2xl p-3 mb-3 text-center text-sm font-semibold text-white" style={{ background: "#1A6B4A" }}>
+              🎉 הגעת לתחנה {step + 1}! {currentWp?.audioUrl ? "ההדרכה מתנגנת…" : ""}
+            </div>
+          )}
+
+          {/* Current waypoint content (auto-revealed on arrival — always viewable) */}
           {currentWp && (
-            <div className="bg-surface rounded-2xl border border-border p-4 mb-3">
+            <div className="bg-surface rounded-2xl border border-border p-4 mb-3" style={arrived ? { boxShadow: "0 0 0 2px var(--accent)" } : undefined}>
               <div className="text-sm font-semibold text-fg mb-2 flex items-center gap-2">
                 <span className="w-6 h-6 rounded-full bg-[#D6EDE3] text-[#1A6B4A] flex items-center justify-center text-xs font-bold">{step + 1}</span>
                 {currentWp.name || `תחנה ${step + 1}`}
@@ -338,13 +418,23 @@ export default function SelfGuidedStartPage() {
           )}
         </div>
 
-        {/* Fixed "הגעתי" confirmation bar */}
+        {/* Hidden audio element for on-arrival guidance auto-play */}
+        <audio ref={arrivalAudioRef} preload="none" />
+
+        {/* Fixed action bar — הגעתי (confirm) + יצאתי לדרך (arm departure auto-advance) */}
         <div className="fixed bottom-0 inset-x-0 flex justify-center z-40" dir="rtl">
-          <div className="w-full max-w-[480px] bg-surface/95 backdrop-blur-xl border-t border-border p-3" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}>
+          <div className="w-full max-w-[480px] bg-surface/95 backdrop-blur-xl border-t border-border p-3 flex gap-2" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}>
+            {arrived && !isLast && (
+              <button type="button" onClick={() => setDeparted((v) => !v)}
+                className="px-4 py-3 rounded-full text-sm font-semibold shadow-lg shrink-0"
+                style={departed ? { background: "#E8A020", color: "#fff" } : { border: "1.5px solid #1A6B4A", color: "#1A6B4A" }}>
+                {departed ? "🚶 בדרך… (עוקב)" : "🚶 יצאתי לדרך"}
+              </button>
+            )}
             <button type="button" onClick={confirmArrival}
-              className="w-full py-3 rounded-full text-sm font-semibold text-white shadow-lg"
-              style={{ background: pendingArrival ? "#1A6B4A" : "#6b7280" }}>
-              {isLast ? "✓ הגעתי — סיים טיול" : pendingArrival ? "✓ הגעתי — לתחנה הבאה" : "הגעתי (אישור ידני) →"}
+              className="flex-1 py-3 rounded-full text-sm font-semibold text-white shadow-lg"
+              style={{ background: pendingArrival || arrived ? "#1A6B4A" : "#6b7280" }}>
+              {isLast ? "✓ הגעתי — סיים טיול" : pendingArrival || arrived ? "✓ הגעתי — לתחנה הבאה" : "הגעתי (אישור ידני) →"}
             </button>
           </div>
         </div>
