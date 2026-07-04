@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { X, MapPin, ArrowLeftRight, Coins, MessageCircle, UserSearch, Plus, Check, Car, Phone } from "lucide-react";
 import { useDualDate } from "@/components/CalendarModeProvider";
 import { useTranslations } from "next-intl";
+import { useDir } from "@/components/useLabels";
 
 interface Claim { id: string; userId: string; user: { id: string; name: string | null; phone: string | null } }
 interface Offer {
@@ -44,6 +45,7 @@ export default function RideshareModal({
 }) {
   const router = useRouter();
   const tr = useTranslations("rideshare");
+  const dir = useDir();
   const [tab, setTab] = useState<"offers" | "seekers">("offers");
   const [offers, setOffers] = useState<Offer[]>([]);
   const [seekers, setSeekers] = useState<Seeker[]>([]);
@@ -101,7 +103,7 @@ export default function RideshareModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3" onClick={onClose} dir="rtl">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3" onClick={onClose} dir={dir}>
       <div className="absolute inset-0 bg-black/50" />
       <div className="relative w-full max-w-[460px] max-h-[86vh] bg-surface rounded-2xl shadow-2xl flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}>

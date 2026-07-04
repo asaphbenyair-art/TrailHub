@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { X, MessageCircle } from "lucide-react";
 import { useDualDate } from "@/components/CalendarModeProvider";
 import { useTranslations } from "next-intl";
+import { useDir } from "@/components/useLabels";
 
 interface QReply { id: string; body: string; createdAt: string; userId: string; user: { name: string | null; image: string | null } }
 interface Question {
@@ -42,6 +43,7 @@ export default function QAModal({
   const dd = useDualDate();
   const tq = useTranslations("qa");
   const tc = useTranslations("common");
+  const dir = useDir();
   const meId = (session?.user as { id?: string } | undefined)?.id;
 
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -113,7 +115,7 @@ export default function QAModal({
   const shown = view === "mine" ? visible.filter((q) => q.userId === meId) : visible.filter((q) => q.userId !== meId);
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3" onClick={onClose} dir="rtl">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3" onClick={onClose} dir={dir}>
       <div className="absolute inset-0 bg-black/50" />
       <div className="relative w-full max-w-[460px] max-h-[86vh] bg-surface rounded-2xl shadow-2xl flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}>

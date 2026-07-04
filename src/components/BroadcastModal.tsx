@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { X, Megaphone, Plus } from "lucide-react";
 import { useDualDate } from "@/components/CalendarModeProvider";
 import { useTranslations } from "next-intl";
+import { useDir } from "@/components/useLabels";
 
 interface Broadcast {
   id: string; body: string; isCancellation: boolean; createdAt: string;
@@ -23,6 +24,7 @@ export default function BroadcastModal({
   const dd = useDualDate();
   const tb = useTranslations("broadcast");
   const tc = useTranslations("common");
+  const dir = useDir();
   const [list, setList] = useState<Broadcast[]>([]);
   const [loading, setLoading] = useState(true);
   const [composing, setComposing] = useState(false);
@@ -60,7 +62,7 @@ export default function BroadcastModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3" onClick={onClose} dir="rtl">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3" onClick={onClose} dir={dir}>
       <div className="absolute inset-0 bg-black/50" />
       <div className="relative w-full max-w-[460px] max-h-[86vh] bg-surface rounded-2xl shadow-2xl flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}>

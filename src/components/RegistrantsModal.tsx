@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { X, Users, Mars, Venus } from "lucide-react";
 import { useDualDate } from "@/components/CalendarModeProvider";
 import { useTranslations } from "next-intl";
+import { useDir } from "@/components/useLabels";
 
 interface Registrant {
   id: string; name: string | null; image: string | null; gender: string | null;
@@ -63,6 +64,7 @@ export default function RegistrantsModal({
   tripId: string; tripTitle: string; onClose: () => void;
 }) {
   const trg = useTranslations("registrants");
+  const dir = useDir();
   const [data, setData] = useState<{ confirmed: Registrant[]; waitlist: Registrant[] } | null>(null);
   const [allowed, setAllowed] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -75,7 +77,7 @@ export default function RegistrantsModal({
   }, [tripId]);
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3" onClick={onClose} dir="rtl">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3" onClick={onClose} dir={dir}>
       <div className="absolute inset-0 bg-black/50" />
       <div className="relative w-full max-w-[440px] max-h-[82vh] bg-surface rounded-2xl shadow-2xl flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}>
