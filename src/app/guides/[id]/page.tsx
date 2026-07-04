@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useDualDate } from "@/components/CalendarModeProvider";
+import { useLabels } from "@/components/useLabels";
 
 const DIFF_LABEL: Record<string, string> = { EASY: "קל", MEDIUM: "בינוני", HARD: "קשה", EXTREME: "קיצוני" };
 
@@ -45,6 +46,7 @@ export default function GuideProfilePage() {
   const router = useRouter();
   const { data: session } = useSession();
   const dd = useDualDate();
+  const L = useLabels();
   const [data, setData] = useState<GuideProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"trips" | "reviews">("trips");
@@ -135,14 +137,14 @@ export default function GuideProfilePage() {
             {guide.specialtyRegions.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {guide.specialtyRegions.map((r) => (
-                  <span key={r} className="text-[11px] px-2 py-1 rounded-full bg-[#D6EDE3] text-[#0F5038]">📍 {r}</span>
+                  <span key={r} className="text-[11px] px-2 py-1 rounded-full bg-[#D6EDE3] text-[#0F5038]">📍 {L.region(r)}</span>
                 ))}
               </div>
             )}
             {guide.interests.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {guide.interests.map((t) => (
-                  <span key={t} className="text-[11px] px-2 py-1 rounded-full bg-surface-2 text-fg-muted">{t}</span>
+                  <span key={t} className="text-[11px] px-2 py-1 rounded-full bg-surface-2 text-fg-muted">{L.specialty(t)}</span>
                 ))}
               </div>
             )}

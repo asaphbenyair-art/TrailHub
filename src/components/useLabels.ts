@@ -3,7 +3,7 @@
 import { useLocale } from "@/components/LanguageProvider";
 import {
   REGION_EN, DIFFICULTY_HE, DIFFICULTY_EN, STATUS_HE, STATUS_EN,
-  TRIP_TYPE_HE, TRIP_TYPE_EN, ROUTE_TYPE_HE, ROUTE_TYPE_EN,
+  TRIP_TYPE_HE, TRIP_TYPE_EN, ROUTE_TYPE_HE, ROUTE_TYPE_EN, SPECIALTY_EN,
 } from "@/lib/labels";
 import { TAG_LABEL, TAG_LABEL_EN } from "@/lib/tripTags";
 
@@ -24,6 +24,7 @@ export function useLabels() {
     tripType: (t?: string | null) => (t ? (en ? TRIP_TYPE_EN[t] ?? t : TRIP_TYPE_HE[t] ?? t) : ""),
     routeType: (t?: string | null) => (t ? (en ? ROUTE_TYPE_EN[t] ?? t : ROUTE_TYPE_HE[t] ?? t) : ""),
     tag: (v?: string | null) => (v ? (en ? TAG_LABEL_EN[v] ?? v : TAG_LABEL[v] ?? v) : ""),
+    specialty: (s?: string | null) => (s ? (en ? SPECIALTY_EN[s] ?? s : s) : ""),
   };
 }
 

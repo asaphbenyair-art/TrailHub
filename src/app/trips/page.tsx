@@ -610,7 +610,7 @@ export default function TripsPage() {
                     className={`shrink-0 text-[11px] rounded-full px-3 py-1.5 border ${guideSpecialties.length === 0 ? "bg-[#185FA5] text-white border-[#185FA5]" : "bg-surface text-fg-muted border-border"}`}>כל ההתמחויות</button>
                   {allSpecialties.map((s) => (
                     <button key={s} type="button" onClick={() => setGuideSpecialties((prev) => toggle(prev, s))}
-                      className={`shrink-0 text-[11px] rounded-full px-3 py-1.5 border ${guideSpecialties.includes(s) ? "bg-[#185FA5] text-white border-[#185FA5]" : "bg-surface text-fg-muted border-border"}`}>{s}</button>
+                      className={`shrink-0 text-[11px] rounded-full px-3 py-1.5 border ${guideSpecialties.includes(s) ? "bg-[#185FA5] text-white border-[#185FA5]" : "bg-surface text-fg-muted border-border"}`}>{L.specialty(s)}</button>
                   ))}
                 </div>
               )}

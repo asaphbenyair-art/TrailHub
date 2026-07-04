@@ -18,6 +18,25 @@ export const REGION_EN: Record<string, string> = {
   "ערבה": "Arava",
 };
 
+// Guide specialty categories (shown on guide profiles, directory cards, filters).
+export const SPECIALTY_EN: Record<string, string> = {
+  "טבע": "Nature",
+  "ארכיאולוגיה": "Archaeology",
+  "היסטוריה": "History",
+  "צפרות": "Birdwatching",
+  "גיאולוגיה": "Geology",
+  "תנ״ך": "Biblical",
+  'תנ"ך': "Biblical",
+  "מדבר": "Desert",
+  "ים ונחלים": "Sea & Streams",
+  "ספורט והרפתקאות": "Sports & Adventure",
+  "משפחות": "Families",
+  "לילה וכוכבים": "Night & Stars",
+  "צמחייה ובוטניקה": "Flora & Botany",
+  "טיולי אתגר": "Adventure Hikes",
+  "מוסיקה": "Music",
+};
+
 export const DIFFICULTY_HE: Record<string, string> = { EASY: "קל", MEDIUM: "בינוני", HARD: "קשה", EXTREME: "קיצוני" };
 export const DIFFICULTY_EN: Record<string, string> = { EASY: "Easy", MEDIUM: "Medium", HARD: "Hard", EXTREME: "Extreme" };
 
