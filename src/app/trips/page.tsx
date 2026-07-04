@@ -350,7 +350,7 @@ export default function TripsPage() {
     if (!filtersRestored.current) return;
     try { localStorage.setItem("trailhub-filters", JSON.stringify(filters)); } catch {}
   }, [filters]);
-  useEffect(() => {
+  const refreshMyRegs = useCallback(() => {
     if (!session) return;
     fetch("/api/my-trips", { cache: "no-store" })
       .then((r) => r.json())
@@ -371,6 +371,18 @@ export default function TripsPage() {
       })
       .catch(() => {});
   }, [session]);
+  // Load on mount + refresh whenever the tab regains focus (so a status set on
+  // the register/interest page shows up immediately when the user returns).
+  useEffect(() => {
+    refreshMyRegs();
+    const onFocus = () => refreshMyRegs();
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, [refreshMyRegs]);
 
   // Cancel/remove a registration or interest directly from the search card.
   async function cancelReg(tripId: string) {
@@ -926,16 +938,26 @@ export default function TripsPage() {
                   {myStatus && (
                     <div className={`px-3 py-1.5 flex items-center gap-1.5 text-xs font-medium ${
                       myStatus === "CONFIRMED" ? "bg-[#D6EDE3] text-[#0F5038]" :
-                      myStatus === "WAITLIST"  ? "bg-[#FDF3DC] text-[#7A5010]" : "bg-surface-2 text-fg-muted"
+                      myStatus === "WAITLIST"  ? "bg-[#FDF3DC] text-[#7A5010]" :
+                      myStatus === "PENDING"   ? "bg-[#FBF0DA] text-[#7A5010]" : "bg-surface-2 text-fg-muted"
                     }`}>
                       <span>{myStatus === "CONFIRMED" ? tcard("registeredLabel") :
-                       myStatus === "WAITLIST"  ? `${tcard("waitlisted")}${myRegPos[trip.id] ? ` · ${myRegPos[trip.id]}` : ""}` : tcard("interestedStatus")}</span>
-                      {(myStatus === "CONFIRMED" || myStatus === "WAITLIST") && (
-                        <button type="button" onClick={(e) => { e.stopPropagation(); cancelReg(trip.id); }}
-                          className="ms-auto border border-current rounded-full px-2.5 py-0.5 text-[11px] font-medium hover:bg-black/5">
-                          {myStatus === "WAITLIST" ? tcard("cancel") : tcard("cancelReg")}
-                        </button>
-                      )}
+                       myStatus === "WAITLIST"  ? `${tcard("waitlisted")}${myRegPos[trip.id] ? ` · ${myRegPos[trip.id]}` : ""}` :
+                       `★ ${tcard("interestedStatus")}`}</span>
+                      <div className="ms-auto flex items-center gap-1.5">
+                        {myStatus === "PENDING" && !isFull && (
+                          <button type="button" onClick={(e) => { e.stopPropagation(); router.push(`/trips/${trip.id}/register`); }}
+                            className="border border-current rounded-full px-2.5 py-0.5 text-[11px] font-medium hover:bg-black/5">
+                            {tcard("register")}
+                          </button>
+                        )}
+                        {(myStatus === "CONFIRMED" || myStatus === "WAITLIST" || myStatus === "PENDING") && (
+                          <button type="button" onClick={(e) => { e.stopPropagation(); cancelReg(trip.id); }}
+                            className="border border-current rounded-full px-2.5 py-0.5 text-[11px] font-medium hover:bg-black/5">
+                            {myStatus === "WAITLIST" ? tcard("cancel") : myStatus === "PENDING" ? tcard("remove") : tcard("cancelReg")}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
                   {isSG && isPurchased && (
@@ -1099,8 +1121,8 @@ export default function TripsPage() {
                       </div>
                     </div>
                     )}
-                    {/* Once registered, the top banner takes over — hide the whole price/action row */}
-                    {!(myStatus === "CONFIRMED" || myStatus === "WAITLIST") && (
+                    {/* Once registered/interested, the top banner takes over — hide the whole price/action row */}
+                    {!(myStatus === "CONFIRMED" || myStatus === "WAITLIST" || myStatus === "PENDING") && (
                     <div className="flex items-center justify-between pt-2 border-t border-border">
                       <div>
                         {trip.price === 0 ? (

@@ -215,7 +215,7 @@ interface Trip {
 const REG_STATUS_UI: Record<string, { bg: string; color: string; text: string }> = {
   CONFIRMED: { bg: "rgba(61,143,95,0.18)", color: "#7fd4a3", text: "✓ רשום לטיול" },
   WAITLIST:  { bg: "rgba(44,95,138,0.22)", color: "#8fc0e8", text: "⏰ ברשימת המתנה" },
-  PENDING:   { bg: "var(--surface-2)", color: "var(--fg-muted)", text: "👀 מתעניין" },
+  PENDING:   { bg: "rgba(232,160,32,0.18)", color: "#E8A020", text: "★ מתעניין" },
 };
 
 interface Registrant { id: string; name: string | null; anonymous: boolean; participantCount: number; createdAt: string }

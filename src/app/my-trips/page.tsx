@@ -79,7 +79,7 @@ interface Registration {
 const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }> = {
   CONFIRMED: { bg: "#D6EDE3", color: "#0F5038", label: "✓ רשום" },
   WAITLIST:  { bg: "#D4E4F0", color: "#185FA5", label: "⏰ רשימת המתנה" },
-  PENDING:   { bg: "#f5f5f5", color: "#666", label: "מתעניין" },
+  PENDING:   { bg: "#FBF0DA", color: "#7A5010", label: "★ מתעניין" },
   CANCELLED: { bg: "#FADBD8", color: "#791F1F", label: "✕ בוטל" },
 };
 
