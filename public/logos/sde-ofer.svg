@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="בית ספר שדה עפר">
+  <defs>
+    <linearGradient id="of-earth" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a9713f"/>
+      <stop offset="1" stop-color="#6e4423"/>
+    </linearGradient>
+  </defs>
+  <circle cx="60" cy="60" r="56" fill="none" stroke="#7a4e28" stroke-width="3"/>
+  <!-- rolling earth hills -->
+  <path d="M14 78 Q34 60 56 72 Q80 84 106 66 L106 96 Q60 106 14 96 Z" fill="url(#of-earth)"/>
+  <path d="M14 88 Q40 74 66 84 Q88 92 106 82 L106 96 Q60 106 14 96 Z" fill="#5c3a1e" opacity="0.6"/>
+  <!-- sprouting leaf -->
+  <path d="M60 60 C60 44 50 38 44 34 C52 40 56 50 58 60 Z" fill="#7d9142"/>
+  <path d="M60 60 C60 46 70 40 78 36 C68 42 64 50 62 60 Z" fill="#93a755"/>
+  <line x1="60" y1="60" x2="60" y2="74" stroke="#5c3a1e" stroke-width="3" stroke-linecap="round"/>
+  <!-- letters שע -->
+  <text x="60" y="34" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="26" fill="#f2e6d6" letter-spacing="2">שע</text>
+</svg>

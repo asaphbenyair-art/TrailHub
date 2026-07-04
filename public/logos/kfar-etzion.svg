@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="בית ספר שדה כפר עציון">
+  <defs>
+    <linearGradient id="ke-mtn" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6b7c3a"/>
+      <stop offset="1" stop-color="#3f4d1f"/>
+    </linearGradient>
+  </defs>
+  <circle cx="60" cy="60" r="56" fill="none" stroke="#4a5a24" stroke-width="3"/>
+  <!-- field ground -->
+  <path d="M12 84 Q40 74 60 80 Q84 87 108 78 L108 92 Q60 104 12 92 Z" fill="#6b7c3a" opacity="0.85"/>
+  <!-- mountains -->
+  <path d="M20 84 L44 44 L60 68 L78 38 L100 84 Z" fill="url(#ke-mtn)"/>
+  <path d="M60 68 L78 38 L100 84 L74 84 Z" fill="#556327"/>
+  <!-- sun -->
+  <circle cx="88" cy="34" r="9" fill="#c8b45a"/>
+  <!-- letters כע -->
+  <text x="60" y="46" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="30" fill="#eef0e2" letter-spacing="2">כע</text>
+</svg>
