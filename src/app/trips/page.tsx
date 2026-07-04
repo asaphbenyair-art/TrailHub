@@ -1107,7 +1107,7 @@ export default function TripsPage() {
                       <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
                         {isSG ? (
                           isPurchased ? (
-                            <button type="button" onClick={() => router.push(`/trips/${trip.id}/start`)}
+                            <button type="button" onClick={() => router.push(`/trips/${trip.id}/start?from=search`)}
                               className="px-3.5 py-1.5 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">▶ התחל</button>
                           ) : (
                             <button type="button" onClick={() => router.push(`/trips/${trip.id}/register`)}

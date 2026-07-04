@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import ElevationChart, { parseTrack } from "@/components/ElevationChart";
 
@@ -80,6 +80,10 @@ function WaypointAudioPlayer({ src }: { src: string }) {
 export default function SelfGuidedStartPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Where to return on exit — set by the entry point (?from=). Never the trip
+  // page itself, so exiting fully leaves the trip context (no redirect loop).
+  const exitHref = searchParams.get("from") === "search" ? "/trips" : "/my-trips";
   const [trip, setTrip] = useState<Trip | null>(null);
   const [allowed, setAllowed] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
@@ -446,7 +450,7 @@ export default function SelfGuidedStartPage() {
     <div dir="rtl" className="min-h-screen bg-bg py-4 px-3">
       <div className="max-w-[480px] mx-auto pb-10">
         <div className="flex items-center gap-3 mb-3">
-          <button type="button" onClick={() => router.push(`/trips/${id}`)}
+          <button type="button" onClick={() => router.push(exitHref)}
             className="text-[11px] font-medium rounded-full px-3 py-1.5 shrink-0 flex items-center gap-1"
             style={{ background: "var(--surface-2)", color: "var(--fg)" }}>
             ← צא מהטיול
