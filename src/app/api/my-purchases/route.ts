@@ -10,7 +10,7 @@ export async function GET() {
     where: { userId: session.user.id!, revoked: false },
     orderBy: { purchasedAt: "desc" },
     include: {
-      trip: { select: { id: true, title: true, region: true, images: true, accessWindowDays: true, price: true } },
+      trip: { select: { id: true, title: true, region: true, images: true, accessWindowDays: true, price: true, durationMin: true } },
     },
   });
   return NextResponse.json(purchases);

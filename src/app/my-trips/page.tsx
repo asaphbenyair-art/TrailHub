@@ -94,6 +94,58 @@ const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }>
 
 const now = new Date();
 
+// Self-guided review form (opened from the עצמאיים tab only, not the trip page).
+function SelfGuidedReviewModal({ tripId, tripTitle, onClose }: { tripId: string; tripTitle: string; onClose: () => void }) {
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [done, setDone] = useState(false);
+  async function submit() {
+    if (!rating) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/trips/${tripId}/reviews`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating, comment }),
+      });
+      if (res.ok) setDone(true);
+    } finally { setSaving(false); }
+  }
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3" onClick={onClose} dir="rtl">
+      <div className="absolute inset-0 bg-black/50" />
+      <div className="relative w-full max-w-[400px] bg-surface rounded-2xl shadow-2xl p-5" onClick={(e) => e.stopPropagation()}>
+        {done ? (
+          <div className="text-center py-4">
+            <div className="text-3xl mb-2">🎉</div>
+            <div className="text-sm font-semibold text-fg mb-3">תודה! הביקורת נשמרה.</div>
+            <button type="button" onClick={onClose} className="px-5 py-2 bg-[#1A6B4A] text-white rounded-full text-sm font-medium">סגור</button>
+          </div>
+        ) : (
+          <>
+            <div className="text-sm font-semibold text-fg mb-1">כתיבת ביקורת</div>
+            <div className="text-[11px] text-fg-faint mb-3 truncate">{tripTitle}</div>
+            <div className="flex gap-1 mb-3">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button key={n} type="button" onClick={() => setRating(n)} className="text-2xl" style={{ color: n <= rating ? "#e0b64a" : "var(--fg-faint)" }}>★</button>
+              ))}
+            </div>
+            <textarea value={comment} onChange={(e) => setComment(e.target.value)} rows={3} placeholder="ספר על החוויה (אופציונלי)"
+              className="w-full rounded-lg px-3 py-2 text-sm resize-none mb-3 bg-surface border border-border text-fg placeholder:text-fg-faint focus:outline-none focus:border-[#1A6B4A]" />
+            <div className="flex gap-2">
+              <button type="button" onClick={submit} disabled={!rating || saving}
+                className="flex-1 py-2 rounded-full text-sm font-medium text-white disabled:opacity-50" style={{ background: "#1A6B4A" }}>
+                {saving ? "שומר…" : "שלח ביקורת"}
+              </button>
+              <button type="button" onClick={onClose} className="px-4 py-2 rounded-full text-sm font-medium border border-border text-fg-muted">ביטול</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function TripCard({
   reg,
   onCancel,
@@ -328,8 +380,9 @@ export default function MyTripsPage() {
   const [regs, setRegs] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"registered" | "waitlist" | "interested" | "selfguided" | "history" | "cancelled">("registered");
-  const [purchases, setPurchases] = useState<Array<{ id: string; accessExpiresAt: string | null; trip: { id: string; title: string; region: string; images: string[]; price?: number } }>>([]);
+  const [purchases, setPurchases] = useState<Array<{ id: string; accessExpiresAt: string | null; purchasedAt: string; trip: { id: string; title: string; region: string; images: string[]; price?: number; durationMin?: number } }>>([]);
   const [qaModal, setQaModal] = useState<{ id: string; title: string } | null>(null);
+  const [reviewFor, setReviewFor] = useState<{ id: string; title: string } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -444,11 +497,23 @@ export default function MyTripsPage() {
                         <button type="button" onClick={() => router.push(`/trips/${p.trip.id}`)}
                           className="self-start mt-2 px-3 py-1.5 rounded-full text-[11px] font-medium border border-[#C0392B] text-[#C0392B]">פג תוקף — רכוש מחדש</button>
                       ) : (
-                        <div className="flex gap-1.5 mt-2">
+                        <div className="flex gap-1.5 mt-2 flex-wrap">
                           <button type="button" onClick={() => router.push(`/trips/${p.trip.id}/start?mode=field`)}
                             className="px-3 py-1.5 bg-[#1A6B4A] text-white rounded-full text-[11px] font-medium">▶ התחל / המשך</button>
                           <button type="button" onClick={() => router.push(`/trips/${p.trip.id}/start?mode=browse`)}
                             className="px-3 py-1.5 border border-[#1A6B4A]/40 text-[#1A6B4A] rounded-full text-[11px] font-medium">📖 למד על הטיול</button>
+                          {(() => {
+                            // Review unlocks (durationHours − 2) after purchase; ≤2h trips unlock at once.
+                            const durH = (p.trip.durationMin ?? 0) / 60;
+                            const unlockMs = new Date(p.purchasedAt).getTime() + Math.max(durH - 2, 0) * 3_600_000;
+                            const hoursLeft = Math.ceil((unlockMs - Date.now()) / 3_600_000);
+                            return hoursLeft <= 0 ? (
+                              <button type="button" onClick={() => setReviewFor({ id: p.trip.id, title: p.trip.title })}
+                                className="px-3 py-1.5 border border-[#E8A020] text-[#7A5010] rounded-full text-[11px] font-medium">⭐ כתוב ביקורת</button>
+                            ) : (
+                              <span className="px-3 py-1.5 text-[11px] text-fg-faint">🔒 ביקורת תתאפשר בעוד {hoursLeft} שעות</span>
+                            );
+                          })()}
                         </div>
                       )}
                     </div>
@@ -485,6 +550,10 @@ export default function MyTripsPage() {
 
       {qaModal && (
         <QAModal tripId={qaModal.id} tripTitle={qaModal.title} onClose={() => setQaModal(null)} />
+      )}
+
+      {reviewFor && (
+        <SelfGuidedReviewModal tripId={reviewFor.id} tripTitle={reviewFor.title} onClose={() => setReviewFor(null)} />
       )}
     </div>
   );

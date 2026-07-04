@@ -1006,7 +1006,9 @@ export default function TripDetailPage() {
 
           {/* ── 15. Reviews — "שלי" / "אחרים" toggle; own review is editable ── */}
           {(() => {
-            const eligible = !!session && (!!myRegStatus || !!purchase?.purchased);
+            // Self-guided reviews are written from the "עצמאיים" tab in My Trips,
+            // never on the trip detail page — so exclude self-guided here.
+            const eligible = !!session && !isSelfGuided && !!myRegStatus;
             const myReview = meId ? trip.reviews.find((rv) => rv.userId === meId) : undefined;
             const otherReviews = trip.reviews.filter((rv) => rv.userId !== meId);
             if (trip.reviews.length === 0 && !eligible) return null;
