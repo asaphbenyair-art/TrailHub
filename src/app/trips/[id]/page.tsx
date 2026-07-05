@@ -11,6 +11,7 @@ import TranslateButton from "@/components/TranslateButton";
 import { useTranslations } from "next-intl";
 import { useLabels } from "@/components/useLabels";
 import { EQUIPMENT_EN } from "@/lib/labels";
+import { computeRefund } from "@/lib/refund";
 import { googleCalendarUrl } from "@/lib/calendar";
 import { coverImages } from "@/lib/tripImage";
 import { useDateFmt, useDualDate } from "@/components/CalendarModeProvider";
@@ -273,6 +274,9 @@ export default function TripDetailPage() {
   const [myRegStatus, setMyRegStatus] = useState<string | null>(null);
   const [myRegId, setMyRegId] = useState<string | null>(null);
   const [myRegPos, setMyRegPos] = useState<number | null>(null);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [waitCount, setWaitCount] = useState(0);
   const [coupon, setCoupon] = useState("");
   const [couponError, setCouponError] = useState<string | null>(null);
   const [couponResult, setCouponResult] = useState<{ original: number; newTotal: number; discountPct: number; refund: number } | null>(null);
@@ -284,10 +288,23 @@ export default function TripDetailPage() {
   const [hoverCoord, setHoverCoord] = useState<[number, number] | null>(null);
   const mapWrapRef = useRef<HTMLDivElement>(null);
 
+  // Smart cancellation dialog: refund amount + context-aware message. Opening
+  // it fetches the current waitlist count so the "full with waitlist" copy is exact.
   async function cancelRegistration() {
-    if (!myRegId || !window.confirm("לבטל את ההרשמה לטיול?")) return;
-    const res = await fetch(`/api/registrations/${myRegId}`, { method: "DELETE" });
-    if (res.ok) { setMyRegStatus(null); setMyRegId(null); }
+    if (!myRegId) return;
+    try {
+      const r = await fetch(`/api/trips/${id}/registrants`, { cache: "no-store" });
+      if (r.ok) { const d = await r.json(); setWaitCount(Array.isArray(d?.waitlist) ? d.waitlist.length : 0); }
+    } catch { /* noop — dialog still shows without the waitlist count */ }
+    setCancelOpen(true);
+  }
+  async function doCancelRegistration() {
+    if (!myRegId) return;
+    setCancelling(true);
+    try {
+      const res = await fetch(`/api/registrations/${myRegId}`, { method: "DELETE" });
+      if (res.ok) { setMyRegStatus(null); setMyRegId(null); setCancelOpen(false); }
+    } finally { setCancelling(false); }
   }
   async function applyCoupon() {
     if (!coupon.trim() || !myRegId) return;
@@ -1259,6 +1276,60 @@ export default function TripDetailPage() {
       {showRideshare && trip && (
         <RideshareModal tripId={trip.id} tripTitle={trip.title} tripDate={trip.date} onClose={() => setShowRideshare(false)} />
       )}
+
+      {/* ── Smart cancellation dialog: exact refund + context-aware message ── */}
+      {cancelOpen && (() => {
+        const isWaitlistCancel = myRegStatus === "WAITLIST";
+        const isFreeTrip = trip.price === 0;
+        const refund = computeRefund(trip.cancellationPolicy, trip.date, trip.price);
+        // Context message keyed on availability (spec: Cancellation Flow — Smart Messaging).
+        let contextMsg: string;
+        if (isFull) {
+          contextMsg = `אתה עומד לבטל את הרשמתך. הטיול מלא${waitCount > 0 ? ` ויש ${waitCount} אנשים ברשימת המתנה — ביטולך יפנה מקום למישהו אחר` : ""}. לא תוכל להירשם מחדש אלא דרך רשימת המתנה.`;
+        } else if (spotsLeft <= 2) {
+          contextMsg = `אתה עומד לבטל. נותרו ${spotsLeft} מקומות בלבד — ייתכן שלא תוכל להירשם מחדש.`;
+        } else {
+          contextMsg = "אתה עומד לבטל את הרשמתך. הטיול עדיין פתוח להרשמה — תוכל להירשם מחדש בעתיד אם תרצה.";
+        }
+        return (
+          <div className="fixed inset-0 z-[60] flex items-end justify-center" onClick={() => !cancelling && setCancelOpen(false)}>
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <div dir={L.dir} className="relative w-full max-w-[480px] bg-surface rounded-t-3xl p-5 pb-8" onClick={(e) => e.stopPropagation()}>
+              <div className="w-10 h-1 rounded-full mx-auto mb-4" style={{ background: "var(--border)" }} />
+              <h3 className="font-display text-xl text-fg mb-3">{isWaitlistCancel ? "ביטול המתנה" : "ביטול הרשמה"}</h3>
+
+              {/* Part 1 — exact refund (registered + paid trips only) */}
+              {!isWaitlistCancel && !isFreeTrip && (
+                <div className="rounded-xl border border-border bg-surface-2/60 p-3 mb-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-fg-muted">החזר כספי בביטול כעת</span>
+                    <span className="font-semibold text-[#0F5038]">
+                      ₪{refund.amount.toLocaleString("he-IL")} <span className="text-fg-faint font-normal">({refund.pct}%)</span>
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-fg-faint mt-1.5 leading-relaxed">
+                    ההחזר יבוצע מיידית דרך Stripe. הזיכוי בחשבון — בדרך כלל 3-5 ימי עסקים, תלוי בבנק.
+                  </div>
+                </div>
+              )}
+
+              {/* Part 2 — context-aware message */}
+              <p className="text-sm text-fg-muted leading-relaxed mb-4">{contextMsg}</p>
+
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setCancelOpen(false)} disabled={cancelling}
+                  className="flex-1 px-4 py-2.5 text-sm rounded-full font-medium border border-border text-fg-muted bg-surface disabled:opacity-60">
+                  חזור
+                </button>
+                <button type="button" onClick={doCancelRegistration} disabled={cancelling}
+                  className="flex-1 px-4 py-2.5 text-sm rounded-full font-semibold text-white disabled:opacity-60" style={{ background: "var(--danger)" }}>
+                  {cancelling ? "מבטל..." : "בטל הרשמה"}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

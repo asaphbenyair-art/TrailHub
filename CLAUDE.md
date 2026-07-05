@@ -2505,3 +2505,52 @@ Review button for self-guided trips appears ONLY in "עצמאיים" tab (My Tri
 - Each day has its own GPX upload field
 - Waypoints are tied to that day's GPX
 - Same waypoint logic as single-day trips (10m proximity validation, blocked until GPX uploaded)
+
+---
+
+## Smart Departure Alert — Guided Trips
+
+### What it does
+X hours before a guided trip, the app checks the user's current location and calculates travel time to the meeting point using Google Maps Distance Matrix API. If the user needs to leave soon, sends a push notification.
+
+### Notification example
+"הגיע הזמן לצאת! לפי Google Maps תגיע לנקודת המפגש בזמן אם תצא עכשיו. נסיעה משוערת: 45 דקות."
+
+### Settings
+- Default: alert sent 2 hours before trip departure
+- User can change this value per trip during registration
+- User must grant background location permission
+
+### Implementation
+- Use Google Maps Distance Matrix API to calculate travel time
+- Trigger via background task X hours before departure
+- Only send if user has granted location permission
+- Include "נווט עכשיו" deep link that opens Waze/Google Maps with the meeting point
+
+### Phase
+- PWA: partial support (location only when screen is on)
+- Native Android/iOS: full background location support
+
+---
+
+## Cancellation Flow — Smart Messaging
+
+Before confirming cancellation, show a dialog with two parts:
+
+### Part 1 — Refund amount (always shown)
+Exact refund amount based on current time vs cancellation policy tiers.
+
+### Part 2 — Smart context message (based on trip status)
+
+**Trip has available spots:**
+"אתה עומד לבטל את הרשמתך. הטיול עדיין פתוח להרשמה — תוכל להירשם מחדש בעתיד אם תרצה."
+
+**Trip is full with waitlist:**
+"אתה עומד לבטל את הרשמתך. הטיול מלא ויש X אנשים ברשימת המתנה — ביטולך יפנה מקום למישהו אחר. לא תוכל להירשם מחדש אלא דרך רשימת המתנה."
+
+**Trip is almost full (≤2 spots remaining):**
+"אתה עומד לבטל. נותרו X מקומות בלבד — ייתכן שלא תוכל להירשם מחדש."
+
+### Actions
+- "בטל הרשמה" — confirms cancellation
+- "חזור" — cancels the dialog, stays registered

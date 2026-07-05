@@ -16,6 +16,7 @@ import { useDateFmt, useCalendarMode } from "@/components/CalendarModeProvider";
 import { useTranslations } from "next-intl";
 import { useDir } from "@/components/useLabels";
 import { formatDualDate } from "@/lib/hebrewDate";
+import { computeRefund } from "@/lib/refund";
 
 const DIFF_LABEL: Record<string, string> = { EASY: "קל", MEDIUM: "בינוני", HARD: "קשה", EXTREME: "קיצוני" };
 
@@ -40,26 +41,6 @@ interface RegistrationTrip {
 // Compute the refund the hiker would get if they cancel right now, based on the
 // trip's cancellation-policy tiers vs. the current time (spec: intermediate
 // screen shows the exact refund amount before cancellation completes).
-function computeRefund(policy: string | null, tripDate: string, totalPrice: number) {
-  const hoursUntil = (new Date(tripDate).getTime() - Date.now()) / 3_600_000;
-  const lines = (policy ?? "").split("\n").filter(Boolean);
-  const tiers: { hours: number; pct: number }[] = [];
-  for (const line of lines) {
-    const hMatch = line.match(/(\d+)\s*שעות/);
-    const noRefund = /ללא\s*החזר/.test(line);
-    const pMatch = line.match(/(\d+)\s*%/);
-    if (!hMatch) continue;
-    const hours = parseInt(hMatch[1], 10);
-    const pct = noRefund ? 0 : pMatch ? parseInt(pMatch[1], 10) : 0;
-    // "פחות מ-X שעות" describes the window BELOW the threshold.
-    if (/פחות/.test(line)) continue;
-    tiers.push({ hours, pct });
-  }
-  // Most generous tier the hiker still qualifies for.
-  let pct = 0;
-  for (const t of tiers) if (hoursUntil >= t.hours) pct = Math.max(pct, t.pct);
-  return { pct, amount: Math.round((totalPrice * pct) / 100) };
-}
 
 interface Registration {
   id: string;
